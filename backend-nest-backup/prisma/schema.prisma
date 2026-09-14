@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AppUserRole {
+  user
+  merchant
+}
+
+model User {
+  id           String      @id
+  name         String
+  email        String      @default("")
+  isGuest      Boolean     @default(false) @map("is_guest")
+  passwordHash String?     @map("password_hash")
+  platform     String?
+  role         AppUserRole @default(user)
+  businessName String?     @map("business_name")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  lastSeenAt   DateTime    @default(now()) @map("last_seen_at")
+  events       Event[]
+
+  @@index([email])
+  @@index([lastSeenAt(sort: Desc)])
+  @@index([role])
+  @@map("users")
+}
+
+model Event {
+  id          String   @id
+  title       String
+  description String
+  imageUrl    String   @map("image_url")
+  city        String   @default("Fortaleza")
+  region      String   @default("Grande Fortaleza")
+  venue       String   @default("")
+  startsAt    DateTime @map("starts_at")
+  active      Boolean  @default(true)
+  merchantId  String   @map("merchant_id")
+  merchant    User     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([city, region])
+  @@index([startsAt])
+  @@index([merchantId])
+  @@index([active])
+  @@map("events")
+}
+
+model Carousel {
+  id        String   @id
+  title     String
+  subtitle  String
+  tag       String
+  imageUrl  String   @map("image_url")
+  city      String   @default("Fortaleza")
+  region    String   @default("Grande Fortaleza")
+  sortOrder Int      @default(0) @map("sort_order")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([city, region])
+  @@map("carousels")
+}
+
+model Notification {
+  id        String   @id
+  title     String
+  body      String
+  city      String   @default("Fortaleza")
+  region    String   @default("Grande Fortaleza")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([city, region])
+  @@map("notifications")
+}
+
+enum PortalRole {
+  admin
+  consultor
+}
+
+model PortalUser {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  role         PortalRole
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@map("portal_users")
+}

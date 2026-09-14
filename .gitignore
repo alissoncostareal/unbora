@@ -1,0 +1,30 @@
+# Secrets — nunca versionar
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Dependências
+node_modules/
+mobile/node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Expo
+mobile/.expo/
+mobile/dist/
+
+# Next.js
+frontend/.next/
+
+# NestJS / Spring
+backend/dist/
+backend/data/
+backend/target/
+backend/.m2-local/
+
+# Vercel
+.vercel/
+
+# OS
+.DS_Store

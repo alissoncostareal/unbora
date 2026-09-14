@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: unbora-backend-service
+  namespace: unbora
+  labels:
+    app: unbora-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: unbora-backend
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001

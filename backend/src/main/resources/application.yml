@@ -1,0 +1,70 @@
+server:
+  port: ${PORT:3001}
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: unbora-api
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29094}}
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 20000
+      max-lifetime: 1800000
+      data-source-properties:
+        prepareThreshold: 0
+        preparedStatementCacheQueries: 0
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+unbora:
+  jwt:
+    secret: ${ADMIN_JWT_SECRET:${JWT_SECRET:unbora-super-secret-jwt-key-minimum-256-bits-for-security-must-be-long-enough-12345}}
+    expiration-ms: 2592000000
+  superadmin:
+    email: ${SUPERADMIN_EMAIL:}
+    password: ${SUPERADMIN_PASSWORD:}
+    name: ${SUPERADMIN_NAME:Super Admin}
+  groq:
+    api-key: ${GROQ_API_KEY:}
+    model: ${GROQ_MODEL:qwen/qwen3.8-27b}
+  brave:
+    api-key: ${BRAVE_API_KEY:}
+  google:
+    places-api-key: ${GOOGLE_PLACES_API_KEY:${GOOGLE_MAPS_API_KEY:}}
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+  oauth:
+    google:
+      client-ids: ${GOOGLE_CLIENT_IDS:${GOOGLE_CLIENT_ID:${EXPO_PUBLIC_GOOGLE_CLIENT_ID:}}}
+  cors:
+    allowed-origin: ${ALLOWED_ORIGIN:*}

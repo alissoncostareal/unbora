@@ -1,0 +1,99 @@
+@import 'tailwindcss';
+
+@source '../components/**/*.{js,ts,jsx,tsx}';
+@source '../app/**/*.{js,ts,jsx,tsx}';
+@source '../lib/**/*.{js,ts,jsx,tsx}';
+
+/* ── Tabela Dashboard — design tokens (Dribbble reference) ── */
+@theme {
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand lime */
+  --color-accent: #d4ff4d;
+  --color-accent-dark: #b8e035;
+  --color-accent-light: #f4ffd6;
+
+  /* Sidebar */
+  --color-sidebar: #1a1a1a;
+  --color-sidebar-dark: #111111;
+  --color-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --color-sidebar-muted: rgba(255, 255, 255, 0.45);
+
+  /* Content */
+  --color-primary: #1a1a1a;
+  --color-primary-dark: #111111;
+  --color-primary-light: #f4f4f4;
+
+  --color-canvas: #f4f4f4;
+  --color-surface: #ffffff;
+  --color-muted: #888888;
+  --color-heading: #000000;
+  --color-border: #ebebeb;
+
+  --color-success: #22c55e;
+  --color-success-light: #dcfce7;
+  --color-warning: #eab308;
+  --color-warning-light: #fef9c3;
+  --color-info: #8b5cf6;
+  --color-info-light: #ede9fe;
+  --color-danger: #ef4444;
+  --color-danger-light: #fee2e2;
+
+  --color-chart-purple: #a78bfa;
+  --color-chart-green: #166534;
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-[15px] text-muted;
+  }
+}
+
+@layer components {
+  /* Card — Tabela style */
+  .tabela-card {
+    @apply rounded-3xl border border-border bg-surface;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Sidebar nav item */
+  .tabela-nav-item {
+    @apply flex items-center gap-3 rounded-xl px-4 py-2.5 text-[14px] font-medium transition;
+  }
+
+  .tabela-nav-item--active {
+    @apply bg-accent text-sidebar;
+  }
+
+  .tabela-nav-item--idle {
+    @apply text-white/55 hover:bg-sidebar-hover hover:text-white;
+  }
+
+  /* Pill toggle (Weekly / Monthly) */
+  .tabela-pill {
+    @apply rounded-full px-3 py-1 text-xs font-semibold transition;
+  }
+
+  .tabela-pill--active {
+    @apply bg-sidebar text-white;
+  }
+
+  .tabela-pill--idle {
+    @apply text-muted hover:text-heading;
+  }
+
+  /* Striped bar chart fill */
+  .tabela-bar-stripe {
+    background: repeating-linear-gradient(
+      -45deg,
+      #166534,
+      #166534 4px,
+      #14532d 4px,
+      #14532d 8px
+    );
+  }
+}

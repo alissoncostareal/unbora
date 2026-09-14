@@ -1,0 +1,184 @@
+import { router } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+
+import { getInitials, useAuthStore } from '@/stores/authStore';
+import { useLocationStore } from '@/stores/locationStore';
+import { spacing, type ThemeColors } from '@/theme/colors';
+import type { UnboraDayPeriod } from '@/types';
+
+export function AppHeader({
+  colors,
+  period: _period,
+  subtitle,
+  title = 'Unbora',
+  isFloating,
+  hideAvatar,
+  showCreate = true,
+}: {
+  colors: ThemeColors;
+  period: UnboraDayPeriod;
+  subtitle?: string;
+  title?: string;
+  isFloating?: boolean;
+  hideAvatar?: boolean;
+  /** Botão para criar evento (lojista) */
+  showCreate?: boolean;
+}) {
+  const insets = useSafeAreaInsets();
+  const user = useAuthStore((s) => s.user);
+  const city = useLocationStore((s) => s.city);
+  const region = useLocationStore((s) => s.region);
+
+  const chipIcon = isFloating ? '#FFFFFF' : colors.textPrimary;
+
+  const openCreate = () => {
+    if (user?.role === 'merchant') {
+      router.push('/create-event');
+      return;
+    }
+    router.push('/merchant-register');
+  };
+
+  const locationText = subtitle ?? `${city}${region && region !== city ? ` · ${region}` : ''}`;
+
+  return (
+    <View
+      style={[
+        styles.wrap,
+        { paddingTop: insets.top + spacing.sm },
+        isFloating && styles.floatingWrap,
+      ]}
+    >
+      <View style={styles.brandBlock}>
+        <Text
+          style={[
+            styles.brand,
+            { color: isFloating ? '#FFFFFF' : colors.textPrimary },
+            isFloating && styles.brandShadow,
+          ]}
+        >
+          {title}
+        </Text>
+
+        <View style={styles.locationRow}>
+          <Ionicons
+            name="location-sharp"
+            size={12}
+            color={isFloating ? 'rgba(255,255,255,0.85)' : colors.primary}
+          />
+          <Text
+            style={[
+              styles.locationText,
+              { color: isFloating ? 'rgba(255,255,255,0.85)' : colors.textMuted },
+              isFloating && styles.brandShadow,
+            ]}
+            numberOfLines={1}
+          >
+            {locationText}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.actions}>
+        {showCreate ? (
+          <Pressable
+            onPress={openCreate}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Criar evento"
+            style={({ pressed }) => [
+              styles.chip,
+              { opacity: pressed ? 0.65 : 1 },
+            ]}
+          >
+            <Ionicons name="add" size={28} color={chipIcon} style={isFloating ? styles.iconShadow : undefined} />
+          </Pressable>
+        ) : null}
+
+        {!hideAvatar ? (
+          <Pressable
+            onPress={() => router.push('/profile')}
+            style={({ pressed }) => [
+              styles.avatar,
+              {
+                backgroundColor: isFloating ? '#FFFFFF' : colors.surfaceStrong,
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            <Text style={[styles.avatarText, { color: colors.textPrimary }]}>
+              {getInitials(user?.name ?? '?')}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingBottom: 4,
+  },
+  brand: {
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: -0.9,
+  },
+  brandBlock: {
+    flexShrink: 1,
+    gap: 2,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  locationText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  brandShadow: {
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  iconShadow: {
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  chip: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { fontWeight: '700', fontSize: 11 },
+  floatingWrap: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    backgroundColor: 'transparent',
+  },
+});

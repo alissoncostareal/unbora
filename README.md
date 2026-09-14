@@ -1,52 +1,102 @@
-# 🌴 Unbora Fortaleza
+# Unbora Fortaleza
 
 > Descubra o que fazer hoje em Fortaleza com recomendações personalizadas por IA.
 
-## O que é?
+## Estrutura do monorepo
 
-O **Unbora** é um app web que analisa seu humor e te indica os melhores lugares, eventos e atividades em Fortaleza-CE no momento. Em 3 passos simples, a IA cruza seu estado emocional com a agenda real da cidade e entrega uma lista personalizada.
+```
+unbora/
+├── mobile/                 # App React Native (Expo)
+├── frontend/               # Portal admin web (Next.js)
+├── backend/                # API Java 21 + Spring Boot 3.4
+├── backend-nest-backup/    # Backup do backend legado NestJS
+├── .env                    # Secrets do backend (não versionar)
+└── README.md
+```
 
-## Como funciona?
+## Arquitetura
 
-1. **Como você está?** — Escolha seu humor atual (animado, tranquilo, aventureiro, romântico...)
-2. **Como quer se sentir?** — Defina o que busca (revigorado, feliz, relaxado, conectado...)
-3. **Que programa te chama?** — Selecione as atividades de interesse (praia, show, balada, gastronomia, cinema, teatro, reggae...)
+```
+┌─────────────────┐     ┌─────────────────┐
+│  mobile/        │     │  frontend/      │
+│  React Native   │     │  React (Next)   │
+└────────┬────────┘     └────────┬────────┘
+         │                       │
+         └───────────┬───────────┘
+                     ▼
+            ┌─────────────────┐
+            │  backend/       │
+            │  Spring Boot 3  │
+            └─────────────────┘
+```
 
-A IA busca eventos reais em fontes como Sympla, O Povo, Diário do Nordeste e a agenda da Prefeitura de Fortaleza, e retorna os **10 melhores lugares e eventos** do momento para o seu perfil.
+| Pasta | Stack | Função |
+|---|---|---|
+| `backend/` | **Java 21 + Spring Boot 3.4** | API única — IA, usuários, admin, OpenAPI Swagger |
+| `frontend/` | **React** (Next.js) | Portal administrativo web |
+| `mobile/` | **React Native** (Expo) | App iOS/Android |
 
-## Funcionalidades
+## Como rodar tudo localmente
 
-- 🤖 Recomendações geradas por IA (LLaMA 3.3 70B via Groq)
-- 🔍 Busca em tempo real de eventos e agenda da cidade
-- 🎯 10 sugestões personalizadas por perfil
-- 🌙 Suporte a tema claro e escuro
-- 📱 100% responsivo e otimizado para mobile
-- ⚡ PWA — pode ser instalado como app no celular
+### 1. Backend Java Spring Boot (obrigatório)
 
-## Tecnologias
+```bash
+# Na raiz do projeto, certifique-se de preencher o .env com GROQ_API_KEY e DATABASE_URL
+cd backend
+./mvnw clean package -DskipTests
+java -jar target/unbora-api-1.0.0.jar
+# ou durante o desenvolvimento:
+./mvnw spring-boot:run
+```
 
-- **Frontend:** HTML, CSS, JavaScript (vanilla)
-- **Backend:** Node.js (Vercel Serverless Functions)
-- **IA:** LLaMA 3.3 70B via [Groq API](https://groq.com)
-- **Busca:** [Brave Search API](https://brave.com/search/api/)
-- **Deploy:** [Vercel](https://vercel.com)
+→ API: http://localhost:3001  
+→ Swagger UI: http://localhost:3001/swagger-ui.html  
+→ OpenAPI Docs: http://localhost:3001/v3/api-docs
 
-## Variáveis de Ambiente
+### 2. Portal admin
 
-Configure no painel da Vercel:
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev
+```
 
-| Variável | Descrição |
+→ http://localhost:3000
+
+### 3. App mobile
+
+```bash
+cd mobile
+npm install
+cp .env.example .env   # EXPO_PUBLIC_API_BASE_URL=http://localhost:3001
+npm start
+```
+
+Pressione `i` para abrir no simulador iOS ou `a` para Android.
+
+## Fluxo de dados
+
+```
+Mobile (Expo) ──POST /users/sync──► Backend (Spring Boot 3.4) ◄──GET /users── Frontend (Next.js)
+       │                                     │
+       └────── POST /api/recomendar ─────────┘
+```
+
+## Variáveis de ambiente (raiz `.env`)
+
+| Variável | Uso |
 |---|---|
-| `GROQ_API_KEY` | Chave da API do Groq |
-| `BRAVE_API_KEY` | Chave da Brave Search API |
-| `ALLOWED_ORIGIN` | Origem permitida (opcional) |
-
-## Deploy
-
-O projeto é automaticamente deployado na Vercel a cada push na branch `main`.
-
-🔗 **[unbora.vercel.app](https://unbora.vercel.app)**
+| `GROQ_API_KEY` | Chave da IA no Groq |
+| `DATABASE_URL` | String de conexão PostgreSQL (Neon / Supabase / Local) |
+| `GOOGLE_PLACES_API_KEY` | Busca oficial de fotos de alta resolução dos locais e eventos |
+| `BRAVE_API_KEY` | Contexto de eventos e buscas web |
+| `SUPERADMIN_EMAIL` | E-mail do superadministrador |
+| `SUPERADMIN_PASSWORD` | Senha do superadministrador |
+| `ADMIN_JWT_SECRET` | Segredo para assinatura de tokens JWT |
+| `ALLOWED_ORIGIN` | CORS (`*` ou origens específicas) |
+| `PORT` | Porta HTTP da API (padrão `3001`) |
 
 ---
 
-Feito com ❤️ em Fortaleza
+Feito com carinho em Fortaleza.
