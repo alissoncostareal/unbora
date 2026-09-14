@@ -35,6 +35,7 @@ public class InstagramEventService {
 
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final EventsService eventsService;
     private final GroqClient groqClient;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -42,10 +43,12 @@ public class InstagramEventService {
     public InstagramEventService(
             EventRepository eventRepository,
             UserRepository userRepository,
+            EventsService eventsService,
             GroqClient groqClient
     ) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
+        this.eventsService = eventsService;
         this.groqClient = groqClient;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(8))
@@ -154,6 +157,8 @@ public class InstagramEventService {
         event.setStartsAt(startsAt);
         event.setActive(true);
         event.setMerchantId(merchantId);
+        event.setCategory(EventCategories.normalize(parsed != null ? parsed.category() : finalTitle));
+        event.setStatus(Event.STATUS_APPROVED);
         event.setCreatedAt(Instant.now());
         event.setUpdatedAt(Instant.now());
 
@@ -163,21 +168,9 @@ public class InstagramEventService {
         log.info("[Instagram Importer] Evento importado com sucesso: '{}' ({}) via {}",
                 saved.getTitle(), saved.getCity(), url);
 
-        return new EventRecordDto(
-                saved.getId(),
-                saved.getTitle(),
-                saved.getDescription(),
-                saved.getImageUrl(),
-                saved.getCity(),
-                saved.getRegion(),
-                saved.getVenue(),
-                saved.getStartsAt() != null ? saved.getStartsAt().toString() : "",
-                saved.getActive(),
-                saved.getMerchantId(),
-                merchant != null ? merchant.getName() : "Curadoria Unbora",
-                merchant != null ? merchant.getBusinessName() : "Instagram",
-                saved.getCreatedAt() != null ? saved.getCreatedAt().toString() : "",
-                saved.getUpdatedAt() != null ? saved.getUpdatedAt().toString() : ""
+        return eventsService.toRecord(
+                saved,
+                merchant != null ? Map.of(merchant.getId(), merchant) : Map.of()
         );
     }
 

@@ -54,6 +54,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/**").permitAll()
                         .requestMatchers("/locations/**").permitAll()
                         .requestMatchers("/admin/auth/login").permitAll()
+                        .requestMatchers("/admin/auth/me").authenticated()
+                        .requestMatchers("/admin/events/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                        .requestMatchers("/admin/users/**").hasRole("SUPERADMIN")
                         .requestMatchers(HttpMethod.GET, "/events/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/carousels/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/notifications/**").permitAll()
@@ -68,8 +71,6 @@ public class SecurityConfig {
                         // Swagger UI & OpenAPI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         // Protected admin endpoints
-                        .requestMatchers("/admin/auth/me").authenticated()
-                        .requestMatchers("/admin/users/**").hasRole("SUPERADMIN")
                         .requestMatchers("/users/stats").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")
                         .requestMatchers(HttpMethod.GET, "/users").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")
                         .requestMatchers(HttpMethod.GET, "/users/*").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")

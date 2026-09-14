@@ -166,7 +166,6 @@ export default function ProfileScreen() {
         period={period}
         title="Perfil"
         hideAvatar
-        showCreate={false}
       />
 
       <ScrollView
@@ -704,9 +703,9 @@ export default function ProfileScreen() {
                     <SettingsRow
                       colors={colors}
                       icon="calendar-outline"
-                      label="Publicar novo evento"
-                      value={user.businessName}
-                      onPress={() => router.push('/create-event')}
+                      label="Criar evento"
+                      value="Enviar para aprovação"
+                      onPress={() => router.push('/(tabs)/create')}
                       last
                     />
                   )}

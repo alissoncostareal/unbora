@@ -26,17 +26,17 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="notifications"
+        name="create"
         options={{
-          title: 'Notificações',
-          tabBarAccessibilityLabel: 'Notificações',
+          title: 'Criar',
+          tabBarAccessibilityLabel: 'Criar evento',
         }}
       />
       <Tabs.Screen
-        name="favorites"
+        name="ratings"
         options={{
-          title: 'Favoritos',
-          tabBarAccessibilityLabel: 'Favoritos',
+          title: 'Avaliações',
+          tabBarAccessibilityLabel: 'Avaliações',
         }}
       />
       <Tabs.Screen
@@ -44,6 +44,20 @@ export default function TabsLayout() {
         options={{
           title: 'Perfil',
           tabBarAccessibilityLabel: 'Perfil',
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+          title: 'Notificações',
+        }}
+      />
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          href: null,
+          title: 'Favoritos',
         }}
       />
       <Tabs.Screen

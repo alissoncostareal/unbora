@@ -1,7 +1,6 @@
 package com.unbora.api.domain.event.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 public record CreateEventDto(
         @NotBlank(message = "O título é obrigatório") String title,
@@ -12,5 +11,7 @@ public record CreateEventDto(
         String venue,
         @NotBlank(message = "A data de início é obrigatória") String startsAt,
         Boolean active,
-        @NotBlank(message = "O ID do lojista é obrigatório") String merchantId
+        /** Creator user id (any logged-in user). */
+        @NotBlank(message = "O ID do usuário é obrigatório") String merchantId,
+        @NotBlank(message = "A categoria é obrigatória") String category
 ) {}

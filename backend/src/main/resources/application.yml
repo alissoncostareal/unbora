@@ -11,6 +11,9 @@ spring:
     name: unbora-api
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29094}}
+    listener:
+      # Evita consumers tentando localhost quando Kafka está off
+      auto-startup: ${UNBORA_KAFKA_ENABLED:false}
   datasource:
     driver-class-name: org.postgresql.Driver
     hikari:
@@ -47,6 +50,11 @@ springdoc:
     tags-sorter: alpha
 
 unbora:
+  # URL pública HTTPS da API (fotos: {base}/api/media/p/{id}). Em local pode ficar vazio.
+  public-base-url: ${APP_PUBLIC_BASE_URL:}
+  # false no Render (sem Kafka). true no docker-compose / k8s.
+  kafka:
+    enabled: ${UNBORA_KAFKA_ENABLED:false}
   jwt:
     secret: ${ADMIN_JWT_SECRET:${JWT_SECRET:unbora-super-secret-jwt-key-minimum-256-bits-for-security-must-be-long-enough-12345}}
     expiration-ms: 2592000000

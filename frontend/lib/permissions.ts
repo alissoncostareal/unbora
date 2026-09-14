@@ -5,7 +5,6 @@ export const PERMISSIONS = {
   viewUsers: ['superadmin', 'admin', 'consultor'] as AdminRole[],
   viewLocations: ['superadmin', 'admin', 'consultor'] as AdminRole[],
   manageEvents: ['superadmin', 'admin'] as AdminRole[],
-  manageNotifications: ['superadmin', 'admin'] as AdminRole[],
   managePortalUsers: ['superadmin'] as AdminRole[],
 };
 

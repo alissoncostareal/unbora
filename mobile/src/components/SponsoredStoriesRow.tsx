@@ -84,6 +84,7 @@ export function CityHighlightsRow({
               <Pressable
                 key={item.id}
                 onPress={() => openHighlight(index)}
+                android_ripple={{ color: 'rgba(255,255,255,0.18)', foreground: true }}
                 style={({ pressed }) => [
                   styles.card,
                   {
@@ -94,7 +95,15 @@ export function CityHighlightsRow({
                   },
                 ]}
               >
-                <Image source={{ uri: item.imageUrl }} style={styles.cover} />
+                {item.imageUrl ? (
+                  <Image
+                    source={{ uri: item.imageUrl }}
+                    style={styles.cover}
+                    fadeDuration={0}
+                  />
+                ) : (
+                  <View style={[styles.cover, { backgroundColor: colors.surfaceStrong }]} />
+                )}
                 <View style={styles.scrim} />
                 <View style={styles.cardBody}>
                   {isSponsored ? (

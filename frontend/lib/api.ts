@@ -1,6 +1,8 @@
 import { getClientToken, type AdminLoginResponse, type AdminSession } from '@/lib/auth';
 import type {
   CarouselItem,
+  CommunityEventItem,
+  EventModerationStatus,
   LocationsResponse,
   NotificationItem,
   PortalUser,
@@ -10,6 +12,8 @@ import type {
 
 export type {
   CarouselItem,
+  CommunityEventItem,
+  EventModerationStatus,
   LocationsResponse,
   NotificationItem,
   PortalUser,
@@ -150,6 +154,43 @@ export function createPortalUser(
   return fetchJson<PortalUser>(
     '/admin/users',
     { method: 'POST', body: JSON.stringify(body) },
+    token,
+  );
+}
+
+export function getAdminEvents(
+  params?: { status?: EventModerationStatus | ''; city?: string; region?: string; category?: string },
+  token?: string,
+) {
+  const query = new URLSearchParams();
+  if (params?.status) query.set('status', params.status);
+  if (params?.city) query.set('city', params.city);
+  if (params?.region) query.set('region', params.region);
+  if (params?.category) query.set('category', params.category);
+  const qs = query.toString();
+  return fetchJson<CommunityEventItem[]>(
+    `/admin/events${qs ? `?${qs}` : ''}`,
+    undefined,
+    token,
+  );
+}
+
+export function getPendingEventsCount(token?: string) {
+  return fetchJson<{ count: number }>('/admin/events/pending-count', undefined, token);
+}
+
+export function approveEvent(id: string, token?: string) {
+  return fetchJson<CommunityEventItem>(
+    `/admin/events/${id}/approve`,
+    { method: 'POST', body: '{}' },
+    token,
+  );
+}
+
+export function rejectEvent(id: string, reason?: string, token?: string) {
+  return fetchJson<CommunityEventItem>(
+    `/admin/events/${id}/reject`,
+    { method: 'POST', body: JSON.stringify({ reason: reason ?? '' }) },
     token,
   );
 }

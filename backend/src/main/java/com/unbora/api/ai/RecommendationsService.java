@@ -1,6 +1,7 @@
 package com.unbora.api.ai;
 
 import com.unbora.api.ai.dto.*;
+import com.unbora.api.common.exception.ApiException;
 import com.unbora.api.domain.place.PlaceEmbeddingProjection;
 import com.unbora.api.domain.place.PlaceEmbeddingRepository;
 import com.unbora.api.kafka.KafkaEventPublisher;
@@ -9,10 +10,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class RecommendationsService {
@@ -26,6 +32,13 @@ public class RecommendationsService {
     private final PromptTemplateService promptTemplateService;
     private final PlaceEmbeddingRepository placeEmbeddingRepository;
     private final EmbeddingService embeddingService;
+    private final ImageSubjectClassifier imageSubjectClassifier;
+    private final PlacePhotoLinkService placePhotoLinkService;
+    private final ExecutorService vectorIndexExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r, "place-vector-index");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     public RecommendationsService(
             GroqClient groqClient,
@@ -34,7 +47,9 @@ public class RecommendationsService {
             GooglePlacesDiscoveryService googlePlacesDiscoveryService,
             PromptTemplateService promptTemplateService,
             PlaceEmbeddingRepository placeEmbeddingRepository,
-            EmbeddingService embeddingService
+            EmbeddingService embeddingService,
+            ImageSubjectClassifier imageSubjectClassifier,
+            PlacePhotoLinkService placePhotoLinkService
     ) {
         this.groqClient = groqClient;
         this.imageEnrichmentService = imageEnrichmentService;
@@ -43,6 +58,8 @@ public class RecommendationsService {
         this.promptTemplateService = promptTemplateService;
         this.placeEmbeddingRepository = placeEmbeddingRepository;
         this.embeddingService = embeddingService;
+        this.imageSubjectClassifier = imageSubjectClassifier;
+        this.placePhotoLinkService = placePhotoLinkService;
     }
 
     public RecommendationResult recommend(RecommendDto dto) {
@@ -163,7 +180,16 @@ public class RecommendationsService {
 
         RecommendationResult result;
         try {
-            result = groqClient.callGroqJson(systemPrompt, userPrompt, RecommendationResult.class, 0.3, 3500);
+            boolean hasLive = !livePlaces.isEmpty();
+            result = groqClient.callGroqJson(
+                    systemPrompt,
+                    userPrompt,
+                    RecommendationResult.class,
+                    0.3,
+                    hasLive ? 1200 : 3500,
+                    hasLive ? Duration.ofSeconds(12) : Duration.ofSeconds(40),
+                    hasLive ? 1 : Integer.MAX_VALUE
+            );
         } catch (Exception e) {
             log.warn("[Recommend] Groq falhou — lista completa via Google Places: {}", e.getMessage());
             result = recommendationFromLivePlaces(
@@ -181,10 +207,13 @@ public class RecommendationsService {
         }
         RecommendationResult enriched = enrichPlaces(result, city, country, lat, lng, livePlaces);
         enriched = appendMissingLivePlaces(enriched, livePlaces, city);
+        fillMissingMapsPhotos(enriched, city, lat, lng);
 
         String topPlace = enriched.getLugares() != null && !enriched.getLugares().isEmpty()
                 ? enriched.getLugares().get(0).getNome()
                 : "none";
+
+        resolveOutgoingPhotos(enriched);
 
         kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
                 "RECOMMENDATION_GENERATED",
@@ -262,20 +291,23 @@ public class RecommendationsService {
         List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces = new ArrayList<>(placeMap.values());
 
         String webContext = groqClient.fetchWebContext(city, List.of(dto.query()), mesAno);
+        if (webContext != null && webContext.length() > 900) {
+            webContext = webContext.substring(0, 900);
+        }
 
         StringBuilder groundingContext = new StringBuilder();
         if (!livePlaces.isEmpty()) {
             groundingContext.append("\n=== CANDIDATOS VIVOS DO GOOGLE MAPS ===\n");
             int count = 0;
             for (GooglePlacesDiscoveryService.DiscoveredPlace p : livePlaces) {
-                if (count++ >= 24) break;
+                if (count++ >= 8) break;
                 groundingContext.append("- ").append(p.displayName()).append(" (").append(p.formattedAddress()).append(")")
                         .append(" | Nota: ").append(p.rating() != null ? p.rating() : 4.7)
                         .append(" | Avaliações: ").append(p.userRatingCount() != null ? p.userRatingCount() : 0)
                         .append("\n");
             }
             groundingContext.append("=== FIM DOS CANDIDATOS ===\n");
-            groundingContext.append("INSTRUÇÃO: inclua TODOS estes candidatos na lista de lugares.\n");
+            groundingContext.append("INSTRUÇÃO: inclua estes candidatos na lista de lugares.\n");
         }
 
         String systemPrompt = promptTemplateService.getTemplate("system-prompt");
@@ -290,7 +322,17 @@ public class RecommendationsService {
 
         RecommendationResult result;
         try {
-            result = groqClient.callGroqJson(systemPrompt, userPrompt, RecommendationResult.class, 0.3, 3500);
+            // Com lugares reais, um modelo e orçamento curto. A cadeia completa estoura o timeout do app.
+            boolean hasLive = !livePlaces.isEmpty();
+            result = groqClient.callGroqJson(
+                    systemPrompt,
+                    userPrompt,
+                    RecommendationResult.class,
+                    0.3,
+                    hasLive ? 1200 : 3500,
+                    hasLive ? Duration.ofSeconds(12) : Duration.ofSeconds(40),
+                    hasLive ? 1 : Integer.MAX_VALUE
+            );
         } catch (Exception e) {
             log.warn("[Search] Groq falhou — lista completa via Google Places: {}", e.getMessage());
             result = recommendationFromLivePlaces(
@@ -308,10 +350,13 @@ public class RecommendationsService {
         }
         RecommendationResult enriched = enrichPlaces(result, city, country, lat, lng, livePlaces);
         enriched = appendMissingLivePlaces(enriched, livePlaces, city);
+        fillMissingMapsPhotos(enriched, city, lat, lng);
 
         String topPlace = enriched.getLugares() != null && !enriched.getLugares().isEmpty()
                 ? enriched.getLugares().get(0).getNome()
                 : "none";
+
+        resolveOutgoingPhotos(enriched);
 
         kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
                 "SEARCH_PERFORMED",
@@ -366,15 +411,30 @@ public class RecommendationsService {
     }
 
     public void processFeedback(RecommendationFeedbackDto feedback) {
-        log.info("[AI Feedback] Feedback recebido para '{}': Ação={}, Humor={}, Sentir={}",
-                feedback.placeName(), feedback.action(), feedback.humor(), feedback.sentir());
+        Integer stars = feedback.stars();
+        if ("RATE".equalsIgnoreCase(feedback.action()) && (stars == null || stars < 1 || stars > 5)) {
+            throw ApiException.badRequest("Avaliação deve ter de 1 a 5 estrelas");
+        }
+
+        log.info("[AI Feedback] Feedback recebido para '{}': Ação={}, Estrelas={}, Humor={}, Sentir={}, PlaceId={}",
+                feedback.placeName(), feedback.action(), stars, feedback.humor(), feedback.sentir(), feedback.placeId());
+
+        String comment = feedback.comment();
+        if (stars != null) {
+            String starTag = "stars=" + stars;
+            comment = comment == null || comment.isBlank() ? starTag : starTag + " | " + comment;
+        }
+        if (feedback.placeId() != null && !feedback.placeId().isBlank()) {
+            String idTag = "placeId=" + feedback.placeId();
+            comment = comment == null || comment.isBlank() ? idTag : comment + " | " + idTag;
+        }
 
         kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
                 "FEEDBACK_" + (feedback.action() != null ? feedback.action().toUpperCase() : "LIKE"),
                 feedback.humor(),
                 feedback.sentir(),
                 List.of(feedback.categoryTag() != null ? feedback.categoryTag() : ""),
-                feedback.comment(),
+                comment,
                 "Global",
                 1,
                 feedback.placeName(),
@@ -409,11 +469,16 @@ public class RecommendationsService {
                 }
             }
 
+            ImageSubjectClassifier.Kind imageKind = imageSubjectClassifier.classify(
+                    place.getNome(),
+                    place.getTipo(),
+                    place.getCategoryTag()
+            );
+            // Venue encontrado no Google Maps → sempre foto do Maps (nunca tema/Unsplash).
+            boolean culturalEvent = matched == null
+                    && imageKind == ImageSubjectClassifier.Kind.CULTURAL_EVENT;
+
             if (matched != null) {
-                if (matched.photoUrl() != null && !matched.photoUrl().isBlank()
-                        && batch.claim(matched.photoUrl())) {
-                    place.setImagem(matched.photoUrl());
-                }
                 if (matched.googleMapsUri() != null && !matched.googleMapsUri().isBlank()) {
                     place.setGoogleMapsUri(matched.googleMapsUri());
                 }
@@ -423,21 +488,31 @@ public class RecommendationsService {
                 if (matched.rating() != null && matched.rating() > 0) place.setNota(matched.rating());
                 if (matched.openNow() != null) place.setOpenNow(matched.openNow());
                 if (matched.userRatingCount() != null) place.setUserRatingCount(matched.userRatingCount());
+                if (place.getTipo() == null || place.getTipo().isBlank()) {
+                    place.setTipo(humanizePlaceType(matched.primaryType()));
+                }
+                if (place.getCategoryTag() == null || place.getCategoryTag().isBlank()) {
+                    place.setCategoryTag(categoryForPlaceType(matched.primaryType()));
+                }
             }
 
-            if (place.getImagem() == null || place.getImagem().isBlank()) {
-                String photo = imageEnrichmentService.fetchPlaceImage(
+            if (culturalEvent) {
+                place.setImagem(null);
+                String photo = imageEnrichmentService.fetchEventImage(
                         place.getNome(),
                         address,
+                        city,
                         place.getTipo(),
                         place.getVisualQuery(),
                         place.getCategoryTag(),
-                        city,
-                        latitude,
-                        longitude,
                         batch
                 );
                 place.setImagem(photo);
+                place.setImagemIlustrativa(
+                        photo != null && imageEnrichmentService.isIllustrativeImageUrl(photo)
+                );
+            } else {
+                applyMapsPhoto(place, matched, address, city, latitude, longitude, batch);
             }
 
             if (place.getNota() == null) place.setNota(4.8);
@@ -447,6 +522,91 @@ public class RecommendationsService {
 
         result.setLugares(enriched);
         return result;
+    }
+
+    /** Lugares físicos: só Google Maps. Descarta Unsplash/tema da IA. */
+    private void applyMapsPhoto(
+            PlaceDto place,
+            GooglePlacesDiscoveryService.DiscoveredPlace matched,
+            String address,
+            String city,
+            Double latitude,
+            Double longitude,
+            ImageEnrichmentService.BatchSession batch
+    ) {
+        place.setImagemIlustrativa(false);
+
+        String mapsPhoto = null;
+        if (matched != null && matched.photoUrl() != null && !matched.photoUrl().isBlank()) {
+            batch.claim(matched.photoUrl());
+            mapsPhoto = matched.photoUrl();
+        }
+
+        if (!isGoogleMapsPhotoUrl(mapsPhoto)) {
+            String fetched = imageEnrichmentService.fetchPlaceImage(
+                    place.getNome(),
+                    address,
+                    place.getTipo(),
+                    place.getVisualQuery(),
+                    place.getCategoryTag(),
+                    city,
+                    latitude != null ? latitude : place.getLatitude(),
+                    longitude != null ? longitude : place.getLongitude(),
+                    batch
+            );
+            if (isGoogleMapsPhotoUrl(fetched)) {
+                mapsPhoto = fetched;
+            } else {
+                mapsPhoto = null;
+            }
+        }
+
+        place.setImagem(mapsPhoto);
+        place.setImagemIlustrativa(false);
+    }
+
+    private static boolean isGoogleMapsPhotoUrl(String url) {
+        if (url == null || url.isBlank()) return false;
+        String lower = url.toLowerCase(Locale.ROOT);
+        if (lower.contains("images.unsplash.com") || lower.contains("picsum.photos")) return false;
+        return lower.contains("places.googleapis.com") || lower.contains("googleusercontent.com");
+    }
+
+    /** Completa lugares ainda sem foto do Maps (ex.: anexados depois do enrich). */
+    private void fillMissingMapsPhotos(
+            RecommendationResult result,
+            String city,
+            Double latitude,
+            Double longitude
+    ) {
+        if (result == null || result.getLugares() == null || result.getLugares().isEmpty()) return;
+        ImageEnrichmentService.BatchSession batch = new ImageEnrichmentService.BatchSession();
+        for (PlaceDto place : result.getLugares()) {
+            if (isGoogleMapsPhotoUrl(place.getImagem())) {
+                batch.claim(place.getImagem());
+            }
+        }
+        for (PlaceDto place : result.getLugares()) {
+            if (isGoogleMapsPhotoUrl(place.getImagem())) continue;
+
+            ImageSubjectClassifier.Kind kind = imageSubjectClassifier.classify(
+                    place.getNome(), place.getTipo(), place.getCategoryTag());
+            // Eventos com arte temática já resolvida — não sobrescreve com Maps.
+            if (kind == ImageSubjectClassifier.Kind.CULTURAL_EVENT
+                    && Boolean.TRUE.equals(place.getImagemIlustrativa())) {
+                continue;
+            }
+            if (kind == ImageSubjectClassifier.Kind.CULTURAL_EVENT
+                    && place.getPlaceId() == null
+                    && !isGoogleMapsPhotoUrl(place.getImagem())
+                    && place.getImagem() != null
+                    && !place.getImagem().isBlank()) {
+                continue;
+            }
+
+            String address = place.getEndereco() != null ? place.getEndereco() : city;
+            applyMapsPhoto(place, null, address, city, latitude, longitude, batch);
+        }
     }
 
     private DiscoverEventsResult enrichEvents(DiscoverEventsResult result, String city) {
@@ -672,8 +832,44 @@ public class RecommendationsService {
         return "gastronomia";
     }
 
+    private void resolveOutgoingPhotos(RecommendationResult result) {
+        if (result == null || result.getLugares() == null || result.getLugares().isEmpty()) return;
+        List<CompletableFuture<Void>> jobs = new ArrayList<>();
+        for (PlaceDto place : result.getLugares()) {
+            String url = place.getImagem();
+            if (url == null || url.isBlank()) continue;
+            if (!url.contains("places.googleapis.com")) continue;
+            jobs.add(CompletableFuture.runAsync(() -> {
+                String direct = googlePlacesDiscoveryService.resolveDirectPhotoUrl(url);
+                if (direct != null && !direct.isBlank() && !direct.contains("places.googleapis.com")) {
+                    place.setImagem(direct);
+                }
+            }));
+        }
+        if (!jobs.isEmpty()) {
+            try {
+                CompletableFuture.allOf(jobs.toArray(CompletableFuture[]::new)).get(8, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                log.warn("[Photos] Tempo esgotado ao resolver fotos do Google Places: {}", e.getMessage());
+            }
+        }
+        // URLs curtas para o app Android (evita Image falhar em ?src= gigante)
+        for (PlaceDto place : result.getLugares()) {
+            String url = place.getImagem();
+            if (url == null || url.isBlank()) continue;
+            if (url.startsWith("/api/media/p/")) continue;
+            if (isGoogleMapsPhotoUrl(url) || url.contains("images.unsplash.com")) {
+                place.setImagem(placePhotoLinkService.toAppPath(url));
+            }
+        }
+    }
+
     private void asyncIndexPlaceVector(GooglePlacesDiscoveryService.DiscoveredPlace p, String city) {
         if (p == null || p.displayName() == null || p.displayName().isBlank()) return;
+        vectorIndexExecutor.submit(() -> indexPlaceVector(p, city));
+    }
+
+    private void indexPlaceVector(GooglePlacesDiscoveryService.DiscoveredPlace p, String city) {
         try {
             String dna = p.displayName() + " em " + city + ". "
                     + (p.editorialSummary() != null ? p.editorialSummary() : (p.primaryType() != null ? p.primaryType() : "Lugar"))

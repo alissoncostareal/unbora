@@ -30,6 +30,7 @@ public class RealEventSyncService {
 
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final EventsService eventsService;
     private final GroqClient groqClient;
     private final ImageEnrichmentService imageEnrichmentService;
     private final PromptTemplateService promptTemplateService;
@@ -39,6 +40,7 @@ public class RealEventSyncService {
     public RealEventSyncService(
             EventRepository eventRepository,
             UserRepository userRepository,
+            EventsService eventsService,
             GroqClient groqClient,
             ImageEnrichmentService imageEnrichmentService,
             PromptTemplateService promptTemplateService,
@@ -47,6 +49,7 @@ public class RealEventSyncService {
     ) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
+        this.eventsService = eventsService;
         this.groqClient = groqClient;
         this.imageEnrichmentService = imageEnrichmentService;
         this.promptTemplateService = promptTemplateService;
@@ -142,6 +145,10 @@ public class RealEventSyncService {
                 event.setStartsAt(startsAt);
                 event.setActive(true);
                 event.setMerchantId(curatorId);
+                event.setCategory(EventCategories.normalize(
+                        dto.getCategoryTag() != null ? dto.getCategoryTag() : dto.getTipo()
+                ));
+                event.setStatus(Event.STATUS_APPROVED);
                 event.setCreatedAt(Instant.now());
                 event.setUpdatedAt(Instant.now());
 
@@ -168,25 +175,7 @@ public class RealEventSyncService {
                 .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
 
         return savedEvents.stream()
-                .map(e -> {
-                    User m = merchantMap.get(e.getMerchantId());
-                    return new EventRecordDto(
-                            e.getId(),
-                            e.getTitle(),
-                            e.getDescription(),
-                            e.getImageUrl(),
-                            e.getCity(),
-                            e.getRegion(),
-                            e.getVenue(),
-                            e.getStartsAt() != null ? e.getStartsAt().toString() : "",
-                            e.getActive(),
-                            e.getMerchantId(),
-                            m != null ? m.getName() : "Curadoria Unbora",
-                            m != null ? m.getBusinessName() : "Agendas Oficiais",
-                            e.getCreatedAt() != null ? e.getCreatedAt().toString() : "",
-                            e.getUpdatedAt() != null ? e.getUpdatedAt().toString() : ""
-                    );
-                })
+                .map(e -> eventsService.toRecord(e, merchantMap))
                 .toList();
     }
 }

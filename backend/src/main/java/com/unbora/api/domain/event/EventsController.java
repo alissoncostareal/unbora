@@ -14,7 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/events")
-@Tag(name = "Events", description = "Operações de eventos da comunidade e lojistas")
+@Tag(name = "Events", description = "Operações de eventos da comunidade")
 public class EventsController {
 
     private final EventsService eventsService;
@@ -47,28 +47,29 @@ public class EventsController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar eventos com filtros opcionais")
+    @Operation(summary = "Listar eventos aprovados (feed público)")
     public List<EventRecordDto> list(
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String region,
             @RequestParam(required = false, defaultValue = "true") String active,
-            @RequestParam(required = false) String merchantId
+            @RequestParam(required = false) String merchantId,
+            @RequestParam(required = false) String category
     ) {
         if (merchantId != null && !merchantId.isBlank()) {
             return eventsService.listByMerchant(merchantId);
         }
         boolean activeOnly = !"false".equalsIgnoreCase(active);
-        return eventsService.list(city, region, activeOnly);
+        return eventsService.list(city, region, activeOnly, category);
     }
 
     @PostMapping
-    @Operation(summary = "Criar novo evento (lojistas)")
+    @Operation(summary = "Criar evento (qualquer usuário logado) — fica PENDING até aprovação")
     public EventRecordDto create(@Valid @RequestBody CreateEventDto dto) {
         return eventsService.create(dto);
     }
 
     @PatchMapping("/{id}")
-    @Operation(summary = "Atualizar evento existente")
+    @Operation(summary = "Atualizar evento existente (autor)")
     public EventRecordDto update(
             @PathVariable String id,
             @RequestHeader(value = "x-user-id", required = true) String merchantId,

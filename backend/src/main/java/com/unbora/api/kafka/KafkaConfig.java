@@ -19,8 +19,13 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Kafka só sobe quando UNBORA_KAFKA_ENABLED=true (docker-compose / k8s).
+ * No Render e deploys sem broker, fica desligado — evita spam em localhost:29094.
+ */
 @Configuration
 @EnableKafka
+@ConditionalOnProperty(name = "unbora.kafka.enabled", havingValue = "true")
 public class KafkaConfig {
 
     public static final String TOPIC_USER_ACTIVITY = "unbora.user.activity";

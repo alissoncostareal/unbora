@@ -1,6 +1,6 @@
 import { BlurView } from 'expo-blur';
 import { ReactNode } from 'react';
-import { StyleSheet, View, ViewStyle, StyleProp } from 'react-native';
+import { Platform, StyleSheet, View, ViewStyle, StyleProp } from 'react-native';
 
 import type { ThemeColors } from '@/theme/colors';
 import { radius } from '@/theme/colors';
@@ -30,7 +30,8 @@ export function GlassSurface({
     ? 0
     : StyleSheet.hairlineWidth;
 
-  if (colors.useGlass) {
+  // expo-blur no Android desenha um retângulo branco por cima do card.
+  if (colors.useGlass && Platform.OS !== 'android') {
     return (
       <View
         style={[

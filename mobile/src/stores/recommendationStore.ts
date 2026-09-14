@@ -2,13 +2,14 @@ import { create } from 'zustand';
 
 import { fetchRecommendations, searchPlaces } from '@/api/recommendations';
 import type { Recommendation, RecommendationRequest } from '@/types';
+import { log } from '@/utils/log';
 
 interface RecommendationState {
   data: Recommendation | null;
   loading: boolean;
   error: string | null;
   submit: (request: RecommendationRequest) => Promise<boolean>;
-  search: (query: string) => Promise<boolean>;
+  search: (query: string, city?: string, latitude?: number, longitude?: number) => Promise<boolean>;
   clear: () => void;
 }
 
@@ -35,34 +36,50 @@ export const useRecommendationStore = create<RecommendationState>((set) => ({
   error: null,
 
   submit: async (request) => {
+    log.info('wizard', 'submit recomendação', {
+      humor: request.humor,
+      sentir: request.sentir,
+      activities: request.activities?.map((a) => a.label ?? a.id),
+      city: request.city,
+    });
     set({ loading: true, error: null, data: null });
     try {
       const data = await fetchRecommendations(request);
+      log.info('wizard', `ok — ${data.places.length} lugares`);
       set({ data, loading: false, error: null });
       return true;
     } catch (error) {
+      const message = humanizeApiError(error);
+      log.error('wizard', 'falha recomendação', message);
       set({
         loading: false,
-        error: humanizeApiError(error),
+        error: message,
       });
       return false;
     }
   },
 
-  search: async (query) => {
+  search: async (query, city, latitude, longitude) => {
+    log.info('search', 'buscar', { query, city, latitude, longitude });
     set({ loading: true, error: null, data: null });
     try {
-      const data = await searchPlaces(query);
+      const data = await searchPlaces(query, city, latitude, longitude);
+      log.info('search', `ok — ${data.places.length} lugares`);
       set({ data, loading: false, error: null });
       return true;
     } catch (error) {
+      const message = humanizeApiError(error);
+      log.error('search', 'falha busca', message);
       set({
         loading: false,
-        error: humanizeApiError(error),
+        error: message,
       });
       return false;
     }
   },
 
-  clear: () => set({ data: null, loading: false, error: null }),
+  clear: () => {
+    log.debug('recommend', 'limpar resultados');
+    set({ data: null, loading: false, error: null });
+  },
 }));

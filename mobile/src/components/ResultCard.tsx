@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View, Image } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { GlassSurface } from '@/components/GlassSurface';
-import { CoverPlaceholder } from '@/components/CoverPlaceholder';
+import { RatePlaceModal, type RateTarget } from '@/components/RatePlaceModal';
 import { RatingStars } from '@/components/RatingStars';
-import { sendRecommendationFeedback } from '@/api/recommendations';
-import { useFavoritesStore } from '@/stores/favoritesStore';
+import { RemoteCoverImage } from '@/components/RemoteCoverImage';
+import { sendRecommendationFeedback, toAppImageUrl } from '@/api/recommendations';
+import { ratingIdForPlace, useRatingsStore } from '@/stores/ratingsStore';
 import type { ThemeColors } from '@/theme/colors';
 import { radius, spacing } from '@/theme/colors';
 import type { Place } from '@/types';
@@ -22,18 +23,21 @@ export function ResultCard({
 }) {
   const address = place.address?.trim() || 'Localização';
   const isDark = colors.scheme === 'dark';
-  const liked = useFavoritesStore((s) => s.isFavorite(place));
-  const toggle = useFavoritesStore((s) => s.toggle);
-  const [imgError, setImgError] = useState(false);
+  const ratingId = ratingIdForPlace(place);
+  const myRating = useRatingsStore((s) => s.getById(ratingId));
+  const [rateOpen, setRateOpen] = useState(false);
 
-  const handleToggleFavorite = () => {
-    toggle(place);
-    const willBeLiked = !liked;
-    void sendRecommendationFeedback({
-      placeName: place.name,
-      action: willBeLiked ? 'LIKE' : 'DISLIKE',
-      categoryTag: place.type,
-    });
+  const coverUrl = toAppImageUrl(place.imageUrl?.trim()) || '';
+
+  const rateTarget: RateTarget = {
+    id: ratingId,
+    kind: 'place',
+    name: place.name,
+    subtitle: address,
+    type: place.type,
+    imageUrl: place.imageUrl,
+    placeId: place.placeId,
+    googleMapsUri: place.googleMapsUri,
   };
 
   const handleOpenMaps = () => {
@@ -53,113 +57,135 @@ export function ResultCard({
       placeName: place.name,
       action: 'MAPS_CLICK',
       categoryTag: place.type,
+      placeId: place.placeId,
     });
   };
 
-  // Lugares: mantém Google Places / URLs reais (não aplica filtro de stock de eventos)
-  const coverUrl = place.imageUrl?.trim() || '';
-  const showCoverImage = Boolean(coverUrl) && !imgError;
-
   return (
-    <GlassSurface
-      colors={colors}
-      style={styles.card}
-      contentStyle={{ padding: 0 }}
-    >
-      <View>
-        {showCoverImage ? (
-          <Image
-            source={{ uri: coverUrl }}
-            style={styles.cover}
-            onError={() => setImgError(true)}
-            resizeMode="cover"
-          />
-        ) : (
-          <CoverPlaceholder colors={colors} label={place.type || place.name} style={styles.cover} />
-        )}
-
-        {place.highlighted && rank != null ? (
-          <View
-            style={[
-              styles.topBadge,
-              { backgroundColor: isDark ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.55)' },
-            ]}
-          >
-            <Text style={styles.topText}>TOP {rank}</Text>
+    <>
+      <GlassSurface colors={colors} style={styles.card} contentStyle={{ padding: 0 }}>
+        <View>
+          <View style={styles.cover}>
+            <RemoteCoverImage
+              colors={colors}
+              uri={coverUrl}
+              label={place.type || place.name}
+            />
           </View>
-        ) : null}
 
-        {place.openNow !== undefined && (
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: place.openNow ? 'rgba(16, 185, 129, 0.85)' : 'rgba(239, 68, 68, 0.85)' },
-            ]}
-          >
-            <View style={[styles.statusDot, { backgroundColor: '#FFF' }]} />
-            <Text style={styles.statusText}>
-              {place.openNow ? 'Aberto agora' : 'Fechado'}
-            </Text>
-          </View>
-        )}
+          {place.imageIllustrative ? (
+            <View
+              style={[
+                styles.illustrativeBadge,
+                place.highlighted && rank != null ? { top: 44 } : null,
+              ]}
+            >
+              <Text style={styles.topText}>Imagem ilustrativa</Text>
+            </View>
+          ) : null}
 
-        <Pressable
-          onPress={handleToggleFavorite}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={liked ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-          style={({ pressed }) => [
-            styles.likeButton,
-            {
-              backgroundColor: isDark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.92)',
-              opacity: pressed ? 0.75 : 1,
-              transform: [{ scale: pressed ? 0.92 : 1 }],
-            },
-          ]}
-        >
-          <Ionicons
-            name={liked ? 'heart' : 'heart-outline'}
-            size={22}
-            color={liked ? colors.like : colors.textPrimary}
-          />
-        </Pressable>
-      </View>
+          {place.highlighted && rank != null ? (
+            <View
+              style={[
+                styles.topBadge,
+                { backgroundColor: isDark ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.55)' },
+              ]}
+            >
+              <Text style={styles.topText}>TOP {rank}</Text>
+            </View>
+          ) : null}
 
-      <View style={styles.cardBody}>
-        <Text style={[styles.when, { color: colors.textMuted }]}>{place.type}</Text>
-        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>
-          {place.name}
-        </Text>
-
-        <View style={styles.typeRow}>
-          <Ionicons name="location-outline" size={13} color={colors.textMuted} />
-          <Text style={[styles.meta, { color: colors.textMuted }]} numberOfLines={2}>
-            {address}
-          </Text>
-          <RatingStars colors={colors} rating={place.rating} />
+          {place.openNow !== undefined && (
+            <View
+              style={[
+                styles.statusBadge,
+                {
+                  backgroundColor: place.openNow
+                    ? 'rgba(16, 185, 129, 0.85)'
+                    : 'rgba(239, 68, 68, 0.85)',
+                },
+              ]}
+            >
+              <View style={[styles.statusDot, { backgroundColor: '#FFF' }]} />
+              <Text style={styles.statusText}>
+                {place.openNow ? 'Aberto agora' : 'Fechado'}
+              </Text>
+            </View>
+          )}
         </View>
 
-        <Text style={[styles.description, { color: colors.textMuted }]} numberOfLines={3}>
-          {place.description}
-        </Text>
-
-        <Pressable
-          onPress={handleOpenMaps}
-          style={({ pressed }) => [
-            styles.mapsButton,
-            {
-              backgroundColor: colors.buttonSecondary,
-              opacity: pressed ? 0.75 : 1,
-            },
-          ]}
-        >
-          <Ionicons name="map-outline" size={15} color={colors.buttonSecondaryText} />
-          <Text style={[styles.mapsButtonLabel, { color: colors.buttonSecondaryText }]}>
-            Ver no Google Maps
+        <View style={styles.cardBody}>
+          <Text style={[styles.when, { color: colors.textMuted }]}>{place.type}</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>
+            {place.name}
           </Text>
-        </Pressable>
-      </View>
-    </GlassSurface>
+
+          <View style={styles.typeRow}>
+            <Ionicons name="location-outline" size={13} color={colors.textMuted} />
+            <Text style={[styles.meta, { color: colors.textMuted }]} numberOfLines={2}>
+              {address}
+            </Text>
+            <RatingStars colors={colors} rating={place.rating} />
+          </View>
+
+          <Text style={[styles.description, { color: colors.textMuted }]} numberOfLines={3}>
+            {place.description}
+          </Text>
+
+          {myRating ? (
+            <View style={styles.myRatingRow}>
+              <Ionicons name="star" size={14} color={colors.gold} />
+              <Text style={[styles.myRatingText, { color: colors.textPrimary }]}>
+                Sua avaliação: {myRating.stars}/5
+              </Text>
+            </View>
+          ) : null}
+
+          <View style={styles.actions}>
+            <Pressable
+              onPress={() => setRateOpen(true)}
+              style={({ pressed }) => [
+                styles.actionButton,
+                {
+                  backgroundColor: colors.buttonSecondary,
+                  opacity: pressed ? 0.75 : 1,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={myRating ? 'Editar avaliação' : 'Avaliar lugar'}
+            >
+              <Ionicons name="star-outline" size={15} color={colors.buttonSecondaryText} />
+              <Text style={[styles.actionLabel, { color: colors.buttonSecondaryText }]}>
+                {myRating ? 'Editar nota' : 'Avaliar'}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={handleOpenMaps}
+              style={({ pressed }) => [
+                styles.actionButton,
+                {
+                  backgroundColor: colors.buttonSecondary,
+                  opacity: pressed ? 0.75 : 1,
+                },
+              ]}
+            >
+              <Ionicons name="map-outline" size={15} color={colors.buttonSecondaryText} />
+              <Text style={[styles.actionLabel, { color: colors.buttonSecondaryText }]}>
+                Maps
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </GlassSurface>
+
+      <RatePlaceModal
+        colors={colors}
+        visible={rateOpen}
+        target={rateTarget}
+        onClose={() => setRateOpen(false)}
+      />
+    </>
   );
 }
 
@@ -172,7 +198,18 @@ const styles = StyleSheet.create({
   cover: {
     width: '100%',
     height: 180,
-    backgroundColor: '#EFEFEF',
+    backgroundColor: '#DCE8EA',
+    overflow: 'hidden',
+  },
+  illustrativeBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: 'rgba(20, 33, 43, 0.72)',
+    zIndex: 2,
   },
   topBadge: {
     position: 'absolute',
@@ -181,6 +218,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
+    zIndex: 2,
   },
   topText: {
     color: '#FFF',
@@ -198,6 +236,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
+    zIndex: 2,
   },
   statusDot: {
     width: 6,
@@ -208,16 +247,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 11,
     fontWeight: '600',
-  },
-  likeButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   cardBody: {
     padding: spacing.md,
@@ -245,8 +274,22 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     marginBottom: 12,
   },
-  mapsButton: {
-    alignSelf: 'stretch',
+  myRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  myRatingText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -254,7 +297,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 8,
   },
-  mapsButtonLabel: {
+  actionLabel: {
     fontSize: 14,
     fontWeight: '600',
   },

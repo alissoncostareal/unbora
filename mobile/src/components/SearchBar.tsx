@@ -8,17 +8,24 @@ import { radius, spacing, type ThemeColors } from '@/theme/colors';
 export function SearchBar({
   colors,
   placeholder = 'Buscar lugares em Fortaleza',
+  onSearch,
 }: {
   colors: ThemeColors;
   placeholder?: string;
+  onSearch?: (query: string) => void;
 }) {
   const [query, setQuery] = useState('');
 
   const handleSearch = () => {
-    if (!query.trim()) return;
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    if (onSearch) {
+      onSearch(trimmed);
+      return;
+    }
     router.push({
       pathname: '/search-results',
-      params: { q: query.trim() },
+      params: { q: trimmed },
     });
   };
 

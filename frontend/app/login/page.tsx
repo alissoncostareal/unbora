@@ -92,14 +92,14 @@ function LoginForm() {
             Unbora
           </h1>
           <p className="mt-5 max-w-md text-base leading-relaxed text-white/55">
-            Gerencie usuários, destaques e notificações do app — por cidade e região —
+            Gerencie usuários, eventos da comunidade e destaques do app — por cidade e região —
             em um painel limpo e centralizado.
           </p>
 
           <ul className="mt-10 space-y-3">
             {[
+              'Aprovação de eventos da comunidade',
               'Destaques e carousels por local',
-              'Notificações segmentadas no app',
               'Equipe com papéis e permissões',
             ].map((item) => (
               <li key={item} className="flex items-center gap-3 text-sm text-white/70">

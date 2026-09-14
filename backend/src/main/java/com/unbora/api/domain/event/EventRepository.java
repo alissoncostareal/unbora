@@ -9,4 +9,6 @@ import java.util.List;
 public interface EventRepository extends JpaRepository<Event, String> {
     List<Event> findByMerchantIdOrderByStartsAtDesc(String merchantId);
     List<Event> findAllByOrderByStartsAtDesc();
+    List<Event> findByStatusOrderByStartsAtDesc(String status);
+    long countByStatus(String status);
 }

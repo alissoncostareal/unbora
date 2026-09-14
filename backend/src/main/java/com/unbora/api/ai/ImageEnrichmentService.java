@@ -475,8 +475,8 @@ public class ImageEnrichmentService {
     }
 
     /**
-     * Lugares físicos (recomendar/buscar): sempre prioriza foto do Google Places / Maps.
-     * Sem stock temático — se não houver Places/Brave, retorna null (placeholder no app).
+     * Lugares físicos (recomendar/buscar): somente foto do Google Places / Maps.
+     * Sem Unsplash, Brave ou tema — se não houver Places, retorna null (placeholder no app).
      */
     public String fetchPlaceImage(
             String placeName,
@@ -549,19 +549,7 @@ public class ImageEnrichmentService {
             }
         }
 
-        // 4. Brave só como fallback de fachada/ambiente (ainda foto “real”, não tema)
-        if (!braveKey.isBlank()) {
-            String braveImage = searchBraveImage(
-                    "\"" + placeName + "\" " + effectiveCity + " fachada OR ambiente", placeName);
-            String accepted = acceptOrContinue(braveImage, batch);
-            if (accepted != null) {
-                saveToCache(normKey, placeName, effectiveCity, accepted, "brave_search",
-                        categoryTag != null ? categoryTag : type);
-                return accepted;
-            }
-        }
-
-        log.info("[Image] Sem foto Google Places para lugar '{}' — sem imagem", placeName);
+        // 4. Brave removido para lugares: regra do produto é só Google Maps.
         return null;
     }
 
@@ -712,7 +700,7 @@ public class ImageEnrichmentService {
                 }
 
                 if (selectedPhotoName != null && !selectedPhotoName.isBlank()) {
-                    return "https://places.googleapis.com/v1/" + selectedPhotoName + "/media?maxHeightPx=1080&maxWidthPx=1920&key=" + URLEncoder.encode(googlePlacesKey, StandardCharsets.UTF_8);
+                    return "https://places.googleapis.com/v1/" + selectedPhotoName + "/media?maxHeightPx=720&maxWidthPx=960&key=" + URLEncoder.encode(googlePlacesKey, StandardCharsets.UTF_8);
                 }
             }
         } catch (Exception e) {

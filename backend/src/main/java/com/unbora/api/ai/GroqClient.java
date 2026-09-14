@@ -16,6 +16,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -56,18 +57,36 @@ public class GroqClient {
     }
 
     public <T> T callGroqJson(String systemPrompt, String userPrompt, Class<T> responseClass, double temperature, int maxTokens) {
+        return callGroqJson(systemPrompt, userPrompt, responseClass, temperature, maxTokens, Duration.ofSeconds(45), Integer.MAX_VALUE);
+    }
+
+    /**
+     * Orçamento curto: evita a cadeia inteira de fallbacks (cada um ~45s) quando já há lugares reais.
+     */
+    public <T> T callGroqJson(String systemPrompt, String userPrompt, Class<T> responseClass, double temperature, int maxTokens, Duration budget, int maxModels) {
         if (groqApiKey.isBlank()) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "GROQ_API_KEY não configurada no backend.");
         }
 
         List<String> models = buildModelChain();
+        if (maxModels > 0 && models.size() > maxModels) {
+            models = new ArrayList<>(models.subList(0, maxModels));
+        }
+        Instant deadline = Instant.now().plus(budget);
         String lastError = "Erro na API do Groq";
         boolean hitDailyLimit = false;
 
         for (String model : models) {
+            if (Instant.now().isAfter(deadline)) {
+                break;
+            }
             // TPD: 1 tentativa por modelo; RPM: até 2 retries curtos
-            int maxAttempts = 2;
+            int maxAttempts = budget.toSeconds() <= 15 ? 1 : 2;
             for (int attempt = 0; attempt < maxAttempts; attempt++) {
+                Duration remaining = Duration.between(Instant.now(), deadline);
+                if (remaining.isNegative() || remaining.isZero()) {
+                    break;
+                }
                 try {
                     Map<String, Object> payload = new HashMap<>();
                     payload.put("model", model);
@@ -88,7 +107,7 @@ public class GroqClient {
                             .header("Content-Type", "application/json")
                             .header("Authorization", "Bearer " + groqApiKey)
                             .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
-                            .timeout(Duration.ofSeconds(45))
+                            .timeout(remaining.compareTo(Duration.ofSeconds(20)) > 0 ? Duration.ofSeconds(20) : remaining)
                             .build();
 
                     HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());

@@ -6,10 +6,11 @@ import { useEffect, useState } from 'react';
 
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { NavIcon } from '@/components/NavIcon';
+import { getPendingEventsCount } from '@/lib/api';
 import { clearAdminSession, getClientSession, ROLE_LABELS, type AdminSession } from '@/lib/auth';
 import { cn } from '@/lib/cn';
-import { SIDEBAR_NAV, isNavItemActive } from '@/lib/nav';
-import { canSeeNavItem } from '@/lib/permissions';
+import { DASHBOARD_NAV_SECTIONS, isNavItemActive, type DashboardNavItem } from '@/lib/nav';
+import { can, canSeeNavItem } from '@/lib/permissions';
 
 function TabelaLogo() {
   return (
@@ -57,24 +58,42 @@ function NavLink({
   );
 }
 
+function itemBadge(item: DashboardNavItem, pendingEvents: number): number | undefined {
+  if (item.badgeKey === 'pendingEvents' && pendingEvents > 0) return pendingEvents;
+  return undefined;
+}
+
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [session, setSession] = useState<AdminSession | null>(null);
-  const [notificationCount] = useState(0);
+  const [pendingEvents, setPendingEvents] = useState(0);
 
   useEffect(() => {
     setSession(getClientSession());
   }, []);
+
+  useEffect(() => {
+    const role = getClientSession()?.role;
+    if (!can(role, 'manageEvents') && !can(role, 'viewUsers')) return;
+    getPendingEventsCount()
+      .then((data) => setPendingEvents(data.count ?? 0))
+      .catch(() => setPendingEvents(0));
+  }, [pathname]);
 
   function logout() {
     clearAdminSession();
     router.replace('/login');
   }
 
-  const visibleNav = SIDEBAR_NAV.filter((item) =>
-    canSeeNavItem(session?.role, item.permission, item.readFor),
-  );
+  const visibleSections = DASHBOARD_NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) =>
+      canSeeNavItem(session?.role, item.permission, item.readFor),
+    ),
+  })).filter((section) => section.items.length > 0);
+
+  const flatVisible = visibleSections.flatMap((s) => s.items);
 
   return (
     <div className="flex min-h-screen bg-canvas">
@@ -84,19 +103,26 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3">
-          <ul className="space-y-1">
-            {visibleNav.map((item) => (
-              <li key={item.href}>
-                <NavLink
-                  href={item.href}
-                  label={item.label}
-                  icon={item.icon}
-                  isActive={isNavItemActive(pathname, item.href)}
-                  badge={item.href === '/notifications' ? notificationCount : undefined}
-                />
-              </li>
-            ))}
-          </ul>
+          {visibleSections.map((section) => (
+            <div key={section.title} className="mb-4">
+              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
+                {section.title}
+              </p>
+              <ul className="space-y-1">
+                {section.items.map((item) => (
+                  <li key={item.href}>
+                    <NavLink
+                      href={item.href}
+                      label={item.label}
+                      icon={item.icon}
+                      isActive={isNavItemActive(pathname, item.href)}
+                      badge={itemBadge(item, pendingEvents)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </nav>
 
         <div className="shrink-0 px-3 pb-5">
@@ -133,18 +159,24 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <DashboardHeader pathname={pathname} />
 
         <nav className="flex gap-1 overflow-x-auto bg-sidebar px-3 py-2 lg:hidden">
-          {visibleNav.map((item) => {
+          {flatVisible.map((item) => {
             const isActive = isNavItemActive(pathname, item.href);
+            const badge = itemBadge(item, pendingEvents);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium',
+                  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium',
                   isActive ? 'bg-accent text-sidebar' : 'text-white/55',
                 )}
               >
                 {item.label}
+                {badge && badge > 0 ? (
+                  <span className="rounded-full bg-sidebar/20 px-1.5 text-[10px] font-bold">
+                    {badge > 9 ? '9+' : badge}
+                  </span>
+                ) : null}
               </Link>
             );
           })}

@@ -33,6 +33,7 @@ export interface Place {
   longitude?: number;
   openNow?: boolean;
   userRatingCount?: number;
+  imageIllustrative?: boolean;
 }
 
 export interface Recommendation {

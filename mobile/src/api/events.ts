@@ -1,4 +1,5 @@
 import { apiGet, apiPost } from '@/api/client';
+import { toAppImageUrl } from '@/api/recommendations';
 
 export interface EventItem {
   id: string;
@@ -19,6 +20,8 @@ export interface EventItem {
   updatedAt: string;
   whenLabel?: string;
   type?: string;
+  category?: string;
+  status?: string;
   source?: 'ai' | 'merchant';
 }
 
@@ -84,12 +87,13 @@ export function resolveEventCover(
 
   if (isStock) {
     if (opts?.illustrative) {
-      return { imageUrl: trimmed, imageIllustrative: true };
+      return { imageUrl: toAppImageUrl(trimmed) ?? trimmed, imageIllustrative: true };
     }
     return { imageUrl: '', imageIllustrative: false };
   }
 
-  return { imageUrl: trimmed, imageIllustrative: false };
+  const proxied = toAppImageUrl(trimmed) ?? trimmed;
+  return { imageUrl: proxied, imageIllustrative: false };
 }
 
 /** @deprecated use resolveEventCover */
@@ -97,10 +101,15 @@ export function reliableImageUrl(url?: string | null): string {
   return resolveEventCover(url).imageUrl;
 }
 
-export function fetchMerchantEvents(params?: { city?: string; region?: string }) {
+export function fetchMerchantEvents(params?: {
+  city?: string;
+  region?: string;
+  category?: string;
+}) {
   const query = new URLSearchParams();
   if (params?.city) query.set('city', params.city);
   if (params?.region) query.set('region', params.region);
+  if (params?.category) query.set('category', params.category);
   query.set('active', 'true');
   const qs = query.toString();
   return apiGet<EventItem[]>(`/events${qs ? `?${qs}` : ''}`);
@@ -186,12 +195,14 @@ function normalizeMerchant(event: EventItem): EventItem {
     title: event.title,
     venue: event.venue,
   });
+  const category = event.category || event.type || 'Outros';
   return {
     ...event,
     imageUrl: cover.imageUrl,
     imageIllustrative: cover.imageIllustrative,
     source: 'merchant' as const,
-    type: event.type || (event.businessName ? 'Comunidade' : 'Evento'),
+    category,
+    type: category,
     whenLabel: formatStartsAt(event.startsAt),
     venue: event.venue || event.city,
   };
@@ -292,6 +303,7 @@ export function createEvent(input: {
   venue?: string;
   startsAt: string;
   merchantId: string;
+  category: string;
 }) {
   return apiPost<EventItem>('/events', input);
 }

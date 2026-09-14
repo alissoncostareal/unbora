@@ -47,6 +47,16 @@ function getTint(label: string) {
   return OPTION_TINTS[label] ?? { soft: 'rgba(14, 165, 233, 0.12)', ink: '#0EA5E9' };
 }
 
+/** Fundo opaco. rgba + elevation no Android vira um quadrado branco dentro do card. */
+function solidFill(soft: string): string {
+  const match = soft.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+  if (!match) return '#FFFFFF';
+  const alpha = match[4] != null ? Number(match[4]) : 1;
+  const mix = (channel: number) => Math.round(alpha * channel + (1 - alpha) * 255);
+  const hex = (value: number) => value.toString(16).padStart(2, '0');
+  return `#${hex(mix(Number(match[1])))}${hex(mix(Number(match[2])))}${hex(mix(Number(match[3])))}`;
+}
+
 /**
  * Card de humor — Headspace (calmo) + Fever (descoberta).
  */
@@ -69,13 +79,16 @@ export function MoodOptionButton({
   return (
     <Pressable
       onPress={onPress}
+      android_ripple={{ color: 'transparent' }}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       style={({ pressed }) => [
         styles.card,
         {
           backgroundColor: selected
-            ? tint.soft
+            ? isDark
+              ? tint.soft
+              : solidFill(tint.soft)
             : isDark
               ? colors.surface
               : '#FFFFFF',
@@ -84,6 +97,7 @@ export function MoodOptionButton({
           opacity: pressed ? 0.92 : 1,
           transform: [{ scale: pressed ? 0.97 : 1 }],
           shadowOpacity: selected || isDark ? 0 : 0.04,
+          elevation: 0,
         },
       ]}
     >
@@ -200,7 +214,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
+    elevation: 0,
   },
   cardTop: {
     flexDirection: 'row',

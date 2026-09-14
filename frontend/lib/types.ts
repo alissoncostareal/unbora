@@ -59,3 +59,26 @@ export interface PortalUser {
   role: 'admin' | 'consultor';
   createdAt: string;
 }
+
+export type EventModerationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface CommunityEventItem {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  city: string;
+  region: string;
+  venue: string;
+  startsAt: string;
+  active: boolean;
+  merchantId: string;
+  merchantName?: string | null;
+  businessName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  category: string;
+  status: EventModerationStatus;
+  rejectionReason?: string | null;
+}
+

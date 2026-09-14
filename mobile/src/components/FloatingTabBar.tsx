@@ -5,7 +5,6 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,7 +13,6 @@ import {
   InstagramTabIcon,
   TAB_ICON_NAMES,
 } from '@/components/InstagramTabIcon';
-import { useNotificationStore } from '@/stores/notificationStore';
 import { useTabBarStore } from '@/stores/tabBarStore';
 import { useDayTheme } from '@/theme/useDayTheme';
 
@@ -52,7 +50,6 @@ type FloatingTabBarProps = {
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useDayTheme();
-  const unreadCount = useNotificationStore((s) => s.unreadCount());
   const visible = useTabBarStore((s) => s.visible);
   const show = useTabBarStore((s) => s.show);
   const bottom = Math.max(insets.bottom, 8) + FLOATING_TAB_BAR_GAP;
@@ -62,8 +59,6 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
     inactive: colors.textMuted,
     pill: isDark ? 'rgba(18, 28, 40, 0.82)' : 'rgba(255, 255, 255, 0.88)',
     pillBorder: colors.border,
-    badge: colors.accent,
-    badgeBorder: isDark ? colors.surface : '#FFFFFF',
     blurTint: (isDark ? 'dark' : 'light') as 'dark' | 'light',
   };
   const hideOffset = FLOATING_TAB_BAR_HEIGHT + bottom + 24;
@@ -90,13 +85,11 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 
   const tabs = visibleRoutes.map((route) => {
     const { options } = descriptors[route.key];
-    // Em /results o ícone Início fica ativo, mas o toque ainda deve voltar para o início.
     const focused =
       activeRouteName === route.name ||
-      (activeRouteName === 'results' && route.name === 'index');
+      (activeRouteName === 'results' && route.name === 'explore');
     const isCurrentRoute = activeRouteName === route.name;
     const iconName = TAB_ICON_NAMES[route.name] ?? 'home';
-    const showBadge = route.name === 'notifications' && unreadCount > 0;
 
     const onPress = () => {
       const event = navigation.emit({
@@ -123,29 +116,12 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
         onLongPress={onLongPress}
         style={({ pressed }) => [styles.item, { opacity: pressed ? 0.65 : 1 }]}
       >
-        <View>
-          <InstagramTabIcon
-            name={iconName}
-            focused={focused}
-            color={focused ? tab.active : tab.inactive}
-            size={26}
-          />
-          {showBadge ? (
-            <View
-              style={[
-                styles.badge,
-                {
-                  backgroundColor: tab.badge,
-                  borderColor: tab.badgeBorder,
-                },
-              ]}
-            >
-              <Text style={styles.badgeText}>
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </Text>
-            </View>
-          ) : null}
-        </View>
+        <InstagramTabIcon
+          name={iconName}
+          focused={focused}
+          color={focused ? tab.active : tab.inactive}
+          size={26}
+        />
       </Pressable>
     );
   });
@@ -202,22 +178,5 @@ const styles = StyleSheet.create({
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -8,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-    borderWidth: 2,
-  },
-  badgeText: {
-    color: '#FFF',
-    fontSize: 8,
-    fontWeight: '700',
   },
 });

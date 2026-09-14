@@ -14,5 +14,8 @@ public record EventRecordDto(
         String merchantName,
         String businessName,
         String createdAt,
-        String updatedAt
+        String updatedAt,
+        String category,
+        String status,
+        String rejectionReason
 ) {}

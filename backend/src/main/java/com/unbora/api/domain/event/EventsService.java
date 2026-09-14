@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -38,15 +39,23 @@ public class EventsService {
     @PostConstruct
     @Transactional
     public void seedInitialData() {
-        // Remove stock genérico e fotos de Places em shows de complexo multiuso (ex. Cuca/quadra)
         List<Event> existing = eventRepository.findAll();
         for (Event e : existing) {
+            boolean dirty = false;
             String url = e.getImageUrl();
-            if (url == null || url.isBlank()) continue;
-            if (isStockPhotoUrl(url) || isMisleadingVenuePhoto(e.getTitle(), e.getVenue(), url)) {
+            if (url != null && !url.isBlank() && (isStockPhotoUrl(url) || isMisleadingVenuePhoto(e.getTitle(), e.getVenue(), url))) {
                 e.setImageUrl("");
-                eventRepository.save(e);
+                dirty = true;
             }
+            if (e.getStatus() == null || e.getStatus().isBlank()) {
+                e.setStatus(Event.STATUS_APPROVED);
+                dirty = true;
+            }
+            if (e.getCategory() == null || e.getCategory().isBlank()) {
+                e.setCategory(EventCategories.normalize(e.getTitle()));
+                dirty = true;
+            }
+            if (dirty) eventRepository.save(e);
         }
 
         if (eventRepository.count() > 0) return;
@@ -69,12 +78,12 @@ public class EventsService {
         }
 
         List<Event> seedEvents = List.of(
-                createSeedEvent("seed-event-1", "Sessão Sonora no Dragão", "Música instrumental e shows autorais na praça verde do Centro Dragão do Mar.", "", "Fortaleza", "Grande Fortaleza", "Centro Dragão do Mar de Arte e Cultura, Praia de Iracema", 1, 19, seedMerchantId),
-                createSeedEvent("seed-event-2", "Chorinho no Mercado dos Pinhões", "Tradicional roda de choro com gastronomia regional e chopp artesanal.", "", "Fortaleza", "Grande Fortaleza", "Mercado dos Pinhões, Centro", 2, 18, seedMerchantId),
-                createSeedEvent("seed-event-3", "Yoga & Pôr do Sol no Cocó", "Prática aberta de yoga e meditação ao entardecer no anfiteatro do parque.", "", "Fortaleza", "Grande Fortaleza", "Parque Estadual do Cocó, Cocó", 3, 16, seedMerchantId),
-                createSeedEvent("seed-event-4", "Temporada Clássica no Theatro José de Alencar", "Concertos e espetáculos cênicos na joia arquitetônica de Fortaleza.", "", "Fortaleza", "Grande Fortaleza", "Theatro José de Alencar, Centro", 4, 20, seedMerchantId),
-                createSeedEvent("seed-event-5", "Feira Criativa da Beira-Mar", "Artesanato autoral, moda cearense, doces típicos e música à beira-mar.", "", "Fortaleza", "Grande Fortaleza", "Feirinha da Beira-Mar, Meireles", 5, 17, seedMerchantId),
-                createSeedEvent("seed-event-6", "Cinema & Debate no Cineteatro São Luiz", "Exibição de clássicos e lançamentos do cinema nacional com entrada franca.", "", "Fortaleza", "Grande Fortaleza", "Cineteatro São Luiz, Centro", 6, 19, seedMerchantId)
+                createSeedEvent("seed-event-1", "Sessão Sonora no Dragão", "Música instrumental e shows autorais na praça verde do Centro Dragão do Mar.", "", "Fortaleza", "Grande Fortaleza", "Centro Dragão do Mar de Arte e Cultura, Praia de Iracema", "Shows", 1, 19, seedMerchantId),
+                createSeedEvent("seed-event-2", "Chorinho no Mercado dos Pinhões", "Tradicional roda de choro com gastronomia regional e chopp artesanal.", "", "Fortaleza", "Grande Fortaleza", "Mercado dos Pinhões, Centro", "Gastronomia", 2, 18, seedMerchantId),
+                createSeedEvent("seed-event-3", "Yoga & Pôr do Sol no Cocó", "Prática aberta de yoga e meditação ao entardecer no anfiteatro do parque.", "", "Fortaleza", "Grande Fortaleza", "Parque Estadual do Cocó, Cocó", "Esportes", 3, 16, seedMerchantId),
+                createSeedEvent("seed-event-4", "Temporada Clássica no Theatro José de Alencar", "Concertos e espetáculos cênicos na joia arquitetônica de Fortaleza.", "", "Fortaleza", "Grande Fortaleza", "Theatro José de Alencar, Centro", "Cultura", 4, 20, seedMerchantId),
+                createSeedEvent("seed-event-5", "Feira Criativa da Beira-Mar", "Artesanato autoral, moda cearense, doces típicos e música à beira-mar.", "", "Fortaleza", "Grande Fortaleza", "Feirinha da Beira-Mar, Meireles", "Feiras", 5, 17, seedMerchantId),
+                createSeedEvent("seed-event-6", "Cinema & Debate no Cineteatro São Luiz", "Exibição de clássicos e lançamentos do cinema nacional com entrada franca.", "", "Fortaleza", "Grande Fortaleza", "Cineteatro São Luiz, Centro", "Cultura", 6, 19, seedMerchantId)
         );
 
         eventRepository.saveAll(seedEvents);
@@ -88,7 +97,6 @@ public class EventsService {
                 || lower.contains("via.placeholder");
     }
 
-    /** Places do Cuca/ginásio em evento musical = foto da quadra, não do show. */
     private static boolean isMisleadingVenuePhoto(String title, String venue, String url) {
         if (url == null || !url.toLowerCase().contains("places.googleapis.com")) return false;
         String hay = ((title != null ? title : "") + " " + (venue != null ? venue : "")).toLowerCase();
@@ -100,7 +108,7 @@ public class EventsService {
         return music && multi;
     }
 
-    private Event createSeedEvent(String id, String title, String description, String imageUrl, String city, String region, String venue, int daysAhead, int hour, String merchantId) {
+    private Event createSeedEvent(String id, String title, String description, String imageUrl, String city, String region, String venue, String category, int daysAhead, int hour, String merchantId) {
         Event event = new Event();
         event.setId(id);
         event.setTitle(title);
@@ -109,6 +117,8 @@ public class EventsService {
         event.setCity(city);
         event.setRegion(region);
         event.setVenue(venue);
+        event.setCategory(category);
+        event.setStatus(Event.STATUS_APPROVED);
         event.setStartsAt(Instant.now().plus(daysAhead, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS).plus(hour, ChronoUnit.HOURS));
         event.setActive(true);
         event.setMerchantId(merchantId);
@@ -117,7 +127,7 @@ public class EventsService {
         return event;
     }
 
-    private EventRecordDto toRecord(Event event, Map<String, User> merchantMap) {
+    public EventRecordDto toRecord(Event event, Map<String, User> merchantMap) {
         User merchant = merchantMap.get(event.getMerchantId());
         String imageUrl = event.getImageUrl();
         if (imageUrl != null && isMisleadingVenuePhoto(event.getTitle(), event.getVenue(), imageUrl)) {
@@ -137,17 +147,54 @@ public class EventsService {
                 merchant != null ? merchant.getName() : null,
                 merchant != null ? merchant.getBusinessName() : null,
                 event.getCreatedAt() != null ? event.getCreatedAt().toString() : "",
-                event.getUpdatedAt() != null ? event.getUpdatedAt().toString() : ""
+                event.getUpdatedAt() != null ? event.getUpdatedAt().toString() : "",
+                event.getCategory() != null ? event.getCategory() : "Outros",
+                event.getStatus() != null ? event.getStatus() : Event.STATUS_PENDING,
+                event.getRejectionReason()
         );
     }
 
-    public List<EventRecordDto> list(String city, String region, boolean activeOnly) {
-        List<Event> events = eventRepository.findAllByOrderByStartsAtDesc();
-        Map<String, User> merchantMap = userRepository.findAll().stream()
+    private Map<String, User> userMap() {
+        return userRepository.findAll().stream()
                 .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+    }
+
+    /** Public feed: APPROVED (+ optional active/city/region/category). */
+    public List<EventRecordDto> list(String city, String region, boolean activeOnly, String category) {
+        return listInternal(city, region, activeOnly, category, Event.STATUS_APPROVED);
+    }
+
+    public List<EventRecordDto> listAdmin(String city, String region, String status, String category) {
+        String normalizedStatus = status == null || status.isBlank() ? null : status.trim().toUpperCase(Locale.ROOT);
+        return listInternal(city, region, false, category, normalizedStatus);
+    }
+
+    private List<EventRecordDto> listInternal(
+            String city,
+            String region,
+            boolean activeOnly,
+            String category,
+            String status
+    ) {
+        List<Event> events = eventRepository.findAllByOrderByStartsAtDesc();
+        Map<String, User> merchantMap = userMap();
+        String categoryFilter = category != null && !category.isBlank()
+                ? EventCategories.normalize(category)
+                : null;
 
         return events.stream()
                 .filter(e -> !activeOnly || Boolean.TRUE.equals(e.getActive()))
+                .filter(e -> {
+                    if (status == null || status.isBlank()) return true;
+                    String s = e.getStatus() != null ? e.getStatus() : Event.STATUS_PENDING;
+                    return status.equalsIgnoreCase(s);
+                })
+                .filter(e -> {
+                    if (categoryFilter == null) return true;
+                    return categoryFilter.equalsIgnoreCase(
+                            e.getCategory() != null ? e.getCategory() : "Outros"
+                    );
+                })
                 .filter(e -> {
                     if (city != null && !city.isBlank()) {
                         return e.getCity() != null && e.getCity().equalsIgnoreCase(city.trim());
@@ -167,19 +214,19 @@ public class EventsService {
 
     public List<EventRecordDto> listByMerchant(String merchantId) {
         List<Event> events = eventRepository.findByMerchantIdOrderByStartsAtDesc(merchantId);
-        Map<String, User> merchantMap = userRepository.findAll().stream()
-                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+        Map<String, User> merchantMap = userMap();
+        return events.stream().map(e -> toRecord(e, merchantMap)).toList();
+    }
 
-        return events.stream()
-                .map(e -> toRecord(e, merchantMap))
-                .toList();
+    public long countPending() {
+        return eventRepository.countByStatus(Event.STATUS_PENDING);
     }
 
     @Transactional
     public EventRecordDto create(CreateEventDto dto) {
-        User merchant = userRepository.findById(dto.merchantId()).orElse(null);
-        if (merchant == null || !"merchant".equalsIgnoreCase(merchant.getRole()) || Boolean.TRUE.equals(merchant.getGuest())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Apenas lojistas podem criar eventos.");
+        User creator = userRepository.findById(dto.merchantId()).orElse(null);
+        if (creator == null || Boolean.TRUE.equals(creator.getGuest())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Faça login para criar um evento.");
         }
 
         Event event = new Event();
@@ -190,18 +237,21 @@ public class EventsService {
         event.setCity(dto.city().trim());
         event.setRegion(dto.region().trim());
         event.setVenue(dto.venue() != null ? dto.venue().trim() : "");
+        event.setCategory(EventCategories.normalize(dto.category()));
+        event.setStatus(Event.STATUS_PENDING);
+        event.setRejectionReason(null);
         try {
             event.setStartsAt(Instant.parse(dto.startsAt()));
         } catch (Exception e) {
             event.setStartsAt(Instant.now());
         }
-        event.setActive(dto.active() != null ? dto.active() : true);
+        event.setActive(true);
         event.setMerchantId(dto.merchantId());
         event.setCreatedAt(Instant.now());
         event.setUpdatedAt(Instant.now());
 
         Event saved = eventRepository.save(event);
-        return toRecord(saved, Map.of(merchant.getId(), merchant));
+        return toRecord(saved, Map.of(creator.getId(), creator));
     }
 
     @Transactional
@@ -219,17 +269,48 @@ public class EventsService {
         if (dto.city() != null && !dto.city().isBlank()) event.setCity(dto.city().trim());
         if (dto.region() != null && !dto.region().isBlank()) event.setRegion(dto.region().trim());
         if (dto.venue() != null) event.setVenue(dto.venue().trim());
+        if (dto.category() != null && !dto.category().isBlank()) {
+            event.setCategory(EventCategories.normalize(dto.category()));
+        }
         if (dto.startsAt() != null && !dto.startsAt().isBlank()) {
             try {
                 event.setStartsAt(Instant.parse(dto.startsAt()));
             } catch (Exception ignored) {}
         }
         if (dto.active() != null) event.setActive(dto.active());
+        // Edits from author re-queue for moderation
+        if (!Event.STATUS_PENDING.equals(event.getStatus())) {
+            event.setStatus(Event.STATUS_PENDING);
+            event.setRejectionReason(null);
+        }
         event.setUpdatedAt(Instant.now());
 
         Event saved = eventRepository.save(event);
         User merchant = userRepository.findById(event.getMerchantId()).orElse(null);
         return toRecord(saved, merchant != null ? Map.of(merchant.getId(), merchant) : Map.of());
+    }
+
+    @Transactional
+    public EventRecordDto approve(String id) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Evento não encontrado."));
+        event.setStatus(Event.STATUS_APPROVED);
+        event.setRejectionReason(null);
+        event.setActive(true);
+        event.setUpdatedAt(Instant.now());
+        Event saved = eventRepository.save(event);
+        return toRecord(saved, userMap());
+    }
+
+    @Transactional
+    public EventRecordDto reject(String id, String reason) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Evento não encontrado."));
+        event.setStatus(Event.STATUS_REJECTED);
+        event.setRejectionReason(reason != null && !reason.isBlank() ? reason.trim() : null);
+        event.setUpdatedAt(Instant.now());
+        Event saved = eventRepository.save(event);
+        return toRecord(saved, userMap());
     }
 
     @Transactional

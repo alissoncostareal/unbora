@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,11 +12,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AmbientBackground } from '@/components/AmbientBackground';
 import { AppHeader } from '@/components/AppHeader';
+import { ExploreEventsPanel } from '@/components/ExploreEventsPanel';
 import {
   FLOATING_TAB_BAR_GAP,
   FLOATING_TAB_BAR_HEIGHT,
 } from '@/components/FloatingTabBar';
 import { MoodOptionButton, MoodProgressBar } from '@/components/MoodForm';
+import { RecommendationResults } from '@/components/RecommendationResults';
 import { SearchBar } from '@/components/SearchBar';
 import { activities, feelings, moods } from '@/constants/wizardCatalog';
 import { useLocationStore } from '@/stores/locationStore';
@@ -40,6 +41,8 @@ function getOptionKey(option: WizardOption | ActivityOption): string {
   return 'id' in option ? option.id : option.value;
 }
 
+const STEP_PAUSE_MS = 1800;
+
 const steps = [
   {
     question: 'Como você está se sentindo?',
@@ -58,8 +61,10 @@ const steps = [
   },
 ];
 
+type ExploreMode = 'places' | 'events';
+
 /**
- * Explorar — Headspace (calma) + Duolingo (passos) + Fever (descoberta).
+ * Explorar — Lugares (wizard) ou Eventos (aprovados).
  */
 export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
@@ -79,9 +84,22 @@ export default function ExploreScreen() {
   const selectMood = useWizardStore((s) => s.selectMood);
   const selectFeeling = useWizardStore((s) => s.selectFeeling);
   const toggleActivity = useWizardStore((s) => s.toggleActivity);
+  const showingResults = useWizardStore((s) => s.showingResults);
+  const showResults = useWizardStore((s) => s.showResults);
+  const resetWizard = useWizardStore((s) => s.reset);
   const submit = useRecommendationStore((s) => s.submit);
+  const searchPlaces = useRecommendationStore((s) => s.search);
+  const clearResults = useRecommendationStore((s) => s.clear);
   const loading = useRecommendationStore((s) => s.loading);
   const [showSearch, setShowSearch] = useState(false);
+  const [mode, setMode] = useState<ExploreMode>('places');
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     void requestDeviceLocation();
@@ -103,15 +121,20 @@ export default function ExploreScreen() {
     return selectedActivities.includes(getOptionKey(option));
   };
 
+  const pauseThen = (next: () => void) => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    advanceTimer.current = setTimeout(next, STEP_PAUSE_MS);
+  };
+
   const onSelect = (option: WizardOption | ActivityOption) => {
     if (step === 0) {
       selectMood(option.value);
-      setTimeout(() => setStep(1), 850);
+      pauseThen(() => setStep(1));
       return;
     }
     if (step === 1) {
       selectFeeling(option.value);
-      setTimeout(() => setStep(2), 850);
+      pauseThen(() => setStep(2));
       return;
     }
     toggleActivity(getOptionKey(option));
@@ -123,6 +146,7 @@ export default function ExploreScreen() {
       setStep(step + 1);
       return;
     }
+    showResults();
     void submit(
       toRequest(wizardState, {
         city,
@@ -132,144 +156,233 @@ export default function ExploreScreen() {
         longitude,
       }),
     );
-    router.push('/(tabs)/results');
+  };
+
+  const onTextSearch = (query: string) => {
+    showResults();
+    void searchPlaces(query, city, latitude ?? undefined, longitude ?? undefined);
+  };
+
+  const onRestart = () => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    resetWizard();
+    clearResults();
+    setShowSearch(false);
+  };
+
+  const switchMode = (next: ExploreMode) => {
+    setMode(next);
+    if (next === 'events') {
+      if (advanceTimer.current) clearTimeout(advanceTimer.current);
+      resetWizard();
+      clearResults();
+      setShowSearch(false);
+    }
   };
 
   const tabClearance =
     FLOATING_TAB_BAR_HEIGHT + FLOATING_TAB_BAR_GAP + Math.max(insets.bottom, 8);
 
-  return (
-    <AmbientBackground colors={colors}>
-      <AppHeader colors={colors} period={period} title="Explorar" subtitle={city} />
-
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 24 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {showSearch ? (
-          <SearchBar colors={colors} placeholder={`Buscar em ${city}`} />
-        ) : (
+  const modeToggle = (
+    <View style={styles.modeRow}>
+      {(
+        [
+          { id: 'places' as const, label: 'Lugares' },
+          { id: 'events' as const, label: 'Eventos' },
+        ] as const
+      ).map((item) => {
+        const selected = mode === item.id;
+        return (
           <Pressable
-            onPress={() => setShowSearch(true)}
-            style={({ pressed }) => [
-              styles.searchChip,
+            key={item.id}
+            onPress={() => switchMode(item.id)}
+            style={[
+              styles.modeChip,
               {
-                backgroundColor: colors.surfaceStrong,
-                opacity: pressed ? 0.85 : 1,
+                backgroundColor: selected ? colors.buttonInk : colors.surfaceStrong,
               },
             ]}
           >
-            <Ionicons name="search" size={16} color={colors.textMuted} />
-            <Text style={[styles.searchChipLabel, { color: colors.textMuted }]}>
-              Buscar lugares em {city}
+            <Text
+              style={{
+                color: selected ? colors.buttonInkText : colors.textMuted,
+                fontWeight: '700',
+                fontSize: 13,
+              }}
+            >
+              {item.label}
             </Text>
           </Pressable>
-        )}
+        );
+      })}
+    </View>
+  );
 
-        <View style={styles.progressWrap}>
-          <MoodProgressBar colors={colors} currentStep={step} totalSteps={3} />
-        </View>
+  return (
+    <AmbientBackground colors={colors}>
+      <AppHeader
+        colors={colors}
+        period={period}
+        title={
+          showingResults && mode === 'places'
+            ? 'Resultados'
+            : mode === 'events'
+              ? 'Eventos'
+              : 'Explorar'
+        }
+        subtitle={city}
+      />
 
-        <View style={styles.copyBlock}>
-          <Text style={[styles.greeting, { color: colors.textMuted }]}>
-            {getPeriodLabel(period)} · {getMoodLabel(period)}
-          </Text>
-          <Text style={[styles.question, { color: colors.textPrimary }]}>
-            {current.question}
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            {step === 2 && selectedActivities.length > 0
-              ? `${selectedActivities.length} escolhida${selectedActivities.length > 1 ? 's' : ''} — pode continuar`
-              : current.subtitle}
-          </Text>
-        </View>
+      {!showingResults || mode === 'events' ? modeToggle : null}
 
-        <View style={styles.grid}>
-          {current.options.map((item) => (
-            <MoodOptionButton
-              key={getOptionKey(item)}
-              colors={colors}
-              option={item}
-              selected={isSelected(item)}
-              multi={isLast}
-              onPress={() => onSelect(item)}
-            />
-          ))}
-        </View>
-      </ScrollView>
-
-      <View
-        style={[
-          styles.bottomBar,
-          {
-            paddingBottom: tabClearance + spacing.sm,
-            backgroundColor: colors.bg,
-            borderTopColor: colors.border,
-          },
-        ]}
-      >
-        {step > 0 ? (
-          <Pressable
-            onPress={() => setStep(step - 1)}
-            disabled={loading}
-            accessibilityRole="button"
-            accessibilityLabel="Voltar"
-            style={({ pressed }) => [
-              styles.backButton,
-              {
-                borderColor: colors.border,
-                backgroundColor: colors.surface,
-                opacity: loading ? 0.5 : pressed ? 0.88 : 1,
-                transform: [{ scale: pressed ? 0.96 : 1 }],
-              },
-            ]}
+      {mode === 'events' ? (
+        <ExploreEventsPanel
+          colors={colors}
+          city={city}
+          region={region}
+          bottomPad={tabClearance}
+        />
+      ) : showingResults ? (
+        <RecommendationResults colors={colors} bottomPad={tabClearance} onRestart={onRestart} />
+      ) : (
+        <>
+          <ScrollView
+            style={styles.body}
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: 24 }]}
+            showsVerticalScrollIndicator={false}
           >
-            <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-          </Pressable>
-        ) : null}
-
-        <Pressable
-          onPress={onPrimary}
-          disabled={!canPress}
-          accessibilityRole="button"
-          accessibilityLabel={isLast ? 'Descobrir lugares' : 'Continuar'}
-          style={({ pressed }) => [
-            styles.primaryButton,
-            {
-              backgroundColor: canPress
-                ? colors.buttonInk
-                : colors.surfaceStrong,
-              opacity: pressed && canPress ? 0.9 : 1,
-              transform: [{ scale: pressed && canPress ? 0.98 : 1 }],
-            },
-          ]}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.buttonInkText} />
-          ) : (
-            <>
-              <Text
-                style={[
-                  styles.primaryLabel,
+            {showSearch ? (
+              <SearchBar colors={colors} placeholder={`Buscar em ${city}`} onSearch={onTextSearch} />
+            ) : (
+              <Pressable
+                onPress={() => setShowSearch(true)}
+                style={({ pressed }) => [
+                  styles.searchChip,
                   {
-                    color: canPress
-                      ? colors.buttonInkText
-                      : colors.textMuted,
+                    backgroundColor: colors.surfaceStrong,
+                    opacity: pressed ? 0.85 : 1,
                   },
                 ]}
               >
-                {isLast ? 'Descobrir lugares' : 'Continuar'}
+                <Ionicons name="search" size={16} color={colors.textMuted} />
+                <Text style={[styles.searchChipLabel, { color: colors.textMuted }]}>
+                  Buscar lugares em {city}
+                </Text>
+              </Pressable>
+            )}
+
+            <View style={styles.progressWrap}>
+              <MoodProgressBar colors={colors} currentStep={step} totalSteps={3} />
+            </View>
+
+            <View style={styles.copyBlock}>
+              <Text style={[styles.greeting, { color: colors.textMuted }]}>
+                {getPeriodLabel(period)} · {getMoodLabel(period)}
               </Text>
-              <Ionicons
-                name="arrow-forward"
-                size={18}
-                color={canPress ? colors.buttonInkText : colors.textMuted}
-              />
-            </>
+              <Text style={[styles.question, { color: colors.textPrimary }]}>
+                {current.question}
+              </Text>
+              <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+                {step === 2 && selectedActivities.length > 0
+                  ? `${selectedActivities.length} escolhida${selectedActivities.length > 1 ? 's' : ''} — pode continuar`
+                  : current.subtitle}
+              </Text>
+            </View>
+
+            <View style={styles.grid}>
+              {current.options.map((item) => (
+                <MoodOptionButton
+                  key={getOptionKey(item)}
+                  colors={colors}
+                  option={item}
+                  selected={isSelected(item)}
+                  multi={isLast}
+                  onPress={() => onSelect(item)}
+                />
+              ))}
+            </View>
+          </ScrollView>
+
+          {step === 0 ? null : (
+            <View
+              style={[
+                styles.bottomBar,
+                {
+                  paddingBottom: tabClearance + spacing.sm,
+                  backgroundColor: colors.bg,
+                  borderTopColor: colors.border,
+                },
+              ]}
+            >
+              <Pressable
+                onPress={() => {
+                  if (advanceTimer.current) clearTimeout(advanceTimer.current);
+                  setStep(step - 1);
+                }}
+                disabled={loading}
+                accessibilityRole="button"
+                accessibilityLabel="Voltar"
+                style={({ pressed }) => [
+                  styles.backButton,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
+                    opacity: loading ? 0.5 : pressed ? 0.88 : 1,
+                    transform: [{ scale: pressed ? 0.96 : 1 }],
+                  },
+                ]}
+              >
+                <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
+              </Pressable>
+
+              {isLast ? (
+                <Pressable
+                  onPress={onPrimary}
+                  disabled={!canPress}
+                  accessibilityRole="button"
+                  accessibilityLabel="Descobrir lugares"
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    {
+                      backgroundColor: canPress
+                        ? colors.buttonInk
+                        : colors.surfaceStrong,
+                      opacity: pressed && canPress ? 0.9 : 1,
+                      transform: [{ scale: pressed && canPress ? 0.98 : 1 }],
+                    },
+                  ]}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={colors.buttonInkText} />
+                  ) : (
+                    <>
+                      <Text
+                        style={[
+                          styles.primaryLabel,
+                          {
+                            color: canPress
+                              ? colors.buttonInkText
+                              : colors.textMuted,
+                          },
+                        ]}
+                      >
+                        Descobrir lugares
+                      </Text>
+                      <Ionicons
+                        name="arrow-forward"
+                        size={18}
+                        color={canPress ? colors.buttonInkText : colors.textMuted}
+                      />
+                    </>
+                  )}
+                </Pressable>
+              ) : (
+                <View style={styles.primaryButtonSpacer} />
+              )}
+            </View>
           )}
-        </Pressable>
-      </View>
+        </>
+      )}
     </AmbientBackground>
   );
 }
@@ -280,6 +393,19 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  modeChip: {
+    flex: 1,
+    height: 36,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchChip: {
     marginHorizontal: spacing.md,
@@ -352,6 +478,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+  },
+  primaryButtonSpacer: {
+    flex: 1,
   },
   primaryLabel: {
     fontSize: 16,

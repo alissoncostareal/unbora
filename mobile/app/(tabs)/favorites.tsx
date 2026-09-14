@@ -24,7 +24,7 @@ export default function FavoritesScreen() {
 
   return (
     <AmbientBackground colors={colors}>
-      <AppHeader colors={colors} period={period} title="Favoritos" hideAvatar showCreate={false} />
+      <AppHeader colors={colors} period={period} title="Favoritos" hideAvatar />
 
       {items.length === 0 ? (
         <View style={[styles.empty, { paddingBottom: tabClearance }]}>

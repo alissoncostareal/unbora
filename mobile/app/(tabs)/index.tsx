@@ -23,15 +23,42 @@ import {
 } from '@/components/FloatingTabBar';
 import { MoodGuideHero } from '@/components/MoodGuideHero';
 import { CoverPlaceholder } from '@/components/CoverPlaceholder';
+import { RatePlaceModal, type RateTarget } from '@/components/RatePlaceModal';
 import { CityHighlightsRow } from '@/components/SponsoredStoriesRow';
 import { fetchHomeEventsFast, fetchHomeEventsAiRefresh, type EventItem } from '@/api/events';
 import { useTabBarScroll } from '@/hooks/useTabBarScroll';
 import { useLocationStore } from '@/stores/locationStore';
-import { useNotificationStore } from '@/stores/notificationStore';
+import { ratingIdForEvent, useRatingsStore } from '@/stores/ratingsStore';
 import { useWizardStore } from '@/stores/wizardStore';
-import { radius, spacing } from '@/theme/colors';
+import { radius, spacing, type ThemeColors } from '@/theme/colors';
 import { useDayTheme } from '@/theme/useDayTheme';
 import { buildStories, type StoryItem } from '@/utils/stories';
+
+function EventCover({
+  colors,
+  imageUrl,
+  label,
+}: {
+  colors: ThemeColors;
+  imageUrl?: string;
+  label: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <View style={styles.cover}>
+      <CoverPlaceholder colors={colors} label={label} style={StyleSheet.absoluteFill} />
+      {imageUrl && !failed ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={[StyleSheet.absoluteFill, { zIndex: 1 }]}
+          resizeMode="cover"
+          onError={() => setFailed(true)}
+        />
+      ) : null}
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -41,14 +68,15 @@ export default function HomeScreen() {
   const mood = useWizardStore((s) => s.mood);
   const feeling = useWizardStore((s) => s.feeling);
   const wizardActivities = useWizardStore((s) => s.activities);
-  const refreshNotifications = useNotificationStore((s) => s.refresh);
   const { onScroll, scrollEventThrottle } = useTabBarScroll();
   const [items, setItems] = useState<EventItem[]>([]);
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [heading, setHeading] = useState({ subtitle: 'Sugestões da IA' });
+  const [rateTarget, setRateTarget] = useState<RateTarget | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const ratings = useRatingsStore((s) => s.items);
 
   const load = useCallback(async () => {
     try {
@@ -128,9 +156,8 @@ export default function HomeScreen() {
         setLoading(true);
       }
       load();
-      refreshNotifications();
       // eslint-disable-next-line react-hooks/exhaustive-deps -- items.length só para o gate inicial
-    }, [load, refreshNotifications]),
+    }, [load]),
   );
 
   const bottomPad =
@@ -303,7 +330,10 @@ export default function HomeScreen() {
             </View>
             ) : null
           }
-          renderItem={({ item }) => (
+          renderItem={({ item }) => {
+            const ratingId = ratingIdForEvent(item);
+            const myRating = ratings.find((r) => r.id === ratingId);
+            return (
             <GlassSurface
               colors={colors}
               style={[
@@ -314,29 +344,25 @@ export default function HomeScreen() {
               ]}
               contentStyle={{ padding: 0 }}
             >
-              {item.imageUrl ? (
-                <Image source={{ uri: item.imageUrl }} style={styles.cover} />
-              ) : (
-                <CoverPlaceholder
-                  colors={colors}
-                  label={item.type || 'Evento'}
-                  style={styles.cover}
-                />
-              )}
+              <EventCover
+                colors={colors}
+                imageUrl={item.imageUrl}
+                label={item.type || 'Evento'}
+              />
 
               {item.imageIllustrative ? (
                 <View style={[styles.badge, styles.illustrativeBadge]}>
                   <Text style={styles.badgeText}>Imagem ilustrativa</Text>
                 </View>
-              ) : item.source === 'merchant' ? (
+              ) : item.source === 'merchant' || item.category ? (
                 <View style={[styles.badge, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
-                  <Text style={styles.badgeText}>Comunidade</Text>
+                  <Text style={styles.badgeText}>{item.category || 'Comunidade'}</Text>
                 </View>
               ) : null}
 
               <View style={styles.cardBody}>
                 <Text style={[styles.when, { color: colors.textMuted }]}>
-                  {[item.type, item.whenLabel].filter(Boolean).join(' · ')}
+                  {[item.category || item.type, item.whenLabel].filter(Boolean).join(' · ')}
                 </Text>
                 <Text
                   style={[styles.cardTitle, { color: colors.textPrimary }]}
@@ -355,11 +381,53 @@ export default function HomeScreen() {
                     {item.description}
                   </Text>
                 ) : null}
+                {myRating ? (
+                  <View style={styles.myRatingRow}>
+                    <Ionicons name="star" size={14} color={colors.gold} />
+                    <Text style={[styles.myRatingText, { color: colors.textPrimary }]}>
+                      Sua avaliação: {myRating.stars}/5
+                    </Text>
+                  </View>
+                ) : null}
+                <Pressable
+                  onPress={() =>
+                    setRateTarget({
+                      id: ratingId,
+                      kind: 'event',
+                      name: item.title,
+                      subtitle: [item.venue, item.businessName].filter(Boolean).join(' · '),
+                      type: item.type || 'Evento',
+                      imageUrl: item.imageUrl,
+                    })
+                  }
+                  style={({ pressed }) => [
+                    styles.rateButton,
+                    {
+                      backgroundColor: colors.buttonSecondary,
+                      opacity: pressed ? 0.75 : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={myRating ? 'Editar avaliação' : 'Avaliar evento'}
+                >
+                  <Ionicons name="star-outline" size={15} color={colors.buttonSecondaryText} />
+                  <Text style={[styles.rateLabel, { color: colors.buttonSecondaryText }]}>
+                    {myRating ? 'Editar nota' : 'Avaliar'}
+                  </Text>
+                </Pressable>
               </View>
             </GlassSurface>
-          )}
+            );
+          }}
         />
       )}
+
+      <RatePlaceModal
+        colors={colors}
+        visible={Boolean(rateTarget)}
+        target={rateTarget}
+        onClose={() => setRateTarget(null)}
+      />
     </AmbientBackground>
   );
 }
@@ -457,6 +525,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     marginTop: 8,
+  },
+  myRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+  },
+  myRatingText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  rateButton: {
+    marginTop: 12,
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 36,
+    borderRadius: 8,
+  },
+  rateLabel: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   footerContainer: {
     paddingHorizontal: spacing.md,

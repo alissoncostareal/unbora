@@ -49,6 +49,8 @@ public class DatabaseVectorInitializer implements ApplicationRunner {
                 );
             """;
             jdbcTemplate.execute(createTableSql);
+            // Hibernate cria a tabela sem a coluna vector; CREATE TABLE IF NOT EXISTS não a adiciona depois.
+            jdbcTemplate.execute("ALTER TABLE place_embeddings ADD COLUMN IF NOT EXISTS embedding vector(1536);");
 
             // 3. Criar índices
             jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_place_embeddings_city ON place_embeddings(LOWER(city));");

@@ -8,6 +8,10 @@ import java.util.UUID;
 @Table(name = "events")
 public class Event {
 
+    public static final String STATUS_PENDING = "PENDING";
+    public static final String STATUS_APPROVED = "APPROVED";
+    public static final String STATUS_REJECTED = "REJECTED";
+
     @Id
     @Column(nullable = false)
     private String id;
@@ -30,12 +34,24 @@ public class Event {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String venue = "";
 
+    /** Shows | Gastronomia | Festas | Cultura | Esportes | Feiras | Outros */
+    @Column(nullable = false, columnDefinition = "varchar(40) default 'Outros'")
+    private String category = "Outros";
+
+    /** PENDING | APPROVED | REJECTED */
+    @Column(nullable = false, columnDefinition = "varchar(20) default 'APPROVED'")
+    private String status = STATUS_APPROVED;
+
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
     @Column(name = "starts_at", nullable = false)
     private Instant startsAt;
 
     @Column(nullable = false)
     private Boolean active = true;
 
+    /** Creator user id (legacy column name merchant_id). */
     @Column(name = "merchant_id", nullable = false)
     private String merchantId;
 
@@ -52,6 +68,8 @@ public class Event {
         }
         if (this.createdAt == null) this.createdAt = Instant.now();
         if (this.updatedAt == null) this.updatedAt = Instant.now();
+        if (this.category == null || this.category.isBlank()) this.category = "Outros";
+        if (this.status == null || this.status.isBlank()) this.status = STATUS_PENDING;
     }
 
     @PreUpdate
@@ -115,6 +133,30 @@ public class Event {
 
     public void setVenue(String venue) {
         this.venue = venue;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
     }
 
     public Instant getStartsAt() {

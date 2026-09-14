@@ -11,10 +11,12 @@ interface WizardData {
 }
 
 interface WizardState extends WizardData {
+  showingResults: boolean;
   setStep: (step: number) => void;
   selectMood: (value: string) => void;
   selectFeeling: (value: string) => void;
   toggleActivity: (id: string) => void;
+  showResults: () => void;
   reset: () => void;
 }
 
@@ -23,8 +25,10 @@ export const useWizardStore = create<WizardState>((set, get) => ({
   mood: null,
   feeling: null,
   activities: [],
+  showingResults: false,
 
   setStep: (step) => set({ step }),
+  showResults: () => set({ showingResults: true }),
 
   selectMood: (value) => set({ mood: value }),
 
@@ -39,7 +43,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
     });
   },
 
-  reset: () => set({ step: 0, mood: null, feeling: null, activities: [] }),
+  reset: () => set({ step: 0, mood: null, feeling: null, activities: [], showingResults: false }),
 }));
 
 export function canProceed(state: WizardData): boolean {

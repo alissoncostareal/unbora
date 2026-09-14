@@ -4,7 +4,6 @@ export type NavPermission =
   | 'viewDashboard'
   | 'viewUsers'
   | 'manageEvents'
-  | 'manageNotifications'
   | 'viewLocations'
   | 'managePortalUsers';
 
@@ -15,6 +14,8 @@ export interface DashboardNavItem {
   permission: NavPermission;
   readFor?: NavPermission;
   description?: string;
+  /** Show pending-events badge when href is /events */
+  badgeKey?: 'pendingEvents';
 }
 
 export interface NavSection {
@@ -24,27 +25,29 @@ export interface NavSection {
 
 export const DASHBOARD_NAV_SECTIONS: NavSection[] = [
   {
-    title: 'Principal',
+    title: 'Visão',
     items: [
       {
         href: '/',
-        label: 'Visão Geral',
+        label: 'Dashboard',
         icon: 'dashboard',
         permission: 'viewDashboard',
         description: 'Resumo do app e atalhos rápidos',
       },
-      {
-        href: '/users',
-        label: 'Usuários',
-        icon: 'users',
-        permission: 'viewUsers',
-        description: 'Cadastros e sessões do app mobile',
-      },
     ],
   },
   {
-    title: 'Conteúdo por local',
+    title: 'Conteúdo',
     items: [
+      {
+        href: '/events',
+        label: 'Eventos',
+        icon: 'calendar',
+        permission: 'manageEvents',
+        readFor: 'viewUsers',
+        description: 'Moderação e aprovação de eventos da comunidade',
+        badgeKey: 'pendingEvents',
+      },
       {
         href: '/destaques',
         label: 'Destaques',
@@ -53,31 +56,18 @@ export const DASHBOARD_NAV_SECTIONS: NavSection[] = [
         readFor: 'viewUsers',
         description: 'Carousels do app filtrados por cidade e região',
       },
-      {
-        href: '/notifications',
-        label: 'Notificações',
-        icon: 'bell',
-        permission: 'manageNotifications',
-        readFor: 'viewUsers',
-        description: 'Avisos push por cidade e região',
-      },
     ],
   },
   {
-    title: 'Dados',
+    title: 'Pessoas',
     items: [
       {
-        href: '/locations',
-        label: 'Regiões e cidades',
-        icon: 'map',
-        permission: 'viewLocations',
-        description: 'Catálogo de localidades do Ceará',
+        href: '/users',
+        label: 'Usuários',
+        icon: 'users',
+        permission: 'viewUsers',
+        description: 'Cadastros e sessões do app mobile',
       },
-    ],
-  },
-  {
-    title: 'Administração',
-    items: [
       {
         href: '/team',
         label: 'Equipe',
@@ -87,58 +77,31 @@ export const DASHBOARD_NAV_SECTIONS: NavSection[] = [
       },
     ],
   },
+  {
+    title: 'Local',
+    items: [
+      {
+        href: '/locations',
+        label: 'Regiões',
+        icon: 'map',
+        permission: 'viewLocations',
+        description: 'Catálogo de localidades do Ceará',
+      },
+    ],
+  },
 ];
 
 export const DASHBOARD_NAV = DASHBOARD_NAV_SECTIONS.flatMap((section) => section.items);
 
-/** Flat sidebar nav — Tabela-style single list */
-export const SIDEBAR_NAV: (DashboardNavItem & { badge?: number })[] = [
-  {
-    href: '/',
-    label: 'Dashboard',
-    icon: 'dashboard',
-    permission: 'viewDashboard',
-  },
-  {
-    href: '/users',
-    label: 'Usuários',
-    icon: 'users',
-    permission: 'viewUsers',
-  },
-  {
-    href: '/destaques',
-    label: 'Destaques',
-    icon: 'star',
-    permission: 'manageEvents',
-    readFor: 'viewUsers',
-  },
-  {
-    href: '/notifications',
-    label: 'Notificações',
-    icon: 'bell',
-    permission: 'manageNotifications',
-    readFor: 'viewUsers',
-  },
-  {
-    href: '/locations',
-    label: 'Regiões',
-    icon: 'map',
-    permission: 'viewLocations',
-  },
-  {
-    href: '/team',
-    label: 'Equipe',
-    icon: 'shield',
-    permission: 'managePortalUsers',
-  },
-];
+/** Flat sidebar nav (same order as sections) */
+export const SIDEBAR_NAV: DashboardNavItem[] = DASHBOARD_NAV;
 
 export const PAGE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
   '/users': 'Usuários',
+  '/events': 'Eventos',
   '/destaques': 'Destaques',
   '/carousels': 'Destaques',
-  '/notifications': 'Notificações',
   '/locations': 'Regiões e cidades',
   '/team': 'Equipe',
 };

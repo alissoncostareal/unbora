@@ -17,6 +17,7 @@
       }
     },
     "android": {
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#FAFAF8",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -31,7 +32,13 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-web-browser"
-    ]
+      "expo-web-browser",
+      "expo-image"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8dccad63-739e-40bc-8275-8c3e78e56b90"
+      }
+    }
   }
 }

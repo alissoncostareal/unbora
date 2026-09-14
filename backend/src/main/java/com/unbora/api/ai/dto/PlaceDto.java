@@ -15,6 +15,11 @@ public class PlaceDto {
     private String descricao;
     private Boolean destaque;
     private String imagem;
+
+    /** true = cartaz/tema de evento, não foto do Google Maps do estabelecimento. */
+    @JsonProperty("imagem_ilustrativa")
+    @JsonAlias({"imagemIlustrativa", "imageIllustrative"})
+    private Boolean imagemIlustrativa;
     private List<String> tags;
 
     @JsonProperty("visual_query")
@@ -108,6 +113,14 @@ public class PlaceDto {
 
     public void setImagem(String imagem) {
         this.imagem = imagem;
+    }
+
+    public Boolean getImagemIlustrativa() {
+        return imagemIlustrativa;
+    }
+
+    public void setImagemIlustrativa(Boolean imagemIlustrativa) {
+        this.imagemIlustrativa = imagemIlustrativa;
     }
 
     public List<String> getTags() {

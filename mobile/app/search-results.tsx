@@ -13,6 +13,7 @@ import { AmbientBackground } from '@/components/AmbientBackground';
 import { GlassSurface } from '@/components/GlassSurface';
 import { ResultCard } from '@/components/ResultCard';
 import { SearchingLoader } from '@/components/SearchingLoader';
+import { useLocationStore } from '@/stores/locationStore';
 import { useRecommendationStore } from '@/stores/recommendationStore';
 import { spacing } from '@/theme/colors';
 import { useDayTheme } from '@/theme/useDayTheme';
@@ -26,15 +27,18 @@ export default function SearchResultsScreen() {
   const data = useRecommendationStore((s) => s.data);
   const search = useRecommendationStore((s) => s.search);
   const clear = useRecommendationStore((s) => s.clear);
+  const city = useLocationStore((s) => s.city);
+  const latitude = useLocationStore((s) => s.latitude);
+  const longitude = useLocationStore((s) => s.longitude);
 
   useEffect(() => {
     if (q) {
-      search(q);
+      void search(q, city, latitude ?? undefined, longitude ?? undefined);
     }
     return () => {
       clear();
     };
-  }, [q]);
+  }, [q, city, latitude, longitude, search]);
 
   const handleBack = () => {
     clear();

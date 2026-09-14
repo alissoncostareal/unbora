@@ -8,5 +8,6 @@ public record UpdateEventDto(
         String region,
         String venue,
         String startsAt,
-        Boolean active
+        Boolean active,
+        String category
 ) {}

@@ -15,7 +15,6 @@ export function AppHeader({
   title = 'Unbora',
   isFloating,
   hideAvatar,
-  showCreate = true,
 }: {
   colors: ThemeColors;
   period: UnboraDayPeriod;
@@ -23,23 +22,11 @@ export function AppHeader({
   title?: string;
   isFloating?: boolean;
   hideAvatar?: boolean;
-  /** Botão para criar evento (lojista) */
-  showCreate?: boolean;
 }) {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const city = useLocationStore((s) => s.city);
   const region = useLocationStore((s) => s.region);
-
-  const chipIcon = isFloating ? '#FFFFFF' : colors.textPrimary;
-
-  const openCreate = () => {
-    if (user?.role === 'merchant') {
-      router.push('/create-event');
-      return;
-    }
-    router.push('/merchant-register');
-  };
 
   const locationText = subtitle ?? `${city}${region && region !== city ? ` · ${region}` : ''}`;
 
@@ -81,39 +68,22 @@ export function AppHeader({
         </View>
       </View>
 
-      <View style={styles.actions}>
-        {showCreate ? (
-          <Pressable
-            onPress={openCreate}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Criar evento"
-            style={({ pressed }) => [
-              styles.chip,
-              { opacity: pressed ? 0.65 : 1 },
-            ]}
-          >
-            <Ionicons name="add" size={28} color={chipIcon} style={isFloating ? styles.iconShadow : undefined} />
-          </Pressable>
-        ) : null}
-
-        {!hideAvatar ? (
-          <Pressable
-            onPress={() => router.push('/profile')}
-            style={({ pressed }) => [
-              styles.avatar,
-              {
-                backgroundColor: isFloating ? '#FFFFFF' : colors.surfaceStrong,
-                opacity: pressed ? 0.85 : 1,
-              },
-            ]}
-          >
-            <Text style={[styles.avatarText, { color: colors.textPrimary }]}>
-              {getInitials(user?.name ?? '?')}
-            </Text>
-          </Pressable>
-        ) : null}
-      </View>
+      {!hideAvatar ? (
+        <Pressable
+          onPress={() => router.push('/profile')}
+          style={({ pressed }) => [
+            styles.avatar,
+            {
+              backgroundColor: isFloating ? '#FFFFFF' : colors.surfaceStrong,
+              opacity: pressed ? 0.85 : 1,
+            },
+          ]}
+        >
+          <Text style={[styles.avatarText, { color: colors.textPrimary }]}>
+            {getInitials(user?.name ?? '?')}
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -148,22 +118,6 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.35)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
-  },
-  iconShadow: {
-    textShadowColor: 'rgba(0,0,0,0.35)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  chip: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   avatar: {
     width: 28,

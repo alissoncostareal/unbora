@@ -59,7 +59,6 @@ export default function NotificationsScreen() {
         colors={colors}
         period={period}
         title="Notificações"
-        showCreate={false}
       />
       <ScrollView
         onScroll={onScroll}

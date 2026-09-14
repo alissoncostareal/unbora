@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { getApiBaseUrl } from '@/api/client';
+import { log } from '@/utils/log';
 import {
   googleLoginUser,
   loginUser,
@@ -63,7 +64,7 @@ export const useAuthStore = create<AuthState>()(
 
       bootstrap: async () => {
         if (__DEV__) {
-          console.log('[Unbora] API:', getApiBaseUrl());
+          log.info('boot', `API base: ${getApiBaseUrl()}`);
         }
         const current = get().user ?? createGuest();
         try {

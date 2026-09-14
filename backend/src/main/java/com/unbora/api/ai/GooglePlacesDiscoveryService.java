@@ -15,6 +15,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GooglePlacesDiscoveryService {
@@ -24,6 +25,7 @@ public class GooglePlacesDiscoveryService {
     private final String googlePlacesKey;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private final Map<String, String> directPhotoCache = new ConcurrentHashMap<>();
 
     public record DiscoveredPlace(
             String name,
@@ -157,7 +159,8 @@ public class GooglePlacesDiscoveryService {
                         selectedPhotoName = photos.get(0).path("name").asText(null);
                     }
                     if (selectedPhotoName != null && !selectedPhotoName.isBlank()) {
-                        photoUrl = "https://places.googleapis.com/v1/" + selectedPhotoName + "/media?maxHeightPx=1080&maxWidthPx=1920&key=" + URLEncoder.encode(googlePlacesKey, StandardCharsets.UTF_8);
+                        // Card covers: keep payloads small for mobile (avoid multi-MB PNGs).
+                        photoUrl = "https://places.googleapis.com/v1/" + selectedPhotoName + "/media?maxHeightPx=720&maxWidthPx=960&key=" + URLEncoder.encode(googlePlacesKey, StandardCharsets.UTF_8);
                     }
                 }
 
@@ -185,6 +188,41 @@ public class GooglePlacesDiscoveryService {
         } catch (Exception e) {
             log.warn("Erro ao buscar locais no Google Places: {}", e.getMessage());
             return List.of();
+        }
+    }
+
+    /**
+     * O app não segue o redirect de /media (e a URL leva a chave da API).
+     * skipHttpRedirect devolve o arquivo em lh3.googleusercontent.com.
+     */
+    public String resolveDirectPhotoUrl(String mediaUrl) {
+        if (mediaUrl == null || mediaUrl.isBlank() || !mediaUrl.contains("places.googleapis.com")) {
+            return mediaUrl;
+        }
+        String cached = directPhotoCache.get(mediaUrl);
+        if (cached != null) return cached;
+        try {
+            String requestUrl = mediaUrl.contains("skipHttpRedirect=")
+                    ? mediaUrl
+                    : mediaUrl + "&skipHttpRedirect=true";
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(requestUrl))
+                    .timeout(Duration.ofSeconds(5))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                return mediaUrl;
+            }
+            String photoUri = objectMapper.readTree(response.body()).path("photoUri").asText("");
+            if (photoUri.isBlank() || !photoUri.startsWith("http")) {
+                return mediaUrl;
+            }
+            directPhotoCache.put(mediaUrl, photoUri);
+            return photoUri;
+        } catch (Exception e) {
+            log.debug("Falha ao resolver foto do Places: {}", e.getMessage());
+            return mediaUrl;
         }
     }
 }
