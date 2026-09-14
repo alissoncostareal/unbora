@@ -3,10 +3,10 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
 export const inputClassName =
-  'w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-heading placeholder:text-muted/60 outline-none transition focus:border-heading focus:ring-4 focus:ring-black/5';
+  'w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-[15px] text-heading placeholder:text-muted/55 outline-none transition focus:border-heading/40 focus:ring-4 focus:ring-accent/25';
 
 export const textareaClassName =
-  'w-full resize-y rounded-xl border border-border bg-surface px-4 py-2.5 text-heading placeholder:text-muted/60 outline-none transition focus:border-heading focus:ring-4 focus:ring-black/5';
+  'w-full resize-y rounded-xl border border-border bg-surface px-4 py-2.5 text-[15px] text-heading placeholder:text-muted/55 outline-none transition focus:border-heading/40 focus:ring-4 focus:ring-accent/25';
 
 export function Field({
   label,

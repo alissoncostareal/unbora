@@ -18,12 +18,12 @@ export function Panel({
   return (
     <section className={cn('tabela-card mb-6 overflow-hidden', className)}>
       {title ? (
-        <div className="flex items-center justify-between px-6 py-5">
-          <h2 className="text-base font-semibold text-heading">{title}</h2>
+        <div className="flex items-center justify-between px-5 py-4">
+          <h2 className="text-[15px] font-semibold text-heading">{title}</h2>
           {action}
         </div>
       ) : null}
-      <div className={flush ? undefined : 'px-6 pb-6'}>{children}</div>
+      <div className={flush ? undefined : 'px-5 pb-5'}>{children}</div>
     </section>
   );
 }

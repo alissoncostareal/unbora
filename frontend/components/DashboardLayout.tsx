@@ -6,22 +6,18 @@ import { useEffect, useState } from 'react';
 
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { NavIcon } from '@/components/NavIcon';
+import { UnboraMark } from '@/components/UnboraMark';
 import { getPendingEventsCount } from '@/lib/api';
 import { clearAdminSession, getClientSession, ROLE_LABELS, type AdminSession } from '@/lib/auth';
 import { cn } from '@/lib/cn';
 import { DASHBOARD_NAV_SECTIONS, isNavItemActive, type DashboardNavItem } from '@/lib/nav';
 import { can, canSeeNavItem } from '@/lib/permissions';
 
-function TabelaLogo() {
+function BrandLogo() {
   return (
     <div className="flex items-center gap-2.5">
-      <svg className="size-7 shrink-0" viewBox="0 0 28 28" fill="none" aria-hidden>
-        <rect x="2" y="2" width="11" height="11" rx="2" fill="#d4ff4d" />
-        <rect x="15" y="2" width="11" height="11" rx="2" fill="white" fillOpacity="0.9" />
-        <rect x="2" y="15" width="11" height="11" rx="2" fill="white" fillOpacity="0.5" />
-        <rect x="15" y="15" width="11" height="11" rx="2" fill="#d4ff4d" fillOpacity="0.6" />
-      </svg>
-      <span className="text-[17px] font-bold tracking-[0.08em] text-white">UNBORA</span>
+      <UnboraMark className="size-7 shrink-0" variant="light" />
+      <span className="text-[15px] font-bold tracking-[0.14em] text-white">UNBORA</span>
     </div>
   );
 }
@@ -50,7 +46,12 @@ function NavLink({
       <NavIcon name={icon} active={isActive} />
       <span className="flex-1">{label}</span>
       {badge && badge > 0 ? (
-        <span className="grid size-5 place-items-center rounded-full bg-accent text-[10px] font-bold text-sidebar">
+        <span
+          className={cn(
+            'grid size-5 place-items-center rounded-full text-[10px] font-bold',
+            isActive ? 'bg-sidebar text-accent' : 'bg-accent text-sidebar',
+          )}
+        >
           {badge > 9 ? '9+' : badge}
         </span>
       ) : null}
@@ -98,17 +99,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-canvas">
       <aside className="fixed inset-y-0 left-0 z-30 flex w-[220px] flex-col bg-sidebar max-lg:hidden">
-        <div className="flex h-[80px] shrink-0 items-center px-5">
-          <TabelaLogo />
+        <div className="flex h-[72px] shrink-0 items-center px-5">
+          <BrandLogo />
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3">
+        <nav className="flex-1 overflow-y-auto px-3 pb-2">
           {visibleSections.map((section) => (
-            <div key={section.title} className="mb-4">
-              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
+            <div key={section.title} className="mb-5">
+              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">
                 {section.title}
               </p>
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {section.items.map((item) => (
                   <li key={item.href}>
                     <NavLink
@@ -125,7 +126,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <div className="shrink-0 px-3 pb-5">
+        <div className="shrink-0 border-t border-white/5 px-3 pb-5 pt-3">
           <button
             type="button"
             onClick={logout}
@@ -140,11 +141,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </button>
 
           {session ? (
-            <div className="flex items-center gap-3 rounded-2xl bg-white/5 px-3 py-3">
-              <div className="size-10 shrink-0 overflow-hidden rounded-full bg-accent">
-                <div className="grid size-full place-items-center text-sm font-bold text-sidebar">
-                  {session.name.charAt(0).toUpperCase()}
-                </div>
+            <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2.5">
+              <div className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-sidebar">
+                {session.name.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white">{session.name}</p>
@@ -158,7 +157,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col max-lg:ml-0 lg:ml-[220px]">
         <DashboardHeader pathname={pathname} />
 
-        <nav className="flex gap-1 overflow-x-auto bg-sidebar px-3 py-2 lg:hidden">
+        <nav className="flex gap-1 overflow-x-auto border-b border-border bg-surface px-3 py-2 lg:hidden">
           {flatVisible.map((item) => {
             const isActive = isNavItemActive(pathname, item.href);
             const badge = itemBadge(item, pendingEvents);
@@ -167,13 +166,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium',
-                  isActive ? 'bg-accent text-sidebar' : 'text-white/55',
+                  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium',
+                  isActive ? 'bg-accent text-sidebar' : 'text-muted hover:text-heading',
                 )}
               >
                 {item.label}
                 {badge && badge > 0 ? (
-                  <span className="rounded-full bg-sidebar/20 px-1.5 text-[10px] font-bold">
+                  <span
+                    className={cn(
+                      'rounded-full px-1.5 text-[10px] font-bold',
+                      isActive ? 'bg-sidebar/15 text-sidebar' : 'bg-accent text-sidebar',
+                    )}
+                  >
                     {badge > 9 ? '9+' : badge}
                   </span>
                 ) : null}
@@ -182,7 +186,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <main className="flex-1 px-6 py-2 lg:px-8 lg:py-4">{children}</main>
+        <main className="flex-1 px-6 py-5 lg:px-8 lg:py-6">{children}</main>
       </div>
     </div>
   );

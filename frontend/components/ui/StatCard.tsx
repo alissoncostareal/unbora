@@ -16,15 +16,15 @@ export function StatCard({
   const trendPositive = trend !== undefined && trend >= 0;
 
   return (
-    <article className="tabela-card p-6">
-      <div className="mb-4 flex items-start justify-between">
+    <article className="tabela-card p-5">
+      <div className="mb-3 flex items-start justify-between">
         <p className="text-sm font-medium text-muted">{label}</p>
-        <div className="grid size-9 place-items-center rounded-full border border-border text-muted">
+        <div className="grid size-8 place-items-center rounded-lg bg-canvas text-muted">
           {icon}
         </div>
       </div>
       <div className="flex items-baseline gap-2">
-        <p className="text-[28px] font-bold leading-none tracking-tight text-heading">{value}</p>
+        <p className="text-[26px] font-bold leading-none tracking-tight text-heading">{value}</p>
         {trend !== undefined ? (
           <span
             className={cn(
