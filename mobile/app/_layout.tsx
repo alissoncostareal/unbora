@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
+import { NavigationBar } from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import {
   initialWindowMetrics,
   SafeAreaProvider,
@@ -12,6 +13,7 @@ const fallbackInsets = { top: 0, left: 0, right: 0, bottom: 0 };
 
 export default function RootLayout() {
   const { colors } = useDayTheme();
+  const isDark = colors.scheme === 'dark';
 
   return (
     <SafeAreaProvider
@@ -19,7 +21,10 @@ export default function RootLayout() {
       initialMetrics={initialWindowMetrics ?? undefined}
       initialSafeAreaInsets={initialWindowMetrics?.insets ?? fallbackInsets}
     >
-      <StatusBar style={colors.scheme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      {Platform.OS === 'android' ? (
+        <NavigationBar style={isDark ? 'light' : 'dark'} />
+      ) : null}
       <Stack
         screenOptions={{
           headerShown: false,

@@ -18,7 +18,8 @@ import { useDayTheme } from '@/theme/useDayTheme';
 
 /** Altura visual da pill (sem safe area) — use para paddingBottom nas telas */
 export const FLOATING_TAB_BAR_HEIGHT = 56;
-export const FLOATING_TAB_BAR_GAP = 12;
+/** Gap acima da gesture/nav bar — menor no Android (estilo Instagram) */
+export const FLOATING_TAB_BAR_GAP = Platform.OS === 'android' ? 6 : 12;
 
 type FloatingTabBarProps = {
   state: {
@@ -52,7 +53,11 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   const { colors } = useDayTheme();
   const visible = useTabBarStore((s) => s.visible);
   const show = useTabBarStore((s) => s.show);
-  const bottom = Math.max(insets.bottom, 8) + FLOATING_TAB_BAR_GAP;
+  // Gesture bar (~16–24) vs 3 botões (~48): respeita inset, sem “flutuar” alto demais
+  const bottom =
+    Platform.OS === 'android'
+      ? Math.max(insets.bottom, 10) + FLOATING_TAB_BAR_GAP
+      : Math.max(insets.bottom, 8) + FLOATING_TAB_BAR_GAP;
   const isDark = colors.scheme === 'dark';
   const tab = {
     active: colors.textPrimary,
@@ -147,24 +152,24 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 const styles = StyleSheet.create({
   wrap: {
     position: 'absolute',
-    left: 18,
-    right: 18,
+    left: Platform.OS === 'android' ? 12 : 18,
+    right: Platform.OS === 'android' ? 12 : 18,
     zIndex: 100,
   },
   shadow: {
-    borderRadius: 28,
+    borderRadius: Platform.OS === 'android' ? 24 : 28,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
-    elevation: 10,
+    elevation: Platform.OS === 'android' ? 6 : 10,
   },
   shadowDark: {
     shadowOpacity: 0.4,
   },
   pill: {
     height: FLOATING_TAB_BAR_HEIGHT,
-    borderRadius: 28,
+    borderRadius: Platform.OS === 'android' ? 24 : 28,
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
   },

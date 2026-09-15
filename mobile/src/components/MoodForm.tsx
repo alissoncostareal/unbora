@@ -148,8 +148,6 @@ export function MoodOptionButton({
   );
 }
 
-const STEP_LABELS = ['Humor', 'Clima', 'Plano'];
-
 export function MoodProgressBar({
   colors,
   currentStep,
@@ -160,45 +158,24 @@ export function MoodProgressBar({
   totalSteps: number;
 }) {
   return (
-    <View style={styles.progressBlock}>
-      <View style={styles.progressRow}>
-        {Array.from({ length: totalSteps }).map((_, index) => {
-          const done = index < currentStep;
-          const active = index === currentStep;
-          return (
-            <View
-              key={index}
-              style={[
-                styles.progressSegment,
-                {
-                  backgroundColor:
-                    done || active ? colors.textPrimary : colors.surfaceStrong,
-                  height: active ? 5 : 3,
-                },
-              ]}
-            />
-          );
-        })}
-      </View>
-      <View style={styles.progressLabels}>
-        {STEP_LABELS.slice(0, totalSteps).map((label, index) => (
-          <Text
-            key={label}
+    <View style={styles.progressRow}>
+      {Array.from({ length: totalSteps }).map((_, index) => {
+        const done = index < currentStep;
+        const active = index === currentStep;
+        return (
+          <View
+            key={index}
             style={[
-              styles.progressLabel,
+              styles.progressSegment,
               {
-                color:
-                  index === currentStep
-                    ? colors.textPrimary
-                    : colors.textMuted,
-                fontWeight: index === currentStep ? '700' : '500',
+                backgroundColor:
+                  done || active ? colors.textPrimary : colors.surfaceStrong,
+                height: active ? 5 : 3,
               },
             ]}
-          >
-            {label}
-          </Text>
-        ))}
-      </View>
+          />
+        );
+      })}
     </View>
   );
 }
@@ -241,9 +218,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.3,
   },
-  progressBlock: {
-    gap: 8,
-  },
   progressRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -252,14 +226,5 @@ const styles = StyleSheet.create({
   progressSegment: {
     flex: 1,
     borderRadius: 3,
-  },
-  progressLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  progressLabel: {
-    flex: 1,
-    fontSize: 11,
-    letterSpacing: 0.2,
   },
 });

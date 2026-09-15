@@ -18,12 +18,23 @@
     },
     "android": {
       "usesCleartextTraffic": true,
+      "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "backgroundColor": "#FAFAF8",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png"
       },
       "package": "com.unbora.app"
+    },
+    "androidStatusBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#00000000",
+      "translucent": true
+    },
+    "androidNavigationBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#00000000",
+      "enforceContrast": false
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -33,7 +44,17 @@
       "expo-router",
       "expo-font",
       "expo-web-browser",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false,
+          "position": "absolute",
+          "vertical": "inset-swipe",
+          "backgroundColor": "#00000000",
+          "barStyle": "dark"
+        }
+      ]
     ],
     "extra": {
       "eas": {

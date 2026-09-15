@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getInitials, useAuthStore } from '@/stores/authStore';
 import { useLocationStore } from '@/stores/locationStore';
@@ -29,12 +29,14 @@ export function AppHeader({
   const region = useLocationStore((s) => s.region);
 
   const locationText = subtitle ?? `${city}${region && region !== city ? ` · ${region}` : ''}`;
+  const topPad =
+    insets.top + (Platform.OS === 'android' ? spacing.xs : spacing.sm);
 
   return (
     <View
       style={[
         styles.wrap,
-        { paddingTop: insets.top + spacing.sm },
+        { paddingTop: topPad },
         isFloating && styles.floatingWrap,
       ]}
     >
@@ -44,6 +46,7 @@ export function AppHeader({
             styles.brand,
             { color: isFloating ? '#FFFFFF' : colors.textPrimary },
             isFloating && styles.brandShadow,
+            Platform.OS === 'android' && styles.brandAndroid,
           ]}
         >
           {title}
@@ -94,12 +97,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingBottom: 4,
+    paddingBottom: Platform.OS === 'android' ? 2 : 4,
   },
   brand: {
     fontSize: 26,
     fontWeight: '700',
     letterSpacing: -0.9,
+  },
+  brandAndroid: {
+    fontSize: 22,
+    letterSpacing: -0.6,
   },
   brandBlock: {
     flexShrink: 1,

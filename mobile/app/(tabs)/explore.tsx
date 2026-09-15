@@ -12,7 +12,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AmbientBackground } from '@/components/AmbientBackground';
 import { AppHeader } from '@/components/AppHeader';
-import { ExploreEventsPanel } from '@/components/ExploreEventsPanel';
 import {
   FLOATING_TAB_BAR_GAP,
   FLOATING_TAB_BAR_HEIGHT,
@@ -28,12 +27,7 @@ import {
   toRequest,
   useWizardStore,
 } from '@/stores/wizardStore';
-import {
-  getMoodLabel,
-  getPeriodLabel,
-  radius,
-  spacing,
-} from '@/theme/colors';
+import { radius, spacing } from '@/theme/colors';
 import { useDayTheme } from '@/theme/useDayTheme';
 import type { ActivityOption, WizardOption } from '@/types';
 
@@ -61,11 +55,7 @@ const steps = [
   },
 ];
 
-type ExploreMode = 'places' | 'events';
-
-/**
- * Explorar — Lugares (wizard) ou Eventos (aprovados).
- */
+/** Explorar — wizard de lugares + busca. */
 export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
   const { colors, period } = useDayTheme();
@@ -92,7 +82,6 @@ export default function ExploreScreen() {
   const clearResults = useRecommendationStore((s) => s.clear);
   const loading = useRecommendationStore((s) => s.loading);
   const [showSearch, setShowSearch] = useState(false);
-  const [mode, setMode] = useState<ExploreMode>('places');
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -170,79 +159,19 @@ export default function ExploreScreen() {
     setShowSearch(false);
   };
 
-  const switchMode = (next: ExploreMode) => {
-    setMode(next);
-    if (next === 'events') {
-      if (advanceTimer.current) clearTimeout(advanceTimer.current);
-      resetWizard();
-      clearResults();
-      setShowSearch(false);
-    }
-  };
-
   const tabClearance =
     FLOATING_TAB_BAR_HEIGHT + FLOATING_TAB_BAR_GAP + Math.max(insets.bottom, 8);
-
-  const modeToggle = (
-    <View style={styles.modeRow}>
-      {(
-        [
-          { id: 'places' as const, label: 'Lugares' },
-          { id: 'events' as const, label: 'Eventos' },
-        ] as const
-      ).map((item) => {
-        const selected = mode === item.id;
-        return (
-          <Pressable
-            key={item.id}
-            onPress={() => switchMode(item.id)}
-            style={[
-              styles.modeChip,
-              {
-                backgroundColor: selected ? colors.buttonInk : colors.surfaceStrong,
-              },
-            ]}
-          >
-            <Text
-              style={{
-                color: selected ? colors.buttonInkText : colors.textMuted,
-                fontWeight: '700',
-                fontSize: 13,
-              }}
-            >
-              {item.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
 
   return (
     <AmbientBackground colors={colors}>
       <AppHeader
         colors={colors}
         period={period}
-        title={
-          showingResults && mode === 'places'
-            ? 'Resultados'
-            : mode === 'events'
-              ? 'Eventos'
-              : 'Explorar'
-        }
+        title={showingResults ? 'Resultados' : 'Explorar'}
         subtitle={city}
       />
 
-      {!showingResults || mode === 'events' ? modeToggle : null}
-
-      {mode === 'events' ? (
-        <ExploreEventsPanel
-          colors={colors}
-          city={city}
-          region={region}
-          bottomPad={tabClearance}
-        />
-      ) : showingResults ? (
+      {showingResults ? (
         <RecommendationResults colors={colors} bottomPad={tabClearance} onRestart={onRestart} />
       ) : (
         <>
@@ -276,9 +205,6 @@ export default function ExploreScreen() {
             </View>
 
             <View style={styles.copyBlock}>
-              <Text style={[styles.greeting, { color: colors.textMuted }]}>
-                {getPeriodLabel(period)} · {getMoodLabel(period)}
-              </Text>
               <Text style={[styles.question, { color: colors.textPrimary }]}>
                 {current.question}
               </Text>
@@ -394,19 +320,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
   },
-  modeRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  modeChip: {
-    flex: 1,
-    height: 36,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   searchChip: {
     marginHorizontal: spacing.md,
     marginBottom: spacing.sm,
@@ -429,11 +342,6 @@ const styles = StyleSheet.create({
   copyBlock: {
     paddingHorizontal: spacing.md,
     marginBottom: 16,
-  },
-  greeting: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 6,
   },
   question: {
     fontSize: 28,
