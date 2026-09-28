@@ -27,7 +27,7 @@ public class DatabaseVectorInitializer implements ApplicationRunner {
             jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS vector;");
             log.info("[pgvector] Extensão 'vector' verificada com sucesso.");
 
-            // 2. Garante tabela/índices mesmo se Flyway falhar (Neon sem permissão pontual)
+            // 2. Garante tabela/índices mesmo se a extensão já existir sem o DDL aplicado
             String createTableSql = """
                 CREATE TABLE IF NOT EXISTS place_embeddings (
                     id VARCHAR(64) PRIMARY KEY,

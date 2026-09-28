@@ -79,7 +79,7 @@ public class RecommendationsService {
 
         Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
 
-        // 1. RAG Semântico Híbrido no pgvector (Neon)
+        // 1. RAG semântico no pgvector do database unbora
         try {
             String semanticQuery = (dto.humor() != null ? dto.humor() : "") + " "
                     + (dto.sentir() != null ? dto.sentir() : "") + " "
@@ -242,7 +242,7 @@ public class RecommendationsService {
 
         Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
 
-        // 1. RAG Semântico Híbrido no pgvector (Neon)
+        // 1. RAG semântico no pgvector do database unbora
         try {
             String queryVector = embeddingService.getEmbeddingVectorString(dto.query() + " " + city);
             List<PlaceEmbeddingProjection> vectorMatches = placeEmbeddingRepository.findSimilarPlaces(city, queryVector, 25);

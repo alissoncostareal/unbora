@@ -50,7 +50,7 @@ public class UnboraApiApplication {
             System.out.println(formatRow("Health:   " + baseUrl + "/health"));
             System.out.println(formatRow("Swagger:  " + baseUrl + "/swagger-ui.html"));
             System.out.println(formatRow("Groq/IA:  " + (groqReady ? "ok" : "faltando GROQ_API_KEY")));
-            System.out.println(formatRow("Postgres: " + (dbReady ? "ok (Neon DB)" : "faltando DATABASE_URL")));
+            System.out.println(formatRow("Postgres: " + (dbReady ? "ok (" + databaseName(dbUrl) + ")" : "faltando DATABASE_URL")));
             System.out.println(formatRow("Brave:    " + (braveReady ? "ok" : "opcional")));
             System.out.println(formatRow("Places:   " + (placesReady ? "ok (fotos)" : "faltando GOOGLE_PLACES_API_KEY")));
             System.out.println(formatRow("Kafka:    " + (kafkaEnabled ? "on" : "off (ok no Render)")));
@@ -63,6 +63,19 @@ public class UnboraApiApplication {
             System.out.println("╚══════════════════════════════════════════════╝");
             System.out.println("");
         };
+    }
+
+    private static String databaseName(String jdbcUrl) {
+        int slash = jdbcUrl.lastIndexOf('/');
+        if (slash < 0 || slash == jdbcUrl.length() - 1) {
+            return "postgres";
+        }
+        String name = jdbcUrl.substring(slash + 1);
+        int query = name.indexOf('?');
+        if (query >= 0) {
+            name = name.substring(0, query);
+        }
+        return name.isBlank() ? "postgres" : name;
     }
 
     private static String formatRow(String text) {

@@ -1,6 +1,5 @@
--- RAG Semântico: pgvector + place_embeddings (Neon/PostgreSQL)
+-- RAG Semântico: pgvector + place_embeddings (PostgreSQL).
 -- Aplicado em runtime por DatabaseVectorInitializer (CREATE IF NOT EXISTS).
--- Pode também ser executado manualmente no SQL Editor do Neon.
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS place_embeddings (

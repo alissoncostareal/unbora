@@ -7,9 +7,9 @@
 ```
 unbora/
 ├── mobile/                 # App React Native (Expo)
-├── frontend/               # Portal admin web (Next.js)
+├── frontend/               # Site público (o mesmo serviço do app)
+├── admin/                  # Portal administrativo (Next.js)
 ├── backend/                # API Java 21 + Spring Boot 3.4
-├── backend-nest-backup/    # Backup do backend legado NestJS
 ├── .env                    # Secrets do backend (não versionar)
 └── README.md
 ```
@@ -19,7 +19,7 @@ unbora/
 ```
 ┌─────────────────┐     ┌─────────────────┐
 │  mobile/        │     │  frontend/      │
-│  React Native   │     │  React (Next)   │
+│  React Native   │     │  Site público   │
 └────────┬────────┘     └────────┬────────┘
          │                       │
          └───────────┬───────────┘
@@ -33,7 +33,8 @@ unbora/
 | Pasta | Stack | Função |
 |---|---|---|
 | `backend/` | **Java 21 + Spring Boot 3.4** | API única — IA, usuários, admin, OpenAPI Swagger |
-| `frontend/` | **React** (Next.js) | Portal administrativo web |
+| `frontend/` | **React** (Vite) | Site público — humor, busca e eventos |
+| `admin/` | **React** (Next.js) | Portal administrativo |
 | `mobile/` | **React Native** (Expo) | App iOS/Android |
 
 ## Como rodar tudo localmente
@@ -53,18 +54,29 @@ java -jar target/unbora-api-1.0.0.jar
 → Swagger UI: http://localhost:3001/swagger-ui.html  
 → OpenAPI Docs: http://localhost:3001/v3/api-docs
 
-### 2. Portal admin
+### 2. Site público
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env.local
+cp .env.example .env
 npm run dev
 ```
 
 → http://localhost:3000
 
-### 3. App mobile
+### 3. Portal admin
+
+```bash
+cd admin
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+→ http://localhost:3002
+
+### 4. App mobile
 
 ```bash
 cd mobile

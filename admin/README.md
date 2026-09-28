@@ -1,23 +1,19 @@
-# Unbora Frontend — Portal Admin (React)
+# Unbora Admin
 
 Portal administrativo em **React + Next.js + TypeScript**.
 
-Consome a mesma **API NestJS** do app mobile (`../backend/`).
+Consome a API Spring Boot (`../backend/`). O site público fica em `../frontend`.
 
 ## Como rodar
 
 ```bash
-# 1. Backend Nest
-cd ../backend && npm run start:dev
-
-# 2. Portal admin
-cd ../frontend
+cd admin
 npm install
 cp .env.example .env.local
 npm run dev
 ```
 
-→ http://localhost:3000
+→ http://localhost:3002
 
 ## Variáveis (.env.local)
 
