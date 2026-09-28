@@ -1,0 +1,158 @@
+#!/bin/bash
+# Publica o Unbora na VPS (k3s), no namespace unbora.
+# Reusa o Postgres e o Kafka do namespace data. Cria o banco `unbora` se ainda não existir.
+# Não altera o namespace partiumenu.
+set -euo pipefail
+
+LOCK=/root/unbora/deploy.lock
+exec 9>"$LOCK"
+if ! flock -w 1800 9; then
+  echo "Outro deploy do Unbora ainda está rodando."
+  exit 1
+fi
+
+REPO=/root/unbora/repo
+BRANCH=main
+LOG=/root/unbora/deploy.log
+mkdir -p /root/unbora
+
+exec > >(tee -a "$LOG") 2>&1
+echo "===== UNBORA DEPLOY $(date -u +%Y-%m-%dT%H:%M:%SZ) ====="
+
+if [ ! -d "$REPO/.git" ]; then
+  git clone --branch "$BRANCH" --depth 1 https://github.com/alissoncostareal/unbora.git "$REPO"
+fi
+
+cd "$REPO"
+git fetch --depth 1 origin "$BRANCH"
+git checkout "$BRANCH"
+git reset --hard "origin/$BRANCH"
+echo "COMMIT $(git rev-parse --short HEAD)"
+
+if [ ! -f backend/Dockerfile ]; then
+  echo "Falta backend/Dockerfile em origin/$BRANCH. Nada foi publicado."
+  exit 1
+fi
+
+decode_b64() {
+  if [ -z "${1:-}" ]; then
+    printf ''
+    return
+  fi
+  printf '%s' "$1" | base64 -d
+}
+
+kubectl apply -f k8s/vps/namespace.yaml
+
+# Credencial do Postgres que já serve o PartiuMenu. A senha não vai para o log.
+DB_USER=$(kubectl -n partiumenu get secret partiumenu-secrets -o jsonpath='{.data.DB_USERNAME}' | base64 -d)
+DB_PASS=$(kubectl -n partiumenu get secret partiumenu-secrets -o jsonpath='{.data.DB_PASSWORD}' | base64 -d)
+if [ -z "$DB_USER" ] || [ -z "$DB_PASS" ]; then
+  echo "Não achei DB_USERNAME/DB_PASSWORD em partiumenu/partiumenu-secrets."
+  exit 1
+fi
+
+kubectl -n unbora delete pod unbora-pg-init --ignore-not-found --wait=true >/dev/null
+kubectl -n unbora run unbora-pg-init --restart=Never --image=postgres:16-alpine \
+  --env "PGHOST=postgres.data.svc.cluster.local" \
+  --env "PGUSER=${DB_USER}" \
+  --env "PGPASSWORD=${DB_PASS}" \
+  --env "PGDATABASE=postgres" \
+  --command -- sh -ec "$(cat <<'EOS'
+if ! psql -tAc "SELECT 1 FROM pg_database WHERE datname = 'unbora'" | grep -qx 1; then
+  psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE unbora OWNER \"${PGUSER}\""
+fi
+psql -v ON_ERROR_STOP=1 -d unbora -c "CREATE EXTENSION IF NOT EXISTS vector;" || echo "AVISO: extensao vector indisponivel neste Postgres"
+EOS
+)"
+
+if ! kubectl -n unbora wait --for=jsonpath='{.status.phase}'=Succeeded pod/unbora-pg-init --timeout=180s; then
+  echo "Falha ao criar o banco unbora."
+  kubectl -n unbora logs pod/unbora-pg-init || true
+  kubectl -n unbora delete pod unbora-pg-init --ignore-not-found >/dev/null
+  exit 1
+fi
+kubectl -n unbora logs pod/unbora-pg-init
+kubectl -n unbora delete pod unbora-pg-init --ignore-not-found >/dev/null
+echo "Banco unbora pronto em postgres.data.svc.cluster.local."
+
+DATABASE_URL=$(DB_USER="$DB_USER" DB_PASS="$DB_PASS" python3 - <<'PY'
+import os
+from urllib.parse import quote
+user = quote(os.environ["DB_USER"], safe="")
+password = quote(os.environ["DB_PASS"], safe="")
+print(f"postgresql://{user}:{password}@postgres.data.svc.cluster.local:5432/unbora?sslmode=disable")
+PY
+)
+
+patch_secret() {
+  DATABASE_URL="$DATABASE_URL" \
+  GROQ_API_KEY="$(decode_b64 "${GROQ_API_KEY_B64:-}")" \
+  BRAVE_API_KEY="$(decode_b64 "${BRAVE_API_KEY_B64:-}")" \
+  GOOGLE_PLACES_API_KEY="$(decode_b64 "${GOOGLE_PLACES_API_KEY_B64:-}")" \
+  SUPERADMIN_EMAIL="$(decode_b64 "${SUPERADMIN_EMAIL_B64:-}")" \
+  SUPERADMIN_PASSWORD="$(decode_b64 "${SUPERADMIN_PASSWORD_B64:-}")" \
+  ADMIN_JWT_SECRET="$(decode_b64 "${ADMIN_JWT_SECRET_B64:-}")" \
+  python3 - <<'PY'
+import json, os, subprocess
+
+def nonempty(name):
+    value = os.environ.get(name, "")
+    return value if value else None
+
+data = {"DATABASE_URL": os.environ["DATABASE_URL"]}
+for key in (
+    "GROQ_API_KEY",
+    "BRAVE_API_KEY",
+    "GOOGLE_PLACES_API_KEY",
+    "SUPERADMIN_EMAIL",
+    "SUPERADMIN_PASSWORD",
+    "ADMIN_JWT_SECRET",
+):
+    value = nonempty(key)
+    if value:
+        data[key] = value
+
+patch = json.dumps({"stringData": data})
+exists = subprocess.run(
+    ["kubectl", "-n", "unbora", "get", "secret", "unbora-backend-secret"],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+).returncode == 0
+if not exists:
+    subprocess.run(
+        [
+            "kubectl", "-n", "unbora", "create", "secret", "generic", "unbora-backend-secret",
+            "--from-literal=DATABASE_URL=" + data["DATABASE_URL"],
+            "--from-literal=GROQ_API_KEY=" + data.get("GROQ_API_KEY", ""),
+            "--from-literal=BRAVE_API_KEY=" + data.get("BRAVE_API_KEY", ""),
+            "--from-literal=GOOGLE_PLACES_API_KEY=" + data.get("GOOGLE_PLACES_API_KEY", ""),
+            "--from-literal=SUPERADMIN_EMAIL=" + data.get("SUPERADMIN_EMAIL", "admin@unbora.com"),
+            "--from-literal=SUPERADMIN_PASSWORD=" + data.get("SUPERADMIN_PASSWORD", ""),
+            "--from-literal=ADMIN_JWT_SECRET=" + data.get("ADMIN_JWT_SECRET", ""),
+        ],
+        check=True,
+    )
+else:
+    subprocess.run(
+        ["kubectl", "-n", "unbora", "patch", "secret", "unbora-backend-secret", "--type", "merge", "-p", patch],
+        check=True,
+    )
+PY
+}
+
+patch_secret
+unset DB_PASS DATABASE_URL
+
+docker build -t unbora-api:latest -f backend/Dockerfile backend
+docker save unbora-api:latest | k3s ctr images import -
+
+kubectl apply -f k8s/vps/configmap.yaml
+kubectl apply -f k8s/vps/deployment.yaml
+kubectl apply -f k8s/vps/service.yaml
+kubectl apply -f k8s/vps/ingress.yaml
+
+kubectl -n unbora rollout restart deploy/unbora-backend
+kubectl -n unbora rollout status deploy/unbora-backend --timeout=300s
+echo "DEPLOY_OK $(git rev-parse --short HEAD)"
+echo "API https://unbora.173.212.242.9.nip.io/health"

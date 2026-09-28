@@ -83,12 +83,20 @@ Mobile (Expo) ──POST /users/sync──► Backend (Spring Boot 3.4) ◄─�
        └────── POST /api/recomendar ─────────┘
 ```
 
+## Deploy na VPS
+
+O push em `main` roda o CI e, se passar, publica a API no mesmo k3s do PartiuMenu (`173.212.242.9`), no namespace `unbora`. O banco `unbora` é criado no Postgres que já está no namespace `data`. O Kafka também é o do cluster.
+
+Na primeira vez, no repositório GitHub: Settings → Environments → `production` → adicione o secret `VPS_SSH_KEY` (a mesma chave da VPS). Chaves da API (`GROQ_API_KEY`, `BRAVE_API_KEY`, `GOOGLE_PLACES_API_KEY`, `ADMIN_JWT_SECRET`, `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD`) são opcionais nesse environment; quando existirem, o deploy grava no Secret do cluster sem imprimir o valor.
+
+API: https://unbora.173.212.242.9.nip.io/health
+
 ## Variáveis de ambiente (raiz `.env`)
 
 | Variável | Uso |
 |---|---|
 | `GROQ_API_KEY` | Chave da IA no Groq |
-| `DATABASE_URL` | String de conexão PostgreSQL (Neon / Supabase / Local) |
+| `DATABASE_URL` | PostgreSQL. Na VPS, banco `unbora` no Postgres do cluster |
 | `GOOGLE_PLACES_API_KEY` | Busca oficial de fotos de alta resolução dos locais e eventos |
 | `BRAVE_API_KEY` | Contexto de eventos e buscas web |
 | `SUPERADMIN_EMAIL` | E-mail do superadministrador |

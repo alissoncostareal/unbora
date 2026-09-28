@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: unbora-backend-config
+  namespace: unbora
+data:
+  PORT: "3001"
+  ALLOWED_ORIGIN: "*"
+  APP_PUBLIC_BASE_URL: "https://unbora.173.212.242.9.nip.io"
+  GROQ_MODEL: "qwen/qwen3.8-27b"
+  # Kafka que já roda no cluster (namespace data), o mesmo do PartiuMenu.
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka-service.data.svc.cluster.local:9092"
+  UNBORA_KAFKA_ENABLED: "true"
+  SUPERADMIN_NAME: "Super Admin"

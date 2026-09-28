@@ -1,0 +1,62 @@
+# Depois que o CI passa em main, entra na mesma VPS do PartiuMenu
+# e publica o Unbora no k3s, sem mexer no namespace partiumenu.
+#
+# GitHub → Settings → Environments → production → Secret:
+#   VPS_SSH_KEY — a mesma chave que entra como root em 173.212.242.9
+#
+# Opcionais (preenchem o Secret do cluster só quando estão definidos):
+#   GROQ_API_KEY, BRAVE_API_KEY, GOOGLE_PLACES_API_KEY,
+#   SUPERADMIN_EMAIL, SUPERADMIN_PASSWORD, ADMIN_JWT_SECRET
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-production:
+    name: Deploy production
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Deploy on VPS
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          SUPERADMIN_EMAIL: ${{ secrets.SUPERADMIN_EMAIL }}
+          SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
+          ADMIN_JWT_SECRET: ${{ secrets.ADMIN_JWT_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VPS_SSH_KEY:-}" ]; then
+            echo "::error::Secret VPS_SSH_KEY ausente no environment production."
+            exit 1
+          fi
+          b64() { printf '%s' "$1" | base64 | tr -d '\n'; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 173.212.242.9 >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes \
+            "root@173.212.242.9" \
+            "GROQ_API_KEY_B64='$(b64 "${GROQ_API_KEY:-}")' BRAVE_API_KEY_B64='$(b64 "${BRAVE_API_KEY:-}")' GOOGLE_PLACES_API_KEY_B64='$(b64 "${GOOGLE_PLACES_API_KEY:-}")' SUPERADMIN_EMAIL_B64='$(b64 "${SUPERADMIN_EMAIL:-}")' SUPERADMIN_PASSWORD_B64='$(b64 "${SUPERADMIN_PASSWORD:-}")' ADMIN_JWT_SECRET_B64='$(b64 "${ADMIN_JWT_SECRET:-}")' bash -s" \
+            < deploy/vps/deploy.sh
