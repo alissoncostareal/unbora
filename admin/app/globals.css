@@ -16,11 +16,11 @@
   --color-coral-dark: #7c2f1d;
   --color-coral-light: #faf2ee;
 
-  /* Sidebar */
-  --color-sidebar: #ffffff;
-  --color-sidebar-dark: #f6f2ec;
-  --color-sidebar-hover: rgba(28, 25, 23, 0.04);
-  --color-sidebar-muted: #746c64;
+  /* Dark Sidebar */
+  --color-sidebar: #141210;
+  --color-sidebar-dark: #0b0a09;
+  --color-sidebar-hover: rgba(255, 255, 255, 0.07);
+  --color-sidebar-muted: #8e857c;
 
   /* Surfaces & Backgrounds */
   --color-canvas: #fbf9f5;
@@ -79,11 +79,11 @@
   }
 
   .tabela-nav-item--active {
-    @apply bg-[#1c1917] text-[#fff8f5] shadow-xs font-semibold;
+    @apply bg-[#9a4632] text-white shadow-xs font-semibold;
   }
 
   .tabela-nav-item--idle {
-    @apply text-[#55433e] hover:bg-sidebar-hover hover:text-[#1c1917];
+    @apply text-[#c9bfb5] hover:bg-white/10 hover:text-white;
   }
 
   .tabela-pill {
