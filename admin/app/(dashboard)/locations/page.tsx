@@ -7,6 +7,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { CheckboxField, Field, inputClassName } from '@/components/ui/Field';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Panel } from '@/components/ui/Panel';
 import {
   deleteCityLocationLimit,
@@ -33,6 +34,8 @@ export default function LocationsPage() {
   const [cityActive, setCityActive] = useState(true);
   const [citySaving, setCitySaving] = useState(false);
   const [cityError, setCityError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; cityName: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,13 +95,18 @@ export default function LocationsPage() {
     }
   }
 
-  async function handleDeleteCity(id: string) {
-    if (!confirm('Deseja remover este limite customizado? A cidade voltará a usar o padrão global.')) return;
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setError(null);
     try {
-      const updated = await deleteCityLocationLimit(id);
+      const updated = await deleteCityLocationLimit(deleteTarget.id);
       setSettings(updated);
+      setDeleteTarget(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao remover limite da cidade');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -244,7 +252,7 @@ export default function LocationsPage() {
                         </Button>
                         <Button
                           variant="danger"
-                          onClick={() => handleDeleteCity(item.id)}
+                          onClick={() => setDeleteTarget({ id: item.id, cityName: item.cityName })}
                           className="h-8 px-2.5 text-[11px]"
                         >
                           Excluir
@@ -416,6 +424,21 @@ export default function LocationsPage() {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Remover Limite Customizado"
+        description={
+          <>
+            Deseja remover o limite customizado para <strong>&ldquo;{deleteTarget?.cityName}&rdquo;</strong>?
+            A cidade voltará a utilizar o padrão global de <strong>{globalMax}</strong> resultados.
+          </>
+        }
+        confirmLabel="Remover Regra"
+        isLoading={deleting}
+      />
     </>
   );
 }

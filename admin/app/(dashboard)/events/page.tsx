@@ -14,6 +14,7 @@ import {
   DataTableLoading,
   DataTableRow,
 } from '@/components/ui/DataTable';
+import { Field, textareaClassName } from '@/components/ui/Field';
 import { Panel } from '@/components/ui/Panel';
 import {
   approveEvent,
@@ -55,6 +56,9 @@ export default function EventsAdminPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<{ id: string; title: string } | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
   const session = getClientSession();
   const canManage = can(session?.role, 'manageEvents');
 
@@ -96,21 +100,21 @@ export default function EventsAdminPage() {
     }
   }
 
-  async function onReject(id: string, title: string) {
-    if (!canManage) return;
-    const reason = window.prompt(`Informe o motivo da recusa para "${title}" (opcional):`);
-    if (reason === null) return;
-    setActingId(id);
+  async function handleConfirmReject() {
+    if (!canManage || !rejectTarget) return;
+    setRejecting(true);
     setError(null);
     setSuccess(null);
     try {
-      await rejectEvent(id, reason);
-      setSuccess(`Evento "${title}" recusado.`);
+      await rejectEvent(rejectTarget.id, rejectReason.trim() || undefined);
+      setSuccess(`Evento "${rejectTarget.title}" recusado.`);
+      setRejectTarget(null);
+      setRejectReason('');
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao recusar evento.');
     } finally {
-      setActingId(null);
+      setRejecting(false);
     }
   }
 
@@ -232,7 +236,10 @@ export default function EventsAdminPage() {
                           variant="danger"
                           className="px-3 py-1.5 text-[11px]"
                           disabled={actingId === item.id}
-                          onClick={() => void onReject(item.id, item.title)}
+                          onClick={() => {
+                            setRejectTarget({ id: item.id, title: item.title });
+                            setRejectReason('');
+                          }}
                         >
                           Recusar
                         </Button>
@@ -245,6 +252,58 @@ export default function EventsAdminPage() {
           </DataTable>
         )}
       </Panel>
+
+      {/* Reject Event Modal */}
+      {rejectTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-2xl border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-base font-bold text-[#1c1917]">
+              Recusar Evento: {rejectTarget.title}
+            </h3>
+            <p className="mt-1 text-xs text-[#73685e]">
+              O evento não será publicado no aplicativo. Você pode informar uma justificativa para o proponente.
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleConfirmReject();
+              }}
+              className="mt-4 space-y-4"
+            >
+              <Field label="Motivo da Recusa (opcional)" hint="Exibido para moderação">
+                <textarea
+                  className={textareaClassName}
+                  rows={3}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Ex: Informações insuficientes, evento cancelado, duplicado..."
+                />
+              </Field>
+
+              <div className="flex items-center justify-end gap-2.5 border-t border-[#f0eae1] pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setRejectTarget(null)}
+                  disabled={rejecting}
+                  className="px-4 py-2 text-xs"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  variant="danger"
+                  disabled={rejecting}
+                  className="px-4 py-2 text-xs"
+                >
+                  {rejecting ? 'Recusando…' : 'Confirmar Recusa'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

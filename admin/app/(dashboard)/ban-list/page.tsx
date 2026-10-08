@@ -7,6 +7,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Field, inputClassName, textareaClassName } from '@/components/ui/Field';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Panel } from '@/components/ui/Panel';
 import {
   DataTable,
@@ -42,7 +43,8 @@ export default function BanListPage() {
   const [city, setCity] = useState('');
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -87,21 +89,20 @@ export default function BanListPage() {
     }
   }
 
-  async function onRemove(id: string, placeName: string) {
-    if (!confirm(`Deseja remover "${placeName}" da ban list? O lugar voltará a aparecer nas buscas.`)) {
-      return;
-    }
-    setDeletingId(id);
+  async function handleConfirmRemove() {
+    if (!deleteTarget) return;
+    setDeleting(true);
     setError(null);
     setSuccess(null);
     try {
-      await deletePlaceBan(id);
-      setItems((current) => current.filter((item) => item.id !== id));
-      setSuccess(`"${placeName}" removido da ban list.`);
+      await deletePlaceBan(deleteTarget.id);
+      setItems((current) => current.filter((item) => item.id !== deleteTarget.id));
+      setSuccess(`"${deleteTarget.name}" removido da ban list com sucesso.`);
+      setDeleteTarget(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao remover lugar da ban list.');
     } finally {
-      setDeletingId(null);
+      setDeleting(false);
     }
   }
 
@@ -246,10 +247,9 @@ export default function BanListPage() {
                         <Button
                           variant="danger"
                           className="px-2.5 py-1 text-[11px]"
-                          disabled={deletingId === item.id}
-                          onClick={() => void onRemove(item.id, item.name)}
+                          onClick={() => setDeleteTarget({ id: item.id, name: item.name })}
                         >
-                          {deletingId === item.id ? 'Removendo…' : 'Desbloquear'}
+                          Desbloquear
                         </Button>
                       </DataTableCell>
                     </DataTableRow>
@@ -260,6 +260,22 @@ export default function BanListPage() {
           </Panel>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmRemove}
+        title="Remover Lugar da Ban List"
+        description={
+          <>
+            Deseja desbloquear e remover <strong>&ldquo;{deleteTarget?.name}&rdquo;</strong> da ban list?
+            O local voltará a ser elegível para recomendações da IA e buscas no aplicativo.
+          </>
+        }
+        confirmLabel="Desbloquear Lugar"
+        variant="coral"
+        isLoading={deleting}
+      />
     </>
   );
 }

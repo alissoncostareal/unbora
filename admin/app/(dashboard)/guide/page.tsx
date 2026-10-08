@@ -7,6 +7,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Field, inputClassName } from '@/components/ui/Field';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Panel } from '@/components/ui/Panel';
 import {
   createGuideOption,
@@ -145,6 +146,8 @@ function OptionSection({
   const [value, setValue] = useState('');
   const [extra, setExtra] = useState('');
   const [busy, setBusy] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<GuideOptionItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function add(event: FormEvent) {
     event.preventDefault();
@@ -177,12 +180,16 @@ function OptionSection({
     }
   }
 
-  async function remove(id: string) {
-    if (!confirm('Deseja realmente remover esta opção?')) return;
+  async function handleConfirmRemove() {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      onChange(await deleteGuideOption(id));
+      onChange(await deleteGuideOption(deleteTarget.id));
+      setDeleteTarget(null);
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Não foi possível remover a opção.');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -223,7 +230,7 @@ function OptionSection({
                   <Button
                     variant="danger"
                     className="px-3 py-1.5 text-[11px]"
-                    onClick={() => void remove(item.id)}
+                    onClick={() => setDeleteTarget(item)}
                   >
                     Excluir
                   </Button>
@@ -274,6 +281,21 @@ function OptionSection({
           </div>
         </form>
       </div>
+
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmRemove}
+        title="Excluir Opção do Formulário"
+        description={
+          <>
+            Deseja realmente excluir a opção <strong>&ldquo;{deleteTarget?.label}&rdquo;</strong> de {title.split('(')[0].trim()}?
+            Ela deixará de aparecer nas opções de busca para os usuários.
+          </>
+        }
+        confirmLabel="Excluir Opção"
+        isLoading={deleting}
+      />
     </Panel>
   );
 }

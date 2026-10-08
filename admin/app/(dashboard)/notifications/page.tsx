@@ -7,6 +7,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Field, inputClassName, textareaClassName } from '@/components/ui/Field';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Panel } from '@/components/ui/Panel';
 import {
   DataTable,
@@ -39,7 +40,8 @@ export default function NotificationsPage() {
   const [region, setRegion] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -85,19 +87,20 @@ export default function NotificationsPage() {
     }
   }
 
-  async function remove(id: string) {
-    if (!confirm('Deseja excluir este aviso? Ele deixará de aparecer para os usuários.')) return;
-    setDeletingId(id);
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
     setError(null);
     setSuccess(null);
     try {
-      await deleteNotification(id);
-      setItems((current) => current.filter((item) => item.id !== id));
-      setSuccess('Aviso removido com sucesso.');
+      await deleteNotification(deleteTarget.id);
+      setItems((current) => current.filter((item) => item.id !== deleteTarget.id));
+      setSuccess(`Aviso "${deleteTarget.title}" removido com sucesso.`);
+      setDeleteTarget(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível apagar o aviso.');
     } finally {
-      setDeletingId(null);
+      setDeleting(false);
     }
   }
 
@@ -213,10 +216,9 @@ export default function NotificationsPage() {
                         <Button
                           variant="danger"
                           className="px-2.5 py-1 text-[11px]"
-                          disabled={deletingId === item.id}
-                          onClick={() => void remove(item.id)}
+                          onClick={() => setDeleteTarget({ id: item.id, title: item.title })}
                         >
-                          {deletingId === item.id ? 'Excluindo…' : 'Excluir'}
+                          Excluir
                         </Button>
                       </DataTableCell>
                     </DataTableRow>
@@ -227,6 +229,21 @@ export default function NotificationsPage() {
           </Panel>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Notificação / Transmissão"
+        description={
+          <>
+            Tem certeza que deseja excluir o aviso <strong>&ldquo;{deleteTarget?.title}&rdquo;</strong>?
+            Ele deixará de aparecer na central de notificações dos usuários no site e app.
+          </>
+        }
+        confirmLabel="Excluir Notificação"
+        isLoading={deleting}
+      />
     </>
   );
 }

@@ -15,6 +15,7 @@ import {
   DataTableRow,
 } from '@/components/ui/DataTable';
 import { CheckboxField, Field, inputClassName } from '@/components/ui/Field';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Panel } from '@/components/ui/Panel';
 import {
   createCarousel,
@@ -48,7 +49,8 @@ export default function CarouselsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const session = getClientSession();
   const canManage = can(session?.role, 'manageEvents');
 
@@ -115,19 +117,20 @@ export default function CarouselsPage() {
     }
   }
 
-  async function onDelete(id: string, title: string) {
-    if (!confirm(`Remover o destaque "${title}"?`)) return;
-    setDeletingId(id);
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
     setError(null);
     setSuccess(null);
     try {
-      await deleteCarousel(id);
-      setSuccess('Destaque removido.');
+      await deleteCarousel(deleteTarget.id);
+      setSuccess(`Destaque "${deleteTarget.title}" removido com sucesso.`);
+      setDeleteTarget(null);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao remover destaque');
     } finally {
-      setDeletingId(null);
+      setDeleting(false);
     }
   }
 
@@ -342,10 +345,9 @@ export default function CarouselsPage() {
                       <Button
                         variant="danger"
                         className="px-2.5 py-1 text-[11px]"
-                        disabled={deletingId === item.id}
-                        onClick={() => void onDelete(item.id, item.title)}
+                        onClick={() => setDeleteTarget({ id: item.id, title: item.title })}
                       >
-                        {deletingId === item.id ? 'Removendo…' : 'Remover'}
+                        Remover
                       </Button>
                     </DataTableCell>
                   ) : null}
@@ -355,6 +357,21 @@ export default function CarouselsPage() {
           </DataTable>
         )}
       </Panel>
+
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Remover Destaque / Anúncio"
+        description={
+          <>
+            Tem certeza que deseja remover o destaque <strong>&ldquo;{deleteTarget?.title}&rdquo;</strong>?
+            Ele deixará de ser exibido nos carrosséis do aplicativo.
+          </>
+        }
+        confirmLabel="Remover Destaque"
+        isLoading={deleting}
+      />
     </>
   );
 }
