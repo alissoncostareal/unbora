@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 
 import { PageHeader } from '@/components/PageHeader';
+import { CitySearchInput } from '@/components/CitySearchInput';
 import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -145,11 +146,10 @@ export default function NotificationsPage() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Cidade" hint="Vazio = Todas">
-                  <input
-                    className={inputClassName}
+                  <CitySearchInput
                     value={city}
                     placeholder="Todas as cidades"
-                    onChange={(event) => setCity(event.target.value)}
+                    onChange={(val) => setCity(val)}
                   />
                 </Field>
                 <Field label="Região" hint="Vazio = Todas">

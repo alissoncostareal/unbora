@@ -12,6 +12,7 @@ import type {
   PortalUser,
   PublicUser,
   UserStats,
+  CitySuggestion,
 } from '@/lib/types';
 
 export type {
@@ -30,6 +31,7 @@ export type {
   PublicUser,
   UserStats,
   RegionCatalog,
+  CitySuggestion,
 } from '@/lib/types';
 
 const API_BASE_URL =
@@ -291,4 +293,16 @@ export function rejectEvent(id: string, reason?: string, token?: string) {
   );
 }
 
+export async function suggestCities(query: string, token?: string): Promise<CitySuggestion[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  try {
+    const data = await fetchJson<CitySuggestion[]>(`/locations/suggest?q=${encodeURIComponent(q)}`, undefined, token);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
 export { API_BASE_URL };
+

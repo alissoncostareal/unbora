@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { PageHeader } from '@/components/PageHeader';
+import { CitySearchInput } from '@/components/CitySearchInput';
 import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -156,11 +157,10 @@ export default function BanListPage() {
               </Field>
 
               <Field label="Cidade" hint="Opcional">
-                <input
-                  className={inputClassName}
+                <CitySearchInput
                   value={city}
-                  onChange={(event) => setCity(event.target.value)}
-                  placeholder="Ex: Fortaleza, Sobral..."
+                  onChange={(val) => setCity(val)}
+                  placeholder="Ex: Fortaleza, Sobral, Tóquio..."
                 />
               </Field>
 

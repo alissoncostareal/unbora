@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { PageHeader } from '@/components/PageHeader';
+import { CitySearchInput } from '@/components/CitySearchInput';
 import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -299,14 +300,13 @@ export default function LocationsPage() {
             {cityError ? <Alert variant="error" className="mt-4">{cityError}</Alert> : null}
 
             <form onSubmit={handleSaveCity} className="mt-5 space-y-4">
-              <Field label="Nome da Cidade" hint="Ex: Tóquio, São Paulo, Fortaleza, Rio de Janeiro">
-                <input
-                  type="text"
+              <Field label="Nome da Cidade (Google Maps)" hint="Digite para buscar sugestões oficiais (ex: Tóquio, São Paulo, Paris)">
+                <CitySearchInput
                   required
-                  placeholder="Nome da Cidade"
                   value={cityName}
-                  onChange={(e) => setCityName(e.target.value)}
-                  className={inputClassName}
+                  placeholder="Buscar cidade no Google Maps..."
+                  onChange={(name) => setCityName(name)}
+                  autoFocus
                 />
               </Field>
 

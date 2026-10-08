@@ -134,3 +134,13 @@ export interface CommunityEventItem {
   rejectionReason?: string | null;
 }
 
+export interface CitySuggestion {
+  city: string;
+  region: string;
+  country: string;
+  label: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+
