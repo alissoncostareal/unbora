@@ -620,7 +620,7 @@ public class RecommendationsService {
         return result;
     }
 
-    /** Lugares físicos: só Google Maps. Descarta Unsplash/tema da IA. */
+    /** Lugares físicos: busca Google Maps e usa fallback temático se não houver foto no Maps. */
     private void applyMapsPhoto(
             PlaceDto place,
             GooglePlacesDiscoveryService.DiscoveredPlace matched,
@@ -630,8 +630,6 @@ public class RecommendationsService {
             Double longitude,
             ImageEnrichmentService.BatchSession batch
     ) {
-        place.setImagemIlustrativa(false);
-
         String mapsPhoto = null;
         if (matched != null && matched.photoUrl() != null && !matched.photoUrl().isBlank()) {
             batch.claim(matched.photoUrl());
@@ -657,8 +655,15 @@ public class RecommendationsService {
             }
         }
 
-        place.setImagem(mapsPhoto);
-        place.setImagemIlustrativa(false);
+        if (mapsPhoto != null && !mapsPhoto.isBlank()) {
+            place.setImagem(mapsPhoto);
+            place.setImagemIlustrativa(false);
+        } else {
+            String category = place.getCategoryTag() != null ? place.getCategoryTag() : place.getTipo();
+            String fallback = imageEnrichmentService.getCuratedFallback(category, place.getNome(), batch);
+            place.setImagem(fallback);
+            place.setImagemIlustrativa(true);
+        }
     }
 
     private static boolean isGoogleMapsPhotoUrl(String url) {
@@ -682,10 +687,11 @@ public class RecommendationsService {
                 : new ArrayList<>();
         if (livePlaces != null) {
             for (PlaceDto place : current) {
-                if (hasPhoto(place)) continue;
+                if (hasRealPhoto(place)) continue;
                 for (GooglePlacesDiscoveryService.DiscoveredPlace live : livePlaces) {
                     if (live.photoUrl() == null || live.photoUrl().isBlank() || !samePlace(place, live)) continue;
                     place.setImagem(live.photoUrl());
+                    place.setImagemIlustrativa(false);
                     if (place.getPlaceId() == null || place.getPlaceId().isBlank()) place.setPlaceId(live.placeId());
                     if (place.getGoogleMapsUri() == null || place.getGoogleMapsUri().isBlank()) {
                         place.setGoogleMapsUri(live.googleMapsUri());
@@ -705,8 +711,15 @@ public class RecommendationsService {
                 if (!present) current.add(toPlaceDto(live, current.isEmpty()));
             }
         }
-        current.sort((left, right) -> Boolean.compare(hasPhoto(right), hasPhoto(left)));
+        current.sort((left, right) -> Boolean.compare(hasRealPhoto(right), hasRealPhoto(left)));
         if (current.size() > 24) current = new ArrayList<>(current.subList(0, 24));
+        for (PlaceDto p : current) {
+            if (p.getImagem() == null || p.getImagem().isBlank()) {
+                String cat = p.getCategoryTag() != null ? p.getCategoryTag() : p.getTipo();
+                p.setImagem(imageEnrichmentService.getCuratedFallback(cat, p.getNome()));
+                p.setImagemIlustrativa(true);
+            }
+        }
         result.setLugares(current);
     }
 
@@ -718,8 +731,8 @@ public class RecommendationsService {
         return imageEnrichmentService.calculateNameSimilarity(place.getNome(), live.displayName()) >= 0.45;
     }
 
-    private static boolean hasPhoto(PlaceDto place) {
-        return place.getImagem() != null && !place.getImagem().isBlank();
+    private static boolean hasRealPhoto(PlaceDto place) {
+        return place.getImagem() != null && !place.getImagem().isBlank() && !Boolean.TRUE.equals(place.getImagemIlustrativa());
     }
 
     /** Completa lugares ainda sem foto do Maps (ex.: anexados depois do enrich). */
@@ -914,7 +927,14 @@ public class RecommendationsService {
                 ? p.editorialSummary()
                 : "Opção real encontrada no Google Maps.");
         place.setDestaque(destaque);
-        place.setImagem(p.photoUrl());
+        if (p.photoUrl() != null && !p.photoUrl().isBlank()) {
+            place.setImagem(p.photoUrl());
+            place.setImagemIlustrativa(false);
+        } else {
+            String category = categoryForPlaceType(p.primaryType());
+            place.setImagem(imageEnrichmentService.getCuratedFallback(category, p.displayName()));
+            place.setImagemIlustrativa(true);
+        }
         place.setVisualQuery(p.displayName());
         place.setCategoryTag(categoryForPlaceType(p.primaryType()));
         place.setGoogleMapsUri(p.googleMapsUri());

@@ -30,6 +30,7 @@ function recommendFromQuery(spec: ReturnType<typeof readResultQuery>, userId?: s
 }
 
 function readJson<T>(key: string): T | null {
+  if (typeof window === 'undefined') return null;
   const raw = sessionStorage.getItem(key);
   if (!raw) return null;
   try {
@@ -79,12 +80,13 @@ function fitsInterest(place: Place, journey: JourneyChoice | null) {
   return journey.interests.some((label) => {
     const key = label.toLocaleLowerCase('pt-BR');
     if (key.startsWith('caf')) return /caf[eé]|coffee|brunch|padaria/.test(hay);
-    if (key === 'natureza') return /parque|natureza|trilha|jardim|praia|verde|mirante/.test(hay);
-    if (key === 'gastronomia') return /restaurante|bistr|comida|gastro/.test(hay);
+    if (key === 'natureza') return /parque|natureza|trilha|jardim|praia|verde|mirante|parques/.test(hay);
+    if (key === 'gastronomia') return /restaurante|bistr|comida|gastro|culinária|bar/.test(hay);
     if (key === 'música') return /música|musica|show|bar|pub/.test(hay);
     if (key === 'cinema') return /cinema|filme/.test(hay);
     if (key === 'praia') return /praia|orla|beach/.test(hay);
-    if (key === 'games') return /game|jogo|fliper/.test(hay);
+    if (key === 'games') return /game|jogo|fliper|arcade|diversão/.test(hay);
+    if (key === 'cultura') return /museu|cultura|arte|teatro|exposição|histórico|templo/.test(hay);
     return hay.includes(key);
   });
 }
@@ -144,13 +146,20 @@ function mapEmbed(place: Place) {
 export function ResultPage() {
   const { user } = useAuth();
   const [params] = useSearchParams();
-  const [result, setResult] = useState<Recommendation | null>(null);
-  const [journey, setJourney] = useState<JourneyChoice | null>(null);
+  const queryKey = params.toString();
+
+  const cachedResult = useMemo(() => readJson<Recommendation>('unbora-result'), []);
+  const cachedKey = typeof window !== 'undefined' ? sessionStorage.getItem('unbora-result-key') : null;
+  const isCacheValid = cachedResult != null && cachedKey === queryKey;
+
+  const [result, setResult] = useState<Recommendation | null>(isCacheValid ? cachedResult : null);
+  const [journey, setJourney] = useState<JourneyChoice | null>(isCacheValid ? readJson<JourneyChoice>(JOURNEY_KEY) : null);
   const [hidden, setHidden] = useState<string[]>([]);
   const [failed, setFailed] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  const hasQuery = Boolean(params.get('city') || params.get('q') || params.get('mood'));
+  const [loading, setLoading] = useState<boolean>(!isCacheValid && hasQuery);
   const [notice, setNotice] = useState('');
-  const queryKey = params.toString();
 
   useEffect(() => {
     let cancelled = false;
@@ -160,6 +169,7 @@ export function ResultPage() {
       const cached = readJson<Recommendation>('unbora-result');
       const cachedJourney = readJson<JourneyChoice>(JOURNEY_KEY);
       const cachedKey = sessionStorage.getItem('unbora-result-key');
+
       if (cached && cachedKey === queryKey) {
         setResult(cached);
         setJourney(cachedJourney ?? journeyFromQuery(spec));
@@ -167,10 +177,12 @@ export function ResultPage() {
         setLoading(false);
         return;
       }
+
       if (!spec.city && !spec.query) {
         setResult(cached);
         setJourney(cachedJourney);
         setFailed(Boolean(sessionStorage.getItem('unbora-search-error')));
+        setLoading(false);
         return;
       }
 
@@ -179,6 +191,7 @@ export function ResultPage() {
       const request = spec.query
         ? searchPlaces(spec.query, spec, user?.id)
         : recommendFromQuery(spec, user?.id);
+
       request.then((next) => {
         if (cancelled || !next) return;
         sessionStorage.setItem('unbora-result', JSON.stringify(next));
@@ -193,6 +206,7 @@ export function ResultPage() {
         if (!cancelled) setLoading(false);
       });
     });
+
     return () => {
       cancelled = true;
     };
@@ -271,9 +285,14 @@ export function ResultPage() {
   }
 
   if (loading) {
+    const targetCity = params.get('city') || 'sua cidade';
     return (
       <main className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-lg flex-col justify-center px-6">
-        <h1 className="text-4xl font-light tracking-tight">Procurando em {params.get('city') || 'sua cidade'}.</h1>
+        <h1 className="text-4xl font-light tracking-tight">Procurando em {targetCity}.</h1>
+        <p className="mt-3 text-sm text-muted">Consultando mapas e curadoria em tempo real…</p>
+        <div className="mt-6 h-1 w-28 overflow-hidden rounded bg-ink/10">
+          <div className="seek h-full w-14 bg-ink" />
+        </div>
       </main>
     );
   }
