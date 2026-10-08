@@ -35,6 +35,24 @@ export function PlaceCard({
         {score != null ? <p className="text-sm font-semibold text-coral">{score}% combina com você</p> : null}
         <h2 className="mt-1 text-3xl font-light tracking-tight text-[#1c1917]">{place.name}</h2>
         {meta ? <p className="mt-2 text-sm text-muted">{meta}</p> : null}
+        {place.address ? (
+          <p className="mt-2 flex items-start gap-1.5 text-sm text-[#6b625b]">
+            <svg
+              className="mt-0.5 size-4 shrink-0 text-[#9a4632]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            <span className="leading-snug">{place.address}</span>
+          </p>
+        ) : null}
         {reason ? (
           <div className="mt-5 max-w-md">
             <p className="text-xs tracking-[0.16em] text-muted uppercase font-medium">Por que escolhemos isso</p>
