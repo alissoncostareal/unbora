@@ -134,4 +134,4 @@ kubectl apply -f k8s/vps/ingress.yaml
 kubectl -n unbora rollout restart deploy/unbora-backend
 kubectl -n unbora rollout status deploy/unbora-backend --timeout=300s
 echo "DEPLOY_OK $(git rev-parse --short HEAD)"
-echo "API https://unbora.173.212.242.9.sslip.io/health"
+echo "API https://unbora.com.br/health"

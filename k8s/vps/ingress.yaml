@@ -6,7 +6,17 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: unbora.173.212.242.9.sslip.io
+    - host: unbora.com.br
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: unbora-backend-service
+                port:
+                  number: 3001
+    - host: www.unbora.com.br
       http:
         paths:
           - path: /
