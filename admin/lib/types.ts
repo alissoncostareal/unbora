@@ -30,6 +30,19 @@ export interface LocationsResponse {
   regions: RegionCatalog[];
 }
 
+export interface CityLimitItem {
+  id: string;
+  cityName: string;
+  maxResults: number;
+  active: boolean;
+  updatedAt?: string;
+}
+
+export interface LocationSettingsResponse {
+  defaultMaxResults: number;
+  cityLimits: CityLimitItem[];
+}
+
 export interface CarouselItem {
   id: string;
   title: string;

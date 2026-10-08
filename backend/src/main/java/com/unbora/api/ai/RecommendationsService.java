@@ -25,6 +25,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.unbora.api.domain.location.LocationSettingsService;
+
 @Service
 public class RecommendationsService {
 
@@ -42,6 +44,7 @@ public class RecommendationsService {
     private final CityAnchor cityAnchor;
     private final DismissedPlaceRepository dismissedPlaceRepository;
     private final PlaceBanService placeBanService;
+    private final LocationSettingsService locationSettingsService;
     private final ExecutorService vectorIndexExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "place-vector-index");
         thread.setDaemon(true);
@@ -60,7 +63,8 @@ public class RecommendationsService {
             PlacePhotoLinkService placePhotoLinkService,
             CityAnchor cityAnchor,
             DismissedPlaceRepository dismissedPlaceRepository,
-            PlaceBanService placeBanService
+            PlaceBanService placeBanService,
+            LocationSettingsService locationSettingsService
     ) {
         this.groqClient = groqClient;
         this.imageEnrichmentService = imageEnrichmentService;
@@ -74,6 +78,7 @@ public class RecommendationsService {
         this.cityAnchor = cityAnchor;
         this.dismissedPlaceRepository = dismissedPlaceRepository;
         this.placeBanService = placeBanService;
+        this.locationSettingsService = locationSettingsService;
     }
 
     public RecommendationResult recommend(RecommendDto dto) {
@@ -87,6 +92,8 @@ public class RecommendationsService {
         String humor = InputSanitizer.sanitizeForPrompt(dto.humor(), 100);
         String sentir = InputSanitizer.sanitizeForPrompt(dto.sentir(), 500);
         String userId = InputSanitizer.sanitizePlaceId(dto.userId(), 100);
+
+        int maxResults = locationSettingsService != null ? locationSettingsService.getEffectiveMaxResults(city) : 24;
 
         Double radiusKm = dto.radiusKm() != null ? Math.min(Math.max(dto.radiusKm(), 1.0), 100.0) : 8.0;
         CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
@@ -117,6 +124,26 @@ public class RecommendationsService {
                     placeMap.putIfAbsent(key, p);
                 }
             }
+
+            // Se o limite de resultados configurado for maior (ex: 30, 40) e ainda tivermos poucos candidatos, busca buscas complementares
+            if (placeMap.size() < maxResults) {
+                List<String> supplementary = List.of(
+                        "lugares e experiências em " + city,
+                        "pontos turísticos e lazer em " + city,
+                        "gastronomia e passeios em " + city
+                );
+                for (String q : supplementary) {
+                    if (placeMap.size() >= maxResults + 10) break;
+                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found =
+                            googlePlacesDiscoveryService.searchPlaces(q, lat, lng, radiusKm, city, country, 20);
+                    for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
+                        String key = p.placeId() != null && !p.placeId().isBlank()
+                                ? p.placeId()
+                                : imageEnrichmentService.normalizeText(p.displayName());
+                        placeMap.putIfAbsent(key, p);
+                    }
+                }
+            }
         }
 
         keepInCity(placeMap, center, radiusKm, city, dismissed, dto.activities(), budgetReais);
@@ -131,7 +158,7 @@ public class RecommendationsService {
             groundingContext.append("\n=== CANDIDATOS VIVOS DO GOOGLE MAPS (Use preferencialmente estes) ===\n");
             int count = 0;
             for (GooglePlacesDiscoveryService.DiscoveredPlace p : livePlaces) {
-                if (count++ >= 24) break;
+                if (count++ >= maxResults) break;
                 groundingContext.append("- Nome: ").append(p.displayName())
                         .append(" | Endereço: ").append(p.formattedAddress())
                         .append(" | Nota: ").append(p.rating() != null ? p.rating() : 4.7)
@@ -175,7 +202,7 @@ public class RecommendationsService {
                     userPrompt,
                     RecommendationResult.class,
                     0.3,
-                    hasLive ? 1200 : 3500,
+                    hasLive ? Math.max(1200, maxResults * 75) : 3500,
                     hasLive ? Duration.ofSeconds(12) : Duration.ofSeconds(40),
                     hasLive ? 1 : Integer.MAX_VALUE
             );
@@ -184,21 +211,23 @@ public class RecommendationsService {
             result = recommendationFromLivePlaces(
                     "Sugestões para o seu humor",
                     "Lista completa em " + city,
-                    livePlaces
+                    livePlaces,
+                    maxResults
             );
         }
         if (result == null || result.getLugares() == null || result.getLugares().isEmpty()) {
             result = recommendationFromLivePlaces(
                     "Sugestões para o seu humor",
                     "Lista completa em " + city,
-                    livePlaces
+                    livePlaces,
+                    maxResults
             );
         }
         RecommendationResult enriched = enrichPlaces(result, city, country, lat, lng, livePlaces);
-        enriched = appendMissingLivePlaces(enriched, livePlaces, city);
+        enriched = appendMissingLivePlaces(enriched, livePlaces, city, maxResults);
         retainInCity(enriched, center, radiusKm, city, dismissed, dto.activities(), budgetReais);
         fillMissingMapsPhotos(enriched, city, lat, lng);
-        ensurePhotographedPlaces(enriched, livePlaces);
+        ensurePhotographedPlaces(enriched, livePlaces, maxResults);
 
         String topPlace = enriched.getLugares() != null && !enriched.getLugares().isEmpty()
                 ? enriched.getLugares().get(0).getNome()
@@ -231,6 +260,8 @@ public class RecommendationsService {
 
         String region = InputSanitizer.sanitizeCityOrCountry(dto.region(), 100);
         String userId = InputSanitizer.sanitizePlaceId(dto.userId(), 100);
+
+        int maxResults = locationSettingsService != null ? locationSettingsService.getEffectiveMaxResults(city) : 24;
 
         CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
         Double lat = center != null ? center.latitude() : dto.latitude();
@@ -270,7 +301,7 @@ public class RecommendationsService {
             groundingContext.append("\n=== CANDIDATOS VIVOS DO GOOGLE MAPS ===\n");
             int count = 0;
             for (GooglePlacesDiscoveryService.DiscoveredPlace p : livePlaces) {
-                if (count++ >= 8) break;
+                if (count++ >= Math.min(maxResults, 24)) break;
                 groundingContext.append("- ").append(p.displayName()).append(" (").append(p.formattedAddress()).append(")")
                         .append(" | Nota: ").append(p.rating() != null ? p.rating() : 4.7)
                         .append(" | Avaliações: ").append(p.userRatingCount() != null ? p.userRatingCount() : 0)
@@ -292,14 +323,13 @@ public class RecommendationsService {
 
         RecommendationResult result;
         try {
-            // Com lugares reais, um modelo e orçamento curto. A cadeia completa estoura o timeout do app.
             boolean hasLive = !livePlaces.isEmpty();
             result = groqClient.callGroqJson(
                     systemPrompt,
                     userPrompt,
                     RecommendationResult.class,
                     0.3,
-                    hasLive ? 1200 : 3500,
+                    hasLive ? Math.max(1200, maxResults * 75) : 3500,
                     hasLive ? Duration.ofSeconds(12) : Duration.ofSeconds(40),
                     hasLive ? 1 : Integer.MAX_VALUE
             );
@@ -308,21 +338,23 @@ public class RecommendationsService {
             result = recommendationFromLivePlaces(
                     "Busca: " + dto.query(),
                     "Lista completa em " + city,
-                    livePlaces
+                    livePlaces,
+                    maxResults
             );
         }
         if (result == null || result.getLugares() == null || result.getLugares().isEmpty()) {
             result = recommendationFromLivePlaces(
                     "Busca: " + dto.query(),
                     "Lista completa em " + city,
-                    livePlaces
+                    livePlaces,
+                    maxResults
             );
         }
         RecommendationResult enriched = enrichPlaces(result, city, country, lat, lng, livePlaces);
-        enriched = appendMissingLivePlaces(enriched, livePlaces, city);
+        enriched = appendMissingLivePlaces(enriched, livePlaces, city, maxResults);
         retainInCity(enriched, center, radiusKm, city, dismissed, null, null);
         fillMissingMapsPhotos(enriched, city, lat, lng);
-        ensurePhotographedPlaces(enriched, livePlaces);
+        ensurePhotographedPlaces(enriched, livePlaces, maxResults);
 
         String topPlace = enriched.getLugares() != null && !enriched.getLugares().isEmpty()
                 ? enriched.getLugares().get(0).getNome()
@@ -704,7 +736,8 @@ public class RecommendationsService {
      */
     private void ensurePhotographedPlaces(
             RecommendationResult result,
-            List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces
+            List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces,
+            int maxResults
     ) {
         if (result == null) return;
         List<PlaceDto> current = result.getLugares() != null
@@ -737,7 +770,8 @@ public class RecommendationsService {
             }
         }
         current.sort((left, right) -> Boolean.compare(hasRealPhoto(right), hasRealPhoto(left)));
-        if (current.size() > 24) current = new ArrayList<>(current.subList(0, 24));
+        int targetMax = maxResults > 0 ? maxResults : 24;
+        if (current.size() > targetMax) current = new ArrayList<>(current.subList(0, targetMax));
         for (PlaceDto p : current) {
             if (p.getImagem() == null || p.getImagem().isBlank()) {
                 String cat = p.getCategoryTag() != null ? p.getCategoryTag() : p.getTipo();
@@ -881,13 +915,15 @@ public class RecommendationsService {
     private RecommendationResult recommendationFromLivePlaces(
             String title,
             String subtitle,
-            List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces
+            List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces,
+            int maxResults
     ) {
         List<PlaceDto> lugares = new ArrayList<>();
+        int targetMax = maxResults > 0 ? maxResults : 24;
         if (livePlaces != null) {
             int i = 0;
             for (GooglePlacesDiscoveryService.DiscoveredPlace p : livePlaces) {
-                if (i >= 24) break;
+                if (i >= targetMax) break;
                 lugares.add(toPlaceDto(p, i == 0));
                 i++;
             }
@@ -902,10 +938,12 @@ public class RecommendationsService {
     private RecommendationResult appendMissingLivePlaces(
             RecommendationResult result,
             List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces,
-            String city
+            String city,
+            int maxResults
     ) {
+        int targetMax = maxResults > 0 ? maxResults : 24;
         if (result == null) {
-            return recommendationFromLivePlaces("Sugestões", "Lista em " + city, livePlaces);
+            return recommendationFromLivePlaces("Sugestões", "Lista em " + city, livePlaces, targetMax);
         }
         if (livePlaces == null || livePlaces.isEmpty()) {
             return result;
@@ -916,7 +954,7 @@ public class RecommendationsService {
                 : new ArrayList<>();
 
         for (GooglePlacesDiscoveryService.DiscoveredPlace lp : livePlaces) {
-            if (current.size() >= 24) break;
+            if (current.size() >= targetMax) break;
             boolean already = false;
             for (PlaceDto existing : current) {
                 if (imageEnrichmentService.calculateNameSimilarity(existing.getNome(), lp.displayName()) >= 0.45) {
@@ -929,15 +967,15 @@ public class RecommendationsService {
             }
         }
 
-        if (current.size() > 24) {
-            current = new ArrayList<>(current.subList(0, 24));
+        if (current.size() > targetMax) {
+            current = new ArrayList<>(current.subList(0, targetMax));
         }
 
         result.setLugares(current);
         if (result.getSubtitulo() == null || result.getSubtitulo().isBlank()) {
             result.setSubtitulo(current.size() + " opções em " + city);
         }
-        log.info("[Places] Lista completa: {} lugares (IA + Google Maps)", current.size());
+        log.info("[Places] Lista completa: {} lugares (IA + Google Maps, limite={})", current.size(), targetMax);
         return result;
     }
 

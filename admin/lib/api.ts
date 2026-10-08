@@ -5,6 +5,8 @@ import type {
   EventModerationStatus,
   GuideCatalog,
   LocationsResponse,
+  CityLimitItem,
+  LocationSettingsResponse,
   NotificationItem,
   PlaceBanItem,
   PortalUser,
@@ -21,6 +23,8 @@ export type {
   CommunityEventItem,
   EventModerationStatus,
   LocationsResponse,
+  CityLimitItem,
+  LocationSettingsResponse,
   NotificationItem,
   PortalUser,
   PublicUser,
@@ -90,6 +94,47 @@ export function getHealth() {
 
 export function getLocations(token?: string) {
   return fetchJson<LocationsResponse>('/locations', undefined, token);
+}
+
+export function getLocationSettings(token?: string) {
+  return fetchJson<LocationSettingsResponse>('/admin/locations/settings', undefined, token);
+}
+
+export function updateGlobalLocationSettings(defaultMaxResults: number, token?: string) {
+  return fetchJson<LocationSettingsResponse>(
+    '/admin/locations/settings',
+    {
+      method: 'PUT',
+      body: JSON.stringify({ defaultMaxResults }),
+    },
+    token,
+  );
+}
+
+export function saveCityLocationLimit(
+  cityName: string,
+  maxResults: number,
+  active?: boolean,
+  token?: string,
+) {
+  return fetchJson<LocationSettingsResponse>(
+    '/admin/locations/settings/cities',
+    {
+      method: 'POST',
+      body: JSON.stringify({ cityName, maxResults, active: active ?? true }),
+    },
+    token,
+  );
+}
+
+export function deleteCityLocationLimit(id: string, token?: string) {
+  return fetchJson<LocationSettingsResponse>(
+    `/admin/locations/settings/cities/${id}`,
+    {
+      method: 'DELETE',
+    },
+    token,
+  );
 }
 
 export function getCarousels(token?: string) {

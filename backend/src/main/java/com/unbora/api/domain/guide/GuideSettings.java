@@ -26,6 +26,9 @@ public class GuideSettings {
     @Column(name = "budget_default", nullable = false)
     private int budgetDefault = 80;
 
+    @Column(name = "default_max_results", nullable = false)
+    private int defaultMaxResults = 24;
+
     public String getId() {
         return id;
     }
@@ -64,5 +67,13 @@ public class GuideSettings {
 
     public void setBudgetDefault(int budgetDefault) {
         this.budgetDefault = budgetDefault;
+    }
+
+    public int getDefaultMaxResults() {
+        return defaultMaxResults;
+    }
+
+    public void setDefaultMaxResults(int defaultMaxResults) {
+        this.defaultMaxResults = defaultMaxResults;
     }
 }
