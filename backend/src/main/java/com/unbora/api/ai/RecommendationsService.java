@@ -9,6 +9,7 @@ import com.unbora.api.domain.place.PlaceEmbeddingProjection;
 import com.unbora.api.domain.place.PlaceEmbeddingRepository;
 import com.unbora.api.kafka.KafkaEventPublisher;
 import com.unbora.api.kafka.event.RecommendationEvent;
+import com.unbora.api.common.security.InputSanitizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -76,24 +77,33 @@ public class RecommendationsService {
     }
 
     public RecommendationResult recommend(RecommendDto dto) {
-        String city = (dto.city() != null && !dto.city().isBlank()) ? dto.city().trim() : "Brasil";
-        String country = (dto.country() != null && !dto.country().isBlank()) ? dto.country().trim() : "Brasil";
-        Double radiusKm = dto.radiusKm() != null ? dto.radiusKm() : 8.0;
-        CityAnchor.Center center = cityAnchor.resolve(city, dto.region(), country, dto.latitude(), dto.longitude());
+        String city = InputSanitizer.sanitizeCityOrCountry(dto.city(), 100);
+        if (city == null || city.isBlank()) city = "Brasil";
+
+        String country = InputSanitizer.sanitizeCityOrCountry(dto.country(), 100);
+        if (country == null || country.isBlank()) country = "Brasil";
+
+        String region = InputSanitizer.sanitizeCityOrCountry(dto.region(), 100);
+        String humor = InputSanitizer.sanitizeForPrompt(dto.humor(), 100);
+        String sentir = InputSanitizer.sanitizeForPrompt(dto.sentir(), 500);
+        String userId = InputSanitizer.sanitizePlaceId(dto.userId(), 100);
+
+        Double radiusKm = dto.radiusKm() != null ? Math.min(Math.max(dto.radiusKm(), 1.0), 100.0) : 8.0;
+        CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
         Double lat = center != null ? center.latitude() : dto.latitude();
         Double lng = center != null ? center.longitude() : dto.longitude();
-        Set<String> dismissed = loadDismissed(dto.userId());
+        Set<String> dismissed = loadDismissed(userId);
 
         LocalDate now = LocalDate.now();
         String dateLabel = now.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
         String mesAno = now.format(DateTimeFormatter.ofPattern("MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
 
         List<String> labels = dto.activities() != null
-                ? dto.activities().stream().map(ActivityItemDto::label).toList()
+                ? dto.activities().stream().map(a -> InputSanitizer.sanitizeText(a.label(), 100)).filter(Objects::nonNull).toList()
                 : List.of();
 
         Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
-        Double budgetReais = budgetCeiling(dto.sentir());
+        Double budgetReais = budgetCeiling(sentir);
 
         if (googlePlacesDiscoveryService.isConfigured()) {
             List<String> queries = buildTargetedPlacesQueries(dto, city);
@@ -212,13 +222,21 @@ public class RecommendationsService {
     }
 
     public RecommendationResult search(SearchDto dto) {
-        String city = (dto.city() != null && !dto.city().isBlank()) ? dto.city().trim() : "Brasil";
-        String country = (dto.country() != null && !dto.country().isBlank()) ? dto.country().trim() : "Brasil";
-        CityAnchor.Center center = cityAnchor.resolve(city, dto.region(), country, dto.latitude(), dto.longitude());
+        String query = InputSanitizer.sanitizeForPrompt(dto.query(), 300);
+        String city = InputSanitizer.sanitizeCityOrCountry(dto.city(), 100);
+        if (city == null || city.isBlank()) city = "Brasil";
+
+        String country = InputSanitizer.sanitizeCityOrCountry(dto.country(), 100);
+        if (country == null || country.isBlank()) country = "Brasil";
+
+        String region = InputSanitizer.sanitizeCityOrCountry(dto.region(), 100);
+        String userId = InputSanitizer.sanitizePlaceId(dto.userId(), 100);
+
+        CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
         Double lat = center != null ? center.latitude() : dto.latitude();
         Double lng = center != null ? center.longitude() : dto.longitude();
         double radiusKm = 25.0;
-        Set<String> dismissed = loadDismissed(dto.userId());
+        Set<String> dismissed = loadDismissed(userId);
 
         LocalDate now = LocalDate.now();
         String dateLabel = now.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
@@ -227,7 +245,7 @@ public class RecommendationsService {
         Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
 
         if (googlePlacesDiscoveryService.isConfigured()) {
-            List<String> searchQueries = buildSearchPlacesQueries(dto.query(), city);
+            List<String> searchQueries = buildSearchPlacesQueries(query, city);
             for (String q : searchQueries) {
                 List<GooglePlacesDiscoveryService.DiscoveredPlace> found =
                         googlePlacesDiscoveryService.searchPlaces(q, lat, lng, radiusKm, city, country, 20);
@@ -370,31 +388,38 @@ public class RecommendationsService {
             throw ApiException.badRequest("Avaliação deve ter de 1 a 5 estrelas");
         }
 
+        String placeName = InputSanitizer.sanitizeText(feedback.placeName(), 200);
+        String placeId = InputSanitizer.sanitizePlaceId(feedback.placeId(), 150);
+        String userId = InputSanitizer.sanitizePlaceId(feedback.userId(), 100);
+        String humor = InputSanitizer.sanitizeText(feedback.humor(), 100);
+        String sentir = InputSanitizer.sanitizeText(feedback.sentir(), 500);
+        String categoryTag = InputSanitizer.sanitizeText(feedback.categoryTag(), 100);
+        String comment = InputSanitizer.sanitizeText(feedback.comment(), 1000);
+
         log.info("[AI Feedback] Feedback recebido para '{}': Ação={}, Estrelas={}, Humor={}, Sentir={}, PlaceId={}",
-                feedback.placeName(), feedback.action(), stars, feedback.humor(), feedback.sentir(), feedback.placeId());
+                placeName, feedback.action(), stars, humor, sentir, placeId);
         if ("DISLIKE".equalsIgnoreCase(feedback.action())) {
-            rememberDismissal(feedback.userId(), feedback.placeId(), feedback.placeName());
+            rememberDismissal(userId, placeId, placeName);
         }
 
-        String comment = feedback.comment();
         if (stars != null) {
             String starTag = "stars=" + stars;
             comment = comment == null || comment.isBlank() ? starTag : starTag + " | " + comment;
         }
-        if (feedback.placeId() != null && !feedback.placeId().isBlank()) {
-            String idTag = "placeId=" + feedback.placeId();
+        if (placeId != null && !placeId.isBlank()) {
+            String idTag = "placeId=" + placeId;
             comment = comment == null || comment.isBlank() ? idTag : comment + " | " + idTag;
         }
 
         kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
                 "FEEDBACK_" + (feedback.action() != null ? feedback.action().toUpperCase() : "LIKE"),
-                feedback.humor(),
-                feedback.sentir(),
-                List.of(feedback.categoryTag() != null ? feedback.categoryTag() : ""),
+                humor,
+                sentir,
+                List.of(categoryTag != null ? categoryTag : ""),
                 comment,
                 "Global",
                 1,
-                feedback.placeName(),
+                placeName,
                 Instant.now()
         ));
     }

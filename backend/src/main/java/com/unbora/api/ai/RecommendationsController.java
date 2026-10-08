@@ -4,7 +4,9 @@ import com.unbora.api.ai.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
+@Validated
 @Tag(name = "AI Recommendations", description = "Recomendações e busca inteligente com IA e enriquecimento de fotos")
 public class RecommendationsController {
 
@@ -40,14 +43,14 @@ public class RecommendationsController {
 
     @PostMapping("/eventos")
     @Operation(summary = "Descobrir eventos e programações culturais em Fortaleza com IA")
-    public DiscoverEventsResult discoverEvents(@RequestBody(required = false) DiscoverEventsDto dto) {
+    public DiscoverEventsResult discoverEvents(@Valid @RequestBody(required = false) DiscoverEventsDto dto) {
         DiscoverEventsDto effective = dto != null ? dto : new DiscoverEventsDto("Fortaleza");
         return recommendationsService.discoverEvents(effective);
     }
 
     @GetMapping("/recomendar/dislikes")
     @Operation(summary = "Lugares que a pessoa logada pediu para não ver de novo")
-    public List<String> dislikes(@RequestParam String userId) {
+    public List<String> dislikes(@RequestParam @Size(max = 120, message = "ID de usuário inválido") String userId) {
         return recommendationsService.dismissedKeys(userId);
     }
 
