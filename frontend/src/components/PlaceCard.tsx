@@ -19,9 +19,25 @@ export function PlaceCard({
   onShare: () => void;
 }) {
   const [imgSrc, setImgSrc] = useState<string>(place.imageUrl || DEFAULT_FALLBACK_IMAGE);
+  const [dismissing, setDismissing] = useState(false);
+
+  function handleDismiss() {
+    if (dismissing) return;
+    setDismissing(true);
+    // Animação suave em slow motion (650ms) antes de remover o item da lista
+    setTimeout(() => {
+      onDismiss();
+    }, 650);
+  }
 
   return (
-    <article className="group">
+    <article
+      className={`group transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+        dismissing
+          ? 'pointer-events-none -translate-y-4 scale-95 opacity-0 blur-[1px]'
+          : 'translate-y-0 scale-100 opacity-100'
+      }`}
+    >
       <div className="aspect-[4/5] bg-[#e7e0d8] sm:aspect-[5/4] overflow-hidden rounded-xl">
         <img
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
@@ -60,7 +76,7 @@ export function PlaceCard({
           </div>
         ) : null}
         {place.illustrative ? <p className="mt-3 text-xs text-muted/75 italic">Imagem ilustrativa</p> : null}
-        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm items-center">
           {place.mapsUrl ? (
             <a className="font-medium underline decoration-ink/20 underline-offset-4 hover:decoration-ink" href={place.mapsUrl} target="_blank" rel="noreferrer">
               Ver no mapa
@@ -69,8 +85,13 @@ export function PlaceCard({
           <button type="button" className="text-muted underline decoration-ink/15 underline-offset-4 hover:text-ink transition-colors" onClick={onShare}>
             Compartilhar
           </button>
-          <button type="button" className="text-muted underline decoration-ink/15 underline-offset-4 hover:text-ink transition-colors" onClick={onDismiss}>
-            Não gostei
+          <button
+            type="button"
+            disabled={dismissing}
+            className="text-muted underline decoration-ink/15 underline-offset-4 hover:text-coral transition-colors disabled:opacity-50"
+            onClick={handleDismiss}
+          >
+            {dismissing ? 'Removendo…' : 'Não gostei'}
           </button>
         </div>
       </div>

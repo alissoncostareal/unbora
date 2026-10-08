@@ -339,15 +339,26 @@ export function ResultPage() {
         </div>
       )}
 
-      {embed ? (
-        <section className="mt-16">
-          <p className="text-xs tracking-[0.16em] text-muted uppercase">No mapa</p>
-          <iframe className="mt-4 h-64 w-full border border-line" title="Mapa da experiência" src={embed} />
-        </section>
-      ) : null}
+      {notice ? <p className="mt-8 text-center text-sm text-muted">{notice}</p> : null}
 
-      {notice ? <p className="mt-8 text-sm text-muted">{notice}</p> : null}
-      <Link to="/home" className="mt-16 inline-flex text-sm text-muted hover:text-ink">Refazer</Link>
+      <div className="mt-20 border-t border-[#e7e0d8] pt-10 text-center">
+        <p className="text-base font-light text-[#1c1917]">Quer explorar outra vibe ou aumentar o raio?</p>
+        <p className="mt-1 text-xs text-muted">Ajuste seu momento para descobrir novas sugestões em {journey?.city || 'sua cidade'}.</p>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            to="/home"
+            className="inline-flex h-11 items-center justify-center rounded-lg bg-ink px-6 text-xs font-semibold uppercase tracking-wider text-white hover:bg-coral transition-colors"
+          >
+            Refazer busca
+          </Link>
+          <Link
+            to="/search"
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-line bg-white px-5 text-xs font-semibold uppercase tracking-wider text-ink hover:border-ink transition-colors"
+          >
+            Buscar por nome
+          </Link>
+        </div>
+      </div>
     </main>
   );
 }
