@@ -136,17 +136,34 @@ function metaFor(place: Place, km: number | null) {
     .join(' · ');
 }
 
-function mapEmbed(place: Place) {
-  if (place.latitude == null || place.longitude == null) return '';
-  const pad = 0.02;
-  const bbox = [place.longitude - pad, place.latitude - pad, place.longitude + pad, place.latitude + pad].join('%2C');
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${place.latitude}%2C${place.longitude}`;
+function getPaginationRange(current: number, total: number): (number | string)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, '...', total];
+  }
+  if (current >= total - 3) {
+    return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  }
+  return [1, '...', current - 1, current, current + 1, '...', total];
 }
+
+const PAGE_SIZE = 6;
 
 export function ResultPage() {
   const { user } = useAuth();
-  const [params] = useSearchParams();
-  const queryKey = params.toString();
+  const [params, setParams] = useSearchParams();
+  const queryKey = useMemo(() => {
+    const clone = new URLSearchParams(params);
+    clone.delete('page');
+    return clone.toString();
+  }, [params]);
+
+  const [page, setPage] = useState(() => {
+    const p = parseInt(params.get('page') || '1', 10);
+    return Number.isFinite(p) && p > 0 ? p : 1;
+  });
 
   const cachedResult = useMemo(() => readJson<Recommendation>('unbora-result'), []);
   const cachedKey = typeof window !== 'undefined' ? sessionStorage.getItem('unbora-result-key') : null;
@@ -160,6 +177,11 @@ export function ResultPage() {
   const hasQuery = Boolean(params.get('city') || params.get('q') || params.get('mood'));
   const [loading, setLoading] = useState<boolean>(!isCacheValid && hasQuery);
   const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    const p = parseInt(params.get('page') || '1', 10);
+    setPage(Number.isFinite(p) && p > 0 ? p : 1);
+  }, [params]);
 
   useEffect(() => {
     let cancelled = false;
@@ -244,6 +266,24 @@ export function ResultPage() {
     return affordable.length > 0 ? affordable : ranked;
   }, [result, journey, hidden]);
 
+  const totalPages = Math.max(1, Math.ceil(places.length / PAGE_SIZE));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const paginatedPlaces = places.slice(startIndex, startIndex + PAGE_SIZE);
+
+  function handlePageChange(newPage: number) {
+    const targetPage = Math.min(Math.max(1, newPage), totalPages);
+    setPage(targetPage);
+    const nextParams = new URLSearchParams(params);
+    if (targetPage === 1) {
+      nextParams.delete('page');
+    } else {
+      nextParams.set('page', String(targetPage));
+    }
+    setParams(nextParams, { replace: true });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   async function dismiss(place: Place) {
     setHidden((current) => [...current, place.placeId || place.name]);
     try {
@@ -309,34 +349,111 @@ export function ResultPage() {
 
   const headline = journey?.moodLine || result.title;
   const countLabel = places.length === 1 ? '1 experiência que combina com você' : `${places.length} experiências que combinam com você`;
-  const mapPlace = places.find((place) => place.latitude != null && place.longitude != null);
-  const embed = mapPlace ? mapEmbed(mapPlace) : '';
 
   return (
     <main className="mx-auto w-full max-w-xl px-6 py-12 sm:py-16">
       <p className="text-sm text-muted">{journey?.city || result.subtitle}</p>
       <h1 className="mt-3 max-w-[14ch] text-4xl leading-[1.08] font-light tracking-tight sm:text-5xl">{headline}</h1>
-      <p className="mt-4 text-base text-muted">Encontramos {countLabel}.</p>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-base text-muted">Encontramos {countLabel}.</p>
+        {totalPages > 1 && (
+          <span className="inline-flex items-center rounded-full bg-sand px-3 py-1 text-xs font-medium text-muted">
+            Página {currentPage} de {totalPages}
+          </span>
+        )}
+      </div>
 
       {places.length === 0 ? (
         <p className="mt-12 text-muted">Nenhuma experiência ficou de pé. Vale refazer com outro humor ou um raio maior.</p>
       ) : (
-        <div className="mt-14 space-y-20">
-          {places.map((place) => {
-            const km = distanceKm(place, journey);
-            return (
-              <PlaceCard
-                key={`${place.placeId ?? place.name}-${place.address ?? ''}`}
-                place={place}
-                score={matchScore(place, journey, km)}
-                meta={metaFor(place, km)}
-                reason={why(place, journey, km)}
-                onDismiss={() => void dismiss(place)}
-                onShare={() => void share(place)}
-              />
-            );
-          })}
-        </div>
+        <>
+          <div className="mt-14 space-y-20">
+            {paginatedPlaces.map((place) => {
+              const km = distanceKm(place, journey);
+              return (
+                <PlaceCard
+                  key={`${place.placeId ?? place.name}-${place.address ?? ''}`}
+                  place={place}
+                  score={matchScore(place, journey, km)}
+                  meta={metaFor(place, km)}
+                  reason={why(place, journey, km)}
+                  onDismiss={() => void dismiss(place)}
+                  onShare={() => void share(place)}
+                />
+              );
+            })}
+          </div>
+
+          {totalPages > 1 && (
+            <nav
+              aria-label="Paginação de resultados"
+              className="mt-16 flex flex-col items-center gap-4 border-t border-[#e7e0d8] pt-8 sm:flex-row sm:justify-between"
+            >
+              <div className="text-xs text-muted order-2 sm:order-1">
+                Mostrando <span className="font-semibold text-ink">{startIndex + 1}</span>–
+                <span className="font-semibold text-ink">{Math.min(startIndex + PAGE_SIZE, places.length)}</span> de{' '}
+                <span className="font-semibold text-ink">{places.length}</span> experiências
+              </div>
+
+              <div className="flex items-center gap-1.5 order-1 sm:order-2">
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                  aria-label="Página anterior"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-stone-50 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                >
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  <span className="hidden sm:inline">Anterior</span>
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {getPaginationRange(currentPage, totalPages).map((p, idx) => {
+                    if (p === '...') {
+                      return (
+                        <span key={`dots-${idx}`} className="px-1 text-xs text-muted">
+                          …
+                        </span>
+                      );
+                    }
+                    const pageNum = Number(p);
+                    const isActive = pageNum === currentPage;
+                    return (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        onClick={() => handlePageChange(pageNum)}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`inline-flex h-9 min-w-[36px] items-center justify-center rounded-lg px-2.5 text-xs font-medium transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-ink text-white shadow-sm'
+                            : 'border border-transparent text-ink/80 hover:border-line hover:bg-stone-100 hover:text-ink'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  aria-label="Próxima página"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-xs font-medium text-ink transition-colors hover:border-ink hover:bg-stone-50 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                >
+                  <span className="hidden sm:inline">Próxima</span>
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              </div>
+            </nav>
+          )}
+        </>
       )}
 
       {notice ? <p className="mt-8 text-center text-sm text-muted">{notice}</p> : null}
