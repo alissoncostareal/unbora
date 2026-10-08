@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { fetchEvents, usableEventImage } from '../lib/api';
+import { fetchEvents, usableEventImage, type CityEvent } from '../lib/api';
 import { useCity } from '../lib/city';
 
 export function TodayRail() {

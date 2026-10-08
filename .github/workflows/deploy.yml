@@ -6,7 +6,7 @@
 #
 # Opcionais (preenchem o Secret do cluster só quando estão definidos):
 #   GROQ_API_KEY, BRAVE_API_KEY, GOOGLE_PLACES_API_KEY,
-#   SUPERADMIN_EMAIL, SUPERADMIN_PASSWORD, ADMIN_JWT_SECRET
+#   GOOGLE_CLIENT_ID, SUPERADMIN_EMAIL, SUPERADMIN_PASSWORD, ADMIN_JWT_SECRET
 
 name: Deploy
 
@@ -42,6 +42,8 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
           GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           SUPERADMIN_EMAIL: ${{ secrets.SUPERADMIN_EMAIL }}
           SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
           ADMIN_JWT_SECRET: ${{ secrets.ADMIN_JWT_SECRET }}
@@ -58,5 +60,5 @@ jobs:
           ssh-keyscan -H 173.212.242.9 >> ~/.ssh/known_hosts
           ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes \
             "root@173.212.242.9" \
-            "GROQ_API_KEY_B64='$(b64 "${GROQ_API_KEY:-}")' BRAVE_API_KEY_B64='$(b64 "${BRAVE_API_KEY:-}")' GOOGLE_PLACES_API_KEY_B64='$(b64 "${GOOGLE_PLACES_API_KEY:-}")' SUPERADMIN_EMAIL_B64='$(b64 "${SUPERADMIN_EMAIL:-}")' SUPERADMIN_PASSWORD_B64='$(b64 "${SUPERADMIN_PASSWORD:-}")' ADMIN_JWT_SECRET_B64='$(b64 "${ADMIN_JWT_SECRET:-}")' bash -s" \
+            "GROQ_API_KEY_B64='$(b64 "${GROQ_API_KEY:-}")' BRAVE_API_KEY_B64='$(b64 "${BRAVE_API_KEY:-}")' GOOGLE_PLACES_API_KEY_B64='$(b64 "${GOOGLE_PLACES_API_KEY:-}")' VITE_GOOGLE_MAPS_API_KEY_B64='$(b64 "${VITE_GOOGLE_MAPS_API_KEY:-}")' VITE_GOOGLE_CLIENT_ID_B64='$(b64 "${VITE_GOOGLE_CLIENT_ID:-}")' SUPERADMIN_EMAIL_B64='$(b64 "${SUPERADMIN_EMAIL:-}")' SUPERADMIN_PASSWORD_B64='$(b64 "${SUPERADMIN_PASSWORD:-}")' ADMIN_JWT_SECRET_B64='$(b64 "${ADMIN_JWT_SECRET:-}")' bash -s" \
             < deploy/vps/deploy.sh

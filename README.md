@@ -103,7 +103,7 @@ O push em `main` roda o CI e, se passar, publica a API no mesmo k3s do PartiuMen
 
 Na primeira vez, no repositório GitHub: Settings → Environments → `production` → adicione o secret `VPS_SSH_KEY` (a mesma chave da VPS). Chaves da API (`GROQ_API_KEY`, `BRAVE_API_KEY`, `GOOGLE_PLACES_API_KEY`, `ADMIN_JWT_SECRET`, `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD`) são opcionais nesse environment; quando existirem, o deploy grava no Secret do cluster sem imprimir o valor.
 
-API: https://unbora.com.br/health
+API: https://api.unbora.com.br/health
 
 ## Variáveis de ambiente (raiz `.env`)
 

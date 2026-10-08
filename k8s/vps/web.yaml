@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unbora-web
+  namespace: unbora
+  labels:
+    app: unbora-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: unbora-web
+  template:
+    metadata:
+      labels:
+        app: unbora-web
+    spec:
+      containers:
+        - name: web
+          image: docker.io/library/unbora-web:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unbora-web-service
+  namespace: unbora
+  labels:
+    app: unbora-web
+spec:
+  type: ClusterIP
+  selector:
+    app: unbora-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

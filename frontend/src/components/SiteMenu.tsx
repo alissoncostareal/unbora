@@ -16,7 +16,7 @@ export function SiteMenu() {
   const { city, region, country, latitude, longitude, modelCity } = useCity();
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [active, setActive] = useState('intencao');
+  const [active, setActive] = useState<string>('intencao');
   const initial = user?.name.trim().charAt(0).toUpperCase() || 'U';
 
   async function onSearch(event: FormEvent) {
@@ -42,7 +42,7 @@ export function SiteMenu() {
     if (!home) return undefined;
     const mark = () => {
       const line = window.innerHeight * 0.45;
-      let current = homeSections[0].id;
+      let current: string = homeSections[0].id;
       for (const section of homeSections) {
         const el = document.getElementById(section.id);
         if (!el) continue;

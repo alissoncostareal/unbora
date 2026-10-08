@@ -13,9 +13,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: unbora-backend-service
+                name: unbora-web-service
                 port:
-                  number: 3001
+                  number: 80
     - host: www.unbora.com.br
       http:
         paths:
@@ -23,10 +23,20 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: unbora-backend-service
+                name: unbora-web-service
                 port:
-                  number: 3001
+                  number: 80
     - host: admin.unbora.com.br
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: unbora-admin-service
+                port:
+                  number: 3002
+    - host: api.unbora.com.br
       http:
         paths:
           - path: /
@@ -43,9 +53,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: unbora-backend-service
+                name: unbora-web-service
                 port:
-                  number: 3001
+                  number: 80
     - host: www.unbora.com
       http:
         paths:
@@ -53,10 +63,20 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: unbora-backend-service
+                name: unbora-web-service
                 port:
-                  number: 3001
+                  number: 80
     - host: admin.unbora.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: unbora-admin-service
+                port:
+                  number: 3002
+    - host: api.unbora.com
       http:
         paths:
           - path: /

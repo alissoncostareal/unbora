@@ -1,6 +1,6 @@
 #!/bin/bash
 # Publica o Unbora na VPS (k3s), no namespace unbora.
-# Sobe o Postgres do namespace unbora e publica a API.
+# Sobe o Postgres do namespace unbora e publica o site, o admin e a API.
 # Não altera o namespace partiumenu.
 set -euo pipefail
 
@@ -125,13 +125,38 @@ unset DB_PASS DATABASE_URL
 docker build -t unbora-api:latest -f backend/Dockerfile backend
 docker save unbora-api:latest | k3s ctr images import -
 
+VITE_GOOGLE_CLIENT_ID="$(decode_b64 "${VITE_GOOGLE_CLIENT_ID_B64:-}")"
+VITE_GOOGLE_MAPS_API_KEY="$(decode_b64 "${VITE_GOOGLE_MAPS_API_KEY_B64:-}")"
+docker build \
+  --build-arg VITE_API_BASE_URL=https://api.unbora.com.br \
+  --build-arg VITE_GOOGLE_CLIENT_ID="$VITE_GOOGLE_CLIENT_ID" \
+  --build-arg VITE_GOOGLE_MAPS_API_KEY="$VITE_GOOGLE_MAPS_API_KEY" \
+  -t unbora-web:latest \
+  -f frontend/Dockerfile \
+  frontend
+docker save unbora-web:latest | k3s ctr images import -
+unset VITE_GOOGLE_CLIENT_ID VITE_GOOGLE_MAPS_API_KEY
+
+docker build \
+  --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.unbora.com.br \
+  -t unbora-admin:latest \
+  -f admin/Dockerfile \
+  admin
+docker save unbora-admin:latest | k3s ctr images import -
+
 kubectl apply -f k8s/vps/ollama.yaml
 kubectl apply -f k8s/vps/configmap.yaml
 kubectl apply -f k8s/vps/deployment.yaml
 kubectl apply -f k8s/vps/service.yaml
+kubectl apply -f k8s/vps/web.yaml
+kubectl apply -f k8s/vps/admin.yaml
 kubectl apply -f k8s/vps/ingress.yaml
 
-kubectl -n unbora rollout restart deploy/unbora-backend
+kubectl -n unbora rollout restart deploy/unbora-backend deploy/unbora-web deploy/unbora-admin
 kubectl -n unbora rollout status deploy/unbora-backend --timeout=300s
+kubectl -n unbora rollout status deploy/unbora-web --timeout=180s
+kubectl -n unbora rollout status deploy/unbora-admin --timeout=180s
 echo "DEPLOY_OK $(git rev-parse --short HEAD)"
-echo "API https://unbora.com.br/health"
+echo "Site https://unbora.com.br"
+echo "Admin https://admin.unbora.com.br"
+echo "API https://api.unbora.com.br/health"
