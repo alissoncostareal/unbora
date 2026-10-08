@@ -109,7 +109,7 @@ public class PlacePhotoProxyController {
             response.setHeader("Access-Control-Allow-Origin", "*");
             response.setContentLength(upstream.body().length);
             response.getOutputStream().write(upstream.body());
-            log.debug("[PhotoProxy] ok host={} bytes={} type={}", host, upstream.body().length, contentType);
+            log.debug("[PhotoProxy] ok host={} bytes={} type={}", uri.getHost(), upstream.body().length, contentType);
         } catch (Exception e) {
             log.warn("[PhotoProxy] falha ao buscar {}: {}", src, e.getMessage());
             if (!response.isCommitted()) {
