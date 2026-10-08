@@ -44,13 +44,13 @@ public class CityAnchor {
 
     public boolean contains(Center center, double radiusKm, Double latitude, Double longitude, String address, String city) {
         if (center != null && latitude != null && longitude != null) {
-            double limit = Math.max(radiusKm > 0 ? radiusKm : 8, 1) * 1.25;
-            if (distanceKm(latitude, longitude, center.latitude(), center.longitude()) > limit) return false;
+            double limit = Math.max(radiusKm > 0 ? radiusKm : 8, 1) * 1.35;
+            return distanceKm(latitude, longitude, center.latitude(), center.longitude()) <= limit;
         }
         if (address != null && !address.isBlank() && city != null && !city.isBlank()) {
             return fold(address).contains(fold(city));
         }
-        return center != null && latitude != null && longitude != null;
+        return true;
     }
 
     public static double distanceKm(double lat1, double lng1, double lat2, double lng2) {
@@ -82,13 +82,23 @@ public class CityAnchor {
             int bestScore = -1;
             for (JsonNode item : results) {
                 String name = item.path("name").asText("");
-                if (!fold(name).equals(fold(city))) continue;
-                int score = 1;
+                int score = 0;
+                if (fold(name).equals(fold(city))) {
+                    score += 3;
+                } else if (fold(name).contains(fold(city)) || fold(city).contains(fold(name))) {
+                    score += 2;
+                } else {
+                    score += 1;
+                }
                 String admin = item.path("admin1").asText("");
                 if (region != null && !region.isBlank() && fold(admin).equals(fold(region))) score += 3;
                 String itemCountry = item.path("country").asText("");
-                if (country != null && fold(itemCountry).startsWith(fold(country).substring(0, Math.min(4, fold(country).length())))) {
-                    score += 1;
+                if (country != null && !country.isBlank()) {
+                    String fc = fold(country);
+                    String fi = fold(itemCountry);
+                    if (fi.equals(fc) || (fc.length() >= 3 && fi.startsWith(fc.substring(0, Math.min(4, fc.length()))))) {
+                        score += 5;
+                    }
                 }
                 if (score > bestScore && item.has("latitude") && item.has("longitude")) {
                     bestScore = score;
