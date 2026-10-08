@@ -2,11 +2,13 @@ import type { ReactNode } from 'react';
 
 import { cn } from '@/lib/cn';
 
-type AlertVariant = 'error' | 'info';
+type AlertVariant = 'error' | 'info' | 'warning' | 'success';
 
 const variants: Record<AlertVariant, string> = {
-  error: 'border-danger/30 bg-danger-light text-danger',
-  info: 'border-accent/40 bg-accent-light text-heading',
+  error: 'border-red-200 bg-red-50/80 text-red-800',
+  info: 'border-[#ebd8d0] bg-[#faf2ee] text-[#7c2f1d]',
+  warning: 'border-amber-200 bg-amber-50 text-amber-800',
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
 };
 
 export function Alert({
@@ -21,7 +23,7 @@ export function Alert({
   return (
     <div
       className={cn(
-        'mb-6 rounded-xl border px-4 py-3.5 text-sm leading-relaxed',
+        'mb-6 rounded-xl border px-4 py-3.5 text-sm leading-relaxed shadow-2xs',
         variants[variant],
         className,
       )}

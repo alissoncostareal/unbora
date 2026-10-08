@@ -25,6 +25,8 @@ backend/dist/
 backend/data/
 backend/target/
 backend/.m2-local/
+.m2-local/
+backend-nest-backup/
 
 # Vercel
 .vercel/

@@ -19,17 +19,21 @@ import { Panel } from '@/components/ui/Panel';
 import { createPortalUser, getPortalUsers, type PortalUser } from '@/lib/api';
 import { getClientSession, ROLE_LABELS } from '@/lib/auth';
 
-function formatDate(value: string) {
+function formatDate(value?: string) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
   return new Intl.DateTimeFormat('pt-BR', {
     dateStyle: 'short',
     timeStyle: 'short',
-  }).format(new Date(value));
+  }).format(d);
 }
 
 export default function TeamAdminPage() {
   const session = getClientSession();
   const [items, setItems] = useState<PortalUser[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -45,7 +49,7 @@ export default function TeamAdminPage() {
     try {
       setItems(await getPortalUsers());
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao carregar equipe');
+      setError(e instanceof Error ? e.message : 'Erro ao carregar equipe do portal.');
     } finally {
       setLoading(false);
     }
@@ -59,8 +63,10 @@ export default function TeamAdminPage() {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+    setSuccess(null);
     try {
       await createPortalUser(form);
+      setSuccess(`Membro "${form.name}" criado com sucesso.`);
       setForm({ name: '', email: '', password: '', role: 'admin' });
       await load();
     } catch (e) {
@@ -73,98 +79,150 @@ export default function TeamAdminPage() {
   if (session?.role !== 'superadmin') {
     return (
       <>
-        <PageHeader description="Gerenciamento de acessos ao portal administrativo." />
-        <p className="rounded-2xl border border-border bg-surface px-6 py-10 text-center text-sm text-muted">
-          Apenas o superadmin pode gerenciar a equipe do portal.
-        </p>
+        <PageHeader
+          title="Equipe do Portal"
+          description="Gerenciamento de administradores e consultores com acesso ao painel."
+        />
+        <div className="rounded-2xl border border-[#e8e0d7] bg-white p-12 text-center shadow-xs">
+          <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-[#faf2ee] text-[#9a4632]">
+            <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <h3 className="text-base font-semibold text-[#1c1917]">Acesso Restrito</h3>
+          <p className="mt-1 text-sm text-[#746c64] max-w-md mx-auto">
+            Apenas a conta de <strong>Superadmin</strong> possui permissão para cadastrar e gerenciar membros da equipe.
+          </p>
+        </div>
       </>
     );
   }
 
   return (
     <>
-      <PageHeader description="Crie contas de administrador ou consultor. O superadmin vem do .env." />
+      <PageHeader
+        title="Equipe do Portal"
+        description="Cadastre novos administradores ou consultores para gerenciar o conteúdo e moderação do Unbora."
+      />
 
-      {error ? <Alert>{error}</Alert> : null}
+      {error ? <Alert variant="error">{error}</Alert> : null}
+      {success ? <Alert variant="success">{success}</Alert> : null}
 
-      <Panel title="Novo membro">
-        <form onSubmit={onSubmit} className="grid gap-4">
-          <Field label="Nome">
-            <input
-              required
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className={inputClassName}
-            />
-          </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="E-mail">
-              <input
-                required
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className={inputClassName}
-              />
-            </Field>
-            <Field label="Senha">
-              <input
-                required
-                type="password"
-                minLength={6}
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className={inputClassName}
-              />
-            </Field>
-          </div>
-          <Field label="Papel">
-            <select
-              value={form.role}
-              onChange={(e) =>
-                setForm({ ...form, role: e.target.value as 'admin' | 'consultor' })
-              }
-              className={inputClassName}
-            >
-              <option value="admin">Administrador</option>
-              <option value="consultor">Consultor</option>
-            </select>
-          </Field>
-          <Button type="submit" disabled={submitting} className="w-fit">
-            {submitting ? 'Salvando…' : 'Adicionar membro'}
-          </Button>
-        </form>
-      </Panel>
+      <div className="grid gap-6 lg:grid-cols-12">
+        {/* New Member form */}
+        <div className="lg:col-span-5">
+          <Panel
+            title="Novo Membro da Equipe"
+            subtitle="Crie credenciais de acesso para a equipe interna"
+          >
+            <form onSubmit={onSubmit} className="grid gap-4">
+              <Field label="Nome Completo">
+                <input
+                  required
+                  value={form.name}
+                  placeholder="Ex: Ana Clara Lima"
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className={inputClassName}
+                />
+              </Field>
 
-      <Panel title="Membros cadastrados" flush>
-        {loading ? (
-          <DataTableLoading>Carregando…</DataTableLoading>
-        ) : items.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-muted">
-            Nenhum membro além do superadmin.
-          </p>
-        ) : (
-          <DataTable>
-            <DataTableHead>
-              {['Nome', 'E-mail', 'Papel', 'Criado em'].map((head) => (
-                <DataTableHeaderCell key={head}>{head}</DataTableHeaderCell>
-              ))}
-            </DataTableHead>
-            <tbody>
-              {items.map((item) => (
-                <DataTableRow key={item.id}>
-                  <DataTableCell className="font-semibold text-heading">{item.name}</DataTableCell>
-                  <DataTableCell>{item.email}</DataTableCell>
-                  <DataTableCell>
-                    <Badge variant="registered">{ROLE_LABELS[item.role]}</Badge>
-                  </DataTableCell>
-                  <DataTableCell>{formatDate(item.createdAt)}</DataTableCell>
-                </DataTableRow>
-              ))}
-            </tbody>
-          </DataTable>
-        )}
-      </Panel>
+              <Field label="E-mail Corporativo">
+                <input
+                  required
+                  type="email"
+                  value={form.email}
+                  placeholder="ana@unbora.com.br"
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className={inputClassName}
+                />
+              </Field>
+
+              <Field label="Senha Temporária" hint="Mínimo 6 caracteres">
+                <input
+                  required
+                  type="password"
+                  minLength={6}
+                  value={form.password}
+                  placeholder="••••••••"
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className={inputClassName}
+                />
+              </Field>
+
+              <Field label="Função / Permissão">
+                <select
+                  value={form.role}
+                  onChange={(e) =>
+                    setForm({ ...form, role: e.target.value as 'admin' | 'consultor' })
+                  }
+                  className={inputClassName}
+                >
+                  <option value="admin">Administrador (Total)</option>
+                  <option value="consultor">Consultor (Leitura & Consulta)</option>
+                </select>
+              </Field>
+
+              <Button type="submit" variant="coral" disabled={submitting} className="w-full mt-2">
+                {submitting ? 'Cadastrando…' : '+ Adicionar Membro'}
+              </Button>
+            </form>
+          </Panel>
+        </div>
+
+        {/* Members List */}
+        <div className="lg:col-span-7">
+          <Panel
+            title={`Membros Ativos (${items.length})`}
+            subtitle="Usuários com permissão administrativa"
+            flush
+          >
+            {loading ? (
+              <DataTableLoading>Carregando equipe…</DataTableLoading>
+            ) : items.length === 0 ? (
+              <p className="px-6 py-12 text-center text-sm text-[#8a8178]">
+                Nenhum membro adicional cadastrado além do Superadmin.
+              </p>
+            ) : (
+              <DataTable>
+                <DataTableHead>
+                  <DataTableHeaderCell>Membro</DataTableHeaderCell>
+                  <DataTableHeaderCell>E-mail</DataTableHeaderCell>
+                  <DataTableHeaderCell>Papel</DataTableHeaderCell>
+                  <DataTableHeaderCell>Cadastro</DataTableHeaderCell>
+                </DataTableHead>
+                <tbody>
+                  {items.map((item) => (
+                    <DataTableRow key={item.id}>
+                      <DataTableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="grid size-8 shrink-0 place-items-center rounded-full bg-[#1c1917] text-xs font-semibold text-white">
+                            {item.name ? item.name.charAt(0).toUpperCase() : 'A'}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-[#1c1917]">{item.name}</p>
+                          </div>
+                        </div>
+                      </DataTableCell>
+                      <DataTableCell className="font-mono text-xs text-[#55433e]">
+                        {item.email}
+                      </DataTableCell>
+                      <DataTableCell>
+                        <Badge variant={item.role === 'admin' ? 'coral' : 'neutral'}>
+                          {ROLE_LABELS[item.role] || item.role}
+                        </Badge>
+                      </DataTableCell>
+                      <DataTableCell className="text-xs text-[#8a8178]">
+                        {formatDate(item.createdAt)}
+                      </DataTableCell>
+                    </DataTableRow>
+                  ))}
+                </tbody>
+              </DataTable>
+            )}
+          </Panel>
+        </div>
+      </div>
     </>
   );
 }

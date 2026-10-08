@@ -39,7 +39,7 @@ public class NotificationsService {
     public List<NotificationRecordDto> list(boolean activeOnly, String city, String region) {
         return notificationRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(n -> !activeOnly || Boolean.TRUE.equals(n.getActive()))
-                .filter(n -> LocationsConstants.matchesLocation(n.getCity(), n.getRegion(), city, region))
+                .filter(n -> matchesAudience(n, city, region))
                 .map(this::toRecord)
                 .toList();
     }
@@ -50,8 +50,8 @@ public class NotificationsService {
         notification.setId(UUID.randomUUID().toString());
         notification.setTitle(dto.title().trim());
         notification.setBody(dto.body().trim());
-        notification.setCity(dto.city().trim());
-        notification.setRegion(dto.region().trim());
+        notification.setCity(audience(dto.city()));
+        notification.setRegion(audience(dto.region()));
         notification.setActive(dto.active() != null ? dto.active() : true);
         notification.setCreatedAt(Instant.now());
         notification.setUpdatedAt(Instant.now());
@@ -81,5 +81,27 @@ public class NotificationsService {
 
         notificationRepository.delete(notification);
         return Map.of("deleted", true, "id", id);
+    }
+
+    private boolean matchesAudience(Notification notification, String city, String region) {
+        boolean cityMatch = isAll(notification.getCity())
+                || city == null || city.isBlank()
+                || notification.getCity().equalsIgnoreCase(city.trim());
+        boolean regionMatch = isAll(notification.getRegion())
+                || region == null || region.isBlank()
+                || (notification.getRegion() != null && notification.getRegion().equalsIgnoreCase(region.trim()));
+        return cityMatch && regionMatch;
+    }
+
+    private static String audience(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        if (isAll(trimmed)) return "*";
+        return trimmed;
+    }
+
+    private static boolean isAll(String value) {
+        if (value == null || value.isBlank()) return true;
+        String folded = value.trim().toLowerCase(java.util.Locale.ROOT);
+        return folded.equals("*") || folded.equals("todas") || folded.equals("todos") || folded.equals("todas as cidades");
     }
 }

@@ -4,6 +4,7 @@ import com.unbora.api.ai.dto.*;
 import com.unbora.api.common.exception.ApiException;
 import com.unbora.api.domain.place.DismissedPlace;
 import com.unbora.api.domain.place.DismissedPlaceRepository;
+import com.unbora.api.domain.place.PlaceBanService;
 import com.unbora.api.domain.place.PlaceEmbeddingProjection;
 import com.unbora.api.domain.place.PlaceEmbeddingRepository;
 import com.unbora.api.kafka.KafkaEventPublisher;
@@ -39,6 +40,7 @@ public class RecommendationsService {
     private final PlacePhotoLinkService placePhotoLinkService;
     private final CityAnchor cityAnchor;
     private final DismissedPlaceRepository dismissedPlaceRepository;
+    private final PlaceBanService placeBanService;
     private final ExecutorService vectorIndexExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "place-vector-index");
         thread.setDaemon(true);
@@ -56,7 +58,8 @@ public class RecommendationsService {
             ImageSubjectClassifier imageSubjectClassifier,
             PlacePhotoLinkService placePhotoLinkService,
             CityAnchor cityAnchor,
-            DismissedPlaceRepository dismissedPlaceRepository
+            DismissedPlaceRepository dismissedPlaceRepository,
+            PlaceBanService placeBanService
     ) {
         this.groqClient = groqClient;
         this.imageEnrichmentService = imageEnrichmentService;
@@ -69,6 +72,7 @@ public class RecommendationsService {
         this.placePhotoLinkService = placePhotoLinkService;
         this.cityAnchor = cityAnchor;
         this.dismissedPlaceRepository = dismissedPlaceRepository;
+        this.placeBanService = placeBanService;
     }
 
     public RecommendationResult recommend(RecommendDto dto) {
@@ -438,6 +442,7 @@ public class RecommendationsService {
         placeMap.entrySet().removeIf(entry -> {
             GooglePlacesDiscoveryService.DiscoveredPlace place = entry.getValue();
             if (isDismissed(dismissed, place.placeId(), place.displayName())) return true;
+            if (placeBanService.blocked(place.placeId(), place.displayName())) return true;
             if (!cityAnchor.contains(center, radiusKm, place.latitude(), place.longitude(), place.formattedAddress(), city)) {
                 return true;
             }
@@ -459,6 +464,7 @@ public class RecommendationsService {
         List<PlaceDto> kept = new ArrayList<>();
         for (PlaceDto place : result.getLugares()) {
             if (isDismissed(dismissed, place.getPlaceId(), place.getNome())) continue;
+            if (placeBanService.blocked(place.getPlaceId(), place.getNome())) continue;
             if (!cityAnchor.contains(center, radiusKm, place.getLatitude(), place.getLongitude(), place.getEndereco(), city)) continue;
             String hay = fold((place.getNome() == null ? "" : place.getNome()) + " "
                     + (place.getTipo() == null ? "" : place.getTipo()) + " "

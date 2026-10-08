@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 
 import { searchPlaces } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useCity } from '../lib/city';
 import { activities } from '../lib/catalog';
+import { loadGuide } from '../lib/guide';
 import { resultPath } from '../lib/resultQuery';
 
 export function SideRail() {
@@ -12,6 +13,11 @@ export function SideRail() {
   const { user } = useAuth();
   const { city, region, country, latitude, longitude } = useCity();
   const [busy, setBusy] = useState<string | null>(null);
+  const [items, setItems] = useState(activities);
+
+  useEffect(() => {
+    void loadGuide().then((guide) => setItems(guide.interests));
+  }, []);
 
   async function openPlace(id: string, hint: string) {
     if (busy) return;
@@ -34,7 +40,7 @@ export function SideRail() {
     <aside className="hidden lg:sticky lg:top-24 lg:block">
       <p className="px-3 pb-2 text-[11px] font-medium tracking-[0.14em] text-muted uppercase">Lugares</p>
       <ul className="space-y-0.5">
-        {activities.map((activity) => (
+        {items.map((activity) => (
           <li key={activity.id}>
             <button
               type="button"

@@ -41,6 +41,42 @@ export interface CarouselItem {
   updatedAt: string;
 }
 
+export interface GuideOptionItem {
+  id: string;
+  key: string;
+  label: string;
+  value?: string | null;
+  line?: string | null;
+  note?: string | null;
+  searchHint?: string | null;
+  active: boolean;
+  position: number;
+}
+
+export interface GuideBudget {
+  min: number;
+  max: number;
+  step: number;
+  defaultValue: number;
+}
+
+export interface GuideCatalog {
+  moods: GuideOptionItem[];
+  interests: GuideOptionItem[];
+  company: GuideOptionItem[];
+  durations: GuideOptionItem[];
+  budget: GuideBudget;
+}
+
+export interface PlaceBanItem {
+  id: string;
+  name: string;
+  placeId?: string | null;
+  city?: string | null;
+  reason?: string | null;
+  createdAt: string;
+}
+
 export interface NotificationItem {
   id: string;
   title: string;

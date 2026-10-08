@@ -3,14 +3,20 @@ import type {
   CarouselItem,
   CommunityEventItem,
   EventModerationStatus,
+  GuideCatalog,
   LocationsResponse,
   NotificationItem,
+  PlaceBanItem,
   PortalUser,
   PublicUser,
   UserStats,
 } from '@/lib/types';
 
 export type {
+  GuideBudget,
+  GuideCatalog,
+  GuideOptionItem,
+  PlaceBanItem,
   CarouselItem,
   CommunityEventItem,
   EventModerationStatus,
@@ -107,6 +113,51 @@ export function deleteCarousel(id: string, token?: string) {
     { method: 'DELETE' },
     token,
   );
+}
+
+export function getGuide(token?: string) {
+  return fetchJson<GuideCatalog>('/admin/guide', undefined, token);
+}
+
+export function createGuideOption(
+  body: { step: string; label: string; value?: string; note?: string; line?: string; searchHint?: string },
+  token?: string,
+) {
+  return fetchJson<GuideCatalog>('/admin/guide/options', { method: 'POST', body: JSON.stringify(body) }, token);
+}
+
+export function updateGuideOption(
+  id: string,
+  body: { label?: string; value?: string; note?: string; line?: string; searchHint?: string; active?: boolean },
+  token?: string,
+) {
+  return fetchJson<GuideCatalog>(`/admin/guide/options/${id}`, { method: 'PATCH', body: JSON.stringify(body) }, token);
+}
+
+export function deleteGuideOption(id: string, token?: string) {
+  return fetchJson<GuideCatalog>(`/admin/guide/options/${id}`, { method: 'DELETE' }, token);
+}
+
+export function updateGuideBudget(
+  body: { min: number; max: number; step: number; defaultValue: number },
+  token?: string,
+) {
+  return fetchJson<GuideCatalog>('/admin/guide/budget', { method: 'PUT', body: JSON.stringify(body) }, token);
+}
+
+export function getPlaceBans(token?: string) {
+  return fetchJson<PlaceBanItem[]>('/admin/bans', undefined, token);
+}
+
+export function createPlaceBan(
+  body: { name: string; placeId?: string; city?: string; reason?: string },
+  token?: string,
+) {
+  return fetchJson<PlaceBanItem>('/admin/bans', { method: 'POST', body: JSON.stringify(body) }, token);
+}
+
+export function deletePlaceBan(id: string, token?: string) {
+  return fetchJson<{ deleted: true; id: string }>(`/admin/bans/${id}`, { method: 'DELETE' }, token);
 }
 
 export function getNotifications(token?: string) {

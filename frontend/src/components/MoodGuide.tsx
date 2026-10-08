@@ -5,7 +5,8 @@ import { HomeGazette } from './HomeGazette';
 import { recommend } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { isBrazilianState, placeArea, readRadiusKm, useCity } from '../lib/city';
-import { company, durations, interests, JOURNEY_KEY, moods, type JourneyChoice } from '../lib/catalog';
+import { JOURNEY_KEY, type JourneyChoice } from '../lib/catalog';
+import { getGuide, loadGuide } from '../lib/guide';
 import { resultPath } from '../lib/resultQuery';
 import { scrollToSection } from '../lib/scrollSection';
 
@@ -51,14 +52,15 @@ const steps = [
 export function MoodGuide() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const preset = moods.find((mood) => mood.label === params.get('mood'));
+  const preset = getGuide().moods.find((mood) => mood.label === params.get('mood'));
   const { user } = useAuth();
   const { city, region, country, latitude, longitude } = useCity();
+  const [guide, setGuide] = useState(getGuide);
   const [step, setStep] = useState(0);
   const [moodLabel, setMoodLabel] = useState(preset?.label ?? '');
   const [picked, setPicked] = useState<string[]>([]);
   const [social, setSocial] = useState('');
-  const [budget, setBudget] = useState(80);
+  const [budget, setBudget] = useState(getGuide().budget.defaultValue);
   const [timeId, setTimeId] = useState('');
   const radiusKm = readRadiusKm();
   const [busy, setBusy] = useState(false);
@@ -67,6 +69,13 @@ export function MoodGuide() {
   const pendingSection = useRef<string | null>(null);
   const area = placeArea(city, region);
   const placeLine = isBrazilianState(area) ? `${city.trim()}, ${area}` : city.trim();
+
+  useEffect(() => {
+    void loadGuide().then(setGuide);
+  }, []);
+
+  const { moods, interests, company, durations } = guide;
+  const budgetMax = guide.budget.max;
 
   useEffect(() => {
     if (!params.get('mood')) {
@@ -165,7 +174,7 @@ export function MoodGuide() {
     setBusy(true);
     setError(null);
     try {
-      const spend = budget >= 300 ? 'sem teto de gasto' : `gastar até ${budget} reais`;
+      const spend = budget >= budgetMax ? 'sem teto de gasto' : `gastar até ${budget} reais`;
       const result = await recommend({
         humor: mood.value,
         sentir: `${withWhom.value}. ${spend}. Tempo disponível: ${time.value}. Raio de ${radiusKm} km.`,
@@ -228,7 +237,7 @@ export function MoodGuide() {
 
   const current = steps[step];
   const opening = step === 0;
-  const continueLabel = step === steps.length - 1 ? 'Ver recomendações →' : 'Continuar →';
+  const continueLabel = step === steps.length - 1 ? 'Ver recomendações\u00a0→' : 'Continuar\u00a0→';
 
   if (opening) {
     return (
@@ -248,7 +257,7 @@ export function MoodGuide() {
               </span>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-3" role="group" aria-label={current.question}>
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:gap-3" role="group" aria-label={current.question}>
               {moods.map((mood, index) => {
                 const selected = moodLabel === mood.label;
                 return (
@@ -260,21 +269,21 @@ export function MoodGuide() {
                       setMoodLabel(mood.label);
                       setStep(1);
                     }}
-                    className={`flex min-h-28 flex-col justify-between border p-4 text-left transition-colors ${
+                    className={`flex min-h-28 min-w-0 flex-col justify-between border p-3 text-left transition-colors sm:p-4 ${
                       selected
                         ? 'border-[#1e1b19] bg-[#1e1b19] text-white'
                         : 'border-[#dedcd6] bg-white text-[#1e1b19] hover:border-[#1e1b19]'
                     }`}
                   >
-                    <span className="flex w-full items-start justify-between">
+                    <span className="flex w-full items-start justify-between gap-2">
                       <span className={selected ? 'text-white' : 'text-[#1e1b19]'}><Mark name={mood.label} /></span>
                       <span className={`text-[10px] font-semibold tracking-[0.16em] ${selected ? 'text-white/60' : 'text-[#55433e]'}`}>
                         {String(index + 1).padStart(2, '0')}
                       </span>
                     </span>
-                    <span className="mt-3">
-                      <span className="block text-base font-medium tracking-tight">{mood.label}</span>
-                      <span className={`mt-1 block text-xs leading-snug ${selected ? 'text-white/70' : 'text-[#55433e]'}`}>
+                    <span className="mt-3 min-w-0">
+                      <span className="block break-words text-sm font-medium tracking-tight sm:text-base">{mood.label}</span>
+                      <span className={`mt-1 block break-words text-xs leading-snug ${selected ? 'text-white/70' : 'text-[#55433e]'}`}>
                         {mood.note}
                       </span>
                     </span>
@@ -292,30 +301,30 @@ export function MoodGuide() {
 
   return (
     <main className="flex min-h-[calc(100dvh-5rem)] flex-col bg-white">
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-10">
-        <p className="text-center text-[11px] tracking-[0.2em] text-muted uppercase">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
+        <p className="break-words px-1 text-center text-[11px] tracking-[0.12em] text-muted uppercase sm:tracking-[0.2em]">
           Passo {step + 1} de {steps.length} · {city}
         </p>
         <div className="mx-auto mt-2 h-px w-12 bg-[#e7dfd8]" />
 
-        <div key={step} className="step-in mx-auto mt-12 w-full max-w-3xl rounded-xl border border-[#e7dfd8] bg-white p-8 shadow-sm md:p-12">
-          <h1 className="text-center text-3xl font-light tracking-tight sm:text-4xl">{current.question}</h1>
+        <div key={step} className="step-in mx-auto mt-8 w-full min-w-0 max-w-3xl rounded-xl border border-[#e7dfd8] bg-white p-4 shadow-sm sm:mt-12 sm:p-8 md:p-12">
+          <h1 className="break-words text-center text-2xl font-light tracking-tight sm:text-3xl md:text-4xl">{current.question}</h1>
           <p className="mt-2 text-center text-sm text-muted">{current.hint}</p>
 
           {step === 1 ? (
-            <div className="mt-8 grid grid-cols-3 gap-3" role="group" aria-label={current.question}>
+            <div className="mt-6 grid min-w-0 grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-3" role="group" aria-label={current.question}>
               {interests.map((item) => (
                 <Choice key={item.id} selected={picked.includes(item.id)} onClick={() => toggleInterest(item.id)}>
                   <Mark name={item.label} />
                   {item.label}
                 </Choice>
               ))}
-              <ContinueSlot label={continueLabel} disabled={!ready || busy} onClick={next} />
+              <ContinueSlot className="col-span-2 sm:col-span-1" label={continueLabel} disabled={!ready || busy} onClick={next} />
             </div>
           ) : null}
 
           {step === 2 ? (
-            <div className="mt-8 grid grid-cols-3 gap-3" role="group" aria-label={current.question}>
+            <div className="mt-6 grid min-w-0 grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-3" role="group" aria-label={current.question}>
               {company.map((item) => (
                 <Choice key={item.label} selected={social === item.label} onClick={() => setSocial(item.label)}>
                   {item.label}
@@ -327,24 +336,24 @@ export function MoodGuide() {
 
           {step === 3 ? (
             <div className="mt-8">
-              <p className="text-center text-6xl font-light tracking-tight sm:text-7xl">{budget >= 300 ? 'R$ 300+' : `R$ ${budget}`}</p>
+              <p className="break-words text-center text-5xl font-light tracking-tight sm:text-6xl md:text-7xl">{budget >= budgetMax ? `R$ ${budgetMax}+` : `R$ ${budget}`}</p>
               <input
                 className="range mt-8"
                 type="range"
-                min={0}
-                max={300}
-                step={10}
+                min={guide.budget.min}
+                max={guide.budget.max}
+                step={guide.budget.step}
                 value={budget}
                 aria-label="Quanto quer gastar"
                 onChange={(event) => setBudget(Number(event.target.value))}
               />
               <div className="mt-3 flex justify-between text-[11px] tracking-[0.12em] text-muted uppercase">
-                <span>R$ 0</span>
-                <span>R$ 300+</span>
+                <span>R$ {guide.budget.min}</span>
+                <span>R$ {guide.budget.max}+</span>
               </div>
               <p className="mt-6 text-center text-sm text-muted">Média estimada por pessoa para café, refeição ou entrada.</p>
-              <div className="mt-8 grid grid-cols-3">
-                <div className="col-start-3">
+              <div className="mt-6 grid grid-cols-1 sm:mt-8 sm:grid-cols-3">
+                <div className="min-w-0 sm:col-start-3">
                   <ContinueSlot label={continueLabel} disabled={!ready || busy} onClick={next} />
                 </div>
               </div>
@@ -352,13 +361,13 @@ export function MoodGuide() {
           ) : null}
 
           {step === 4 ? (
-            <div className="mt-8 grid grid-cols-3 gap-3" role="group" aria-label={current.question}>
+            <div className="mt-6 grid min-w-0 grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-3" role="group" aria-label={current.question}>
               {durations.map((item) => (
                 <Choice key={item.id} selected={timeId === item.id} onClick={() => setTimeId(item.id)}>
                   {item.label}
                 </Choice>
               ))}
-              <ContinueSlot label={continueLabel} disabled={!ready || busy} onClick={next} />
+              <ContinueSlot className="col-span-2 sm:col-span-1" label={continueLabel} disabled={!ready || busy} onClick={next} />
             </div>
           ) : null}
 
@@ -462,11 +471,11 @@ function ProjectCarousel({ city, label }: { city: string; label: string }) {
       })}
       <div className="absolute inset-0 bg-gradient-to-t from-[#1c1917]/88 via-[#1c1917]/25 to-[#1c1917]/15" />
       <div className="relative flex h-full flex-col justify-end p-6 text-white lg:p-12">
-        <p className="text-[11px] font-semibold tracking-[0.16em] uppercase">
+        <p className="break-words text-[11px] font-semibold tracking-[0.12em] uppercase sm:tracking-[0.16em]">
           {String(index + 1).padStart(2, '0')} / {String(count).padStart(2, '0')}{label ? ` · ${label}` : ''}
         </p>
-        <p className="mt-3 max-w-xl text-4xl leading-[1.05] font-light tracking-tight sm:text-5xl lg:text-6xl">{slide.title}</p>
-        <p className="mt-4 max-w-xl text-lg leading-8 text-white/90 lg:text-xl">{slide.text}</p>
+        <p className="mt-3 max-w-xl break-words text-3xl leading-[1.05] font-light tracking-tight sm:text-5xl lg:text-6xl">{slide.title}</p>
+        <p className="mt-4 max-w-xl text-base leading-7 text-white/90 sm:text-lg sm:leading-8 lg:text-xl">{slide.text}</p>
         <div className="mt-6 flex items-center gap-4">
           <button
             type="button"
@@ -508,17 +517,19 @@ function ContinueSlot({
   label,
   disabled,
   onClick,
+  className = '',
 }: {
   label: string;
   disabled: boolean;
   onClick: () => void;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="flex h-full min-h-16 items-center justify-center bg-ink px-4 text-sm text-white disabled:opacity-30"
+      className={`flex h-full min-h-16 w-full min-w-0 items-center justify-center break-words bg-ink px-2 text-center text-[13px] leading-snug text-white disabled:opacity-30 sm:px-3 sm:text-sm ${className}`}
     >
       {label}
     </button>
@@ -541,7 +552,7 @@ function Choice({
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={`flex flex-col items-start justify-end gap-6 border px-4 py-4 text-left text-base transition-colors ${
+      className={`flex min-w-0 flex-col items-center justify-center gap-2 break-words border px-2 py-3 text-center text-sm leading-snug transition-colors sm:px-4 sm:text-base ${
         tall ? 'min-h-36' : 'min-h-16'
       } ${selected ? 'border-ink bg-ink text-white' : 'border-[#e7dfd8] bg-white text-ink hover:border-ink/40'}`}
     >

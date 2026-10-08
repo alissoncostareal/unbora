@@ -25,6 +25,18 @@ const paths: Record<NavIconName, ReactNode> = {
   star: (
     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
   ),
+  form: (
+    <>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 8h8M8 12h8M8 16h5" />
+    </>
+  ),
+  ban: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M7 17 17 7" />
+    </>
+  ),
   calendar: (
     <>
       <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -51,7 +63,7 @@ const paths: Record<NavIconName, ReactNode> = {
 export function NavIcon({ name, active = false }: { name: NavIconName; active?: boolean }) {
   return (
     <svg
-      className={cn('size-[18px] shrink-0', active ? 'text-sidebar' : 'text-current')}
+      className={cn('size-[18px] shrink-0', active ? 'text-white' : 'text-current')}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

@@ -5,6 +5,7 @@ import { PlaceCard } from '../components/PlaceCard';
 import { fetchDismissed, recommend, searchPlaces, sendFeedback, type Place, type Recommendation } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { company, durations, interests, JOURNEY_KEY, moods, type JourneyChoice } from '../lib/catalog';
+import { loadGuide } from '../lib/guide';
 import { journeyFromQuery, readResultQuery } from '../lib/resultQuery';
 
 function recommendFromQuery(spec: ReturnType<typeof readResultQuery>, userId?: string) {
@@ -152,47 +153,50 @@ export function ResultPage() {
   const queryKey = params.toString();
 
   useEffect(() => {
-    const spec = readResultQuery(params);
-    const cached = readJson<Recommendation>('unbora-result');
-    const cachedJourney = readJson<JourneyChoice>(JOURNEY_KEY);
-    const cachedKey = sessionStorage.getItem('unbora-result-key');
-    if (cached && cachedKey === queryKey) {
-      setResult(cached);
-      setJourney(cachedJourney ?? journeyFromQuery(spec));
-      setFailed(false);
-      setLoading(false);
-      return;
-    }
-    if (!spec.city && !spec.query) {
-      setResult(cached);
-      setJourney(cachedJourney);
-      setFailed(Boolean(sessionStorage.getItem('unbora-search-error')));
-      return;
-    }
-
     let cancelled = false;
-    setLoading(true);
-    setFailed(false);
-    const request = spec.query
-      ? searchPlaces(spec.query, spec, user?.id)
-      : recommendFromQuery(spec, user?.id);
-    request.then((next) => {
-      if (cancelled || !next) return;
-      sessionStorage.setItem('unbora-result', JSON.stringify(next));
-      sessionStorage.setItem('unbora-result-key', queryKey);
-      const nextJourney = journeyFromQuery(spec);
-      if (nextJourney) sessionStorage.setItem(JOURNEY_KEY, JSON.stringify(nextJourney));
-      setResult(next);
-      setJourney(nextJourney);
-    }).catch(() => {
-      if (!cancelled) setFailed(true);
-    }).finally(() => {
-      if (!cancelled) setLoading(false);
+    void loadGuide().then(() => {
+      if (cancelled) return;
+      const spec = readResultQuery(params);
+      const cached = readJson<Recommendation>('unbora-result');
+      const cachedJourney = readJson<JourneyChoice>(JOURNEY_KEY);
+      const cachedKey = sessionStorage.getItem('unbora-result-key');
+      if (cached && cachedKey === queryKey) {
+        setResult(cached);
+        setJourney(cachedJourney ?? journeyFromQuery(spec));
+        setFailed(false);
+        setLoading(false);
+        return;
+      }
+      if (!spec.city && !spec.query) {
+        setResult(cached);
+        setJourney(cachedJourney);
+        setFailed(Boolean(sessionStorage.getItem('unbora-search-error')));
+        return;
+      }
+
+      setLoading(true);
+      setFailed(false);
+      const request = spec.query
+        ? searchPlaces(spec.query, spec, user?.id)
+        : recommendFromQuery(spec, user?.id);
+      request.then((next) => {
+        if (cancelled || !next) return;
+        sessionStorage.setItem('unbora-result', JSON.stringify(next));
+        sessionStorage.setItem('unbora-result-key', queryKey);
+        const nextJourney = journeyFromQuery(spec);
+        if (nextJourney) sessionStorage.setItem(JOURNEY_KEY, JSON.stringify(nextJourney));
+        setResult(next);
+        setJourney(nextJourney);
+      }).catch(() => {
+        if (!cancelled) setFailed(true);
+      }).finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     });
     return () => {
       cancelled = true;
     };
-  }, [queryKey, user?.id]);
+  }, [queryKey, user?.id, params]);
 
   useEffect(() => {
     if (!user) return;

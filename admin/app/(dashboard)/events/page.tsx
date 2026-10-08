@@ -26,12 +26,12 @@ import { getClientSession } from '@/lib/auth';
 import { can } from '@/lib/permissions';
 
 const TABS: { id: EventModerationStatus; label: string }[] = [
-  { id: 'PENDING', label: 'Pendentes' },
-  { id: 'APPROVED', label: 'Aprovados' },
-  { id: 'REJECTED', label: 'Recusados' },
+  { id: 'PENDING', label: 'Pendentes de Análise' },
+  { id: 'APPROVED', label: 'Eventos Aprovados' },
+  { id: 'REJECTED', label: 'Eventos Recusados' },
 ];
 
-function formatDate(value: string) {
+function formatDate(value?: string) {
   if (!value) return '—';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
@@ -41,9 +41,9 @@ function formatDate(value: string) {
   }).format(d);
 }
 
-function statusVariant(status: string): 'guest' | 'registered' | 'active' | 'inactive' {
+function statusVariant(status: string): 'guest' | 'registered' | 'active' | 'inactive' | 'pending' {
   if (status === 'APPROVED') return 'active';
-  if (status === 'PENDING') return 'guest';
+  if (status === 'PENDING') return 'pending';
   if (status === 'REJECTED') return 'inactive';
   return 'registered';
 }
@@ -52,6 +52,7 @@ export default function EventsAdminPage() {
   const [tab, setTab] = useState<EventModerationStatus>('PENDING');
   const [items, setItems] = useState<CommunityEventItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
   const session = getClientSession();
@@ -64,7 +65,7 @@ export default function EventsAdminPage() {
       const data = await getAdminEvents({ status });
       setItems(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao carregar eventos');
+      setError(e instanceof Error ? e.message : 'Erro ao carregar eventos para moderação.');
     } finally {
       setLoading(false);
     }
@@ -79,31 +80,35 @@ export default function EventsAdminPage() {
     return `${items.length} evento${items.length === 1 ? '' : 's'}`;
   }, [items.length]);
 
-  async function onApprove(id: string) {
+  async function onApprove(id: string, title: string) {
     if (!canManage) return;
     setActingId(id);
     setError(null);
+    setSuccess(null);
     try {
       await approveEvent(id);
+      setSuccess(`Evento "${title}" aprovado e publicado com sucesso!`);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao aprovar');
+      setError(e instanceof Error ? e.message : 'Erro ao aprovar evento.');
     } finally {
       setActingId(null);
     }
   }
 
-  async function onReject(id: string) {
+  async function onReject(id: string, title: string) {
     if (!canManage) return;
-    const reason = window.prompt('Motivo da recusa (opcional):');
+    const reason = window.prompt(`Informe o motivo da recusa para "${title}" (opcional):`);
     if (reason === null) return;
     setActingId(id);
     setError(null);
+    setSuccess(null);
     try {
       await rejectEvent(id, reason);
+      setSuccess(`Evento "${title}" recusado.`);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao recusar');
+      setError(e instanceof Error ? e.message : 'Erro ao recusar evento.');
     } finally {
       setActingId(null);
     }
@@ -112,110 +117,122 @@ export default function EventsAdminPage() {
   return (
     <>
       <PageHeader
-        title="Eventos"
-        description="Aprove ou recuse eventos enviados pela comunidade no app."
+        title="Moderação de Eventos"
+        description="Curadoria e aprovação de eventos submetidos pela comunidade no aplicativo Unbora."
       />
 
-      {error ? (
-        <Alert variant="error" className="mb-4">
-          {error}
-        </Alert>
-      ) : null}
+      {error ? <Alert variant="error">{error}</Alert> : null}
+      {success ? <Alert variant="success">{success}</Alert> : null}
 
       {!canManage ? (
-        <Alert variant="error" className="mb-4">
-          Você pode visualizar a fila, mas só admin/superadmin aprova ou recusa.
+        <Alert variant="info">
+          Modo consultor: visualização de eventos permitida. Apenas administradores podem aprovar ou recusar submissões.
         </Alert>
       ) : null}
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={
-              tab === t.id
-                ? 'rounded-full bg-sidebar px-4 py-2 text-sm font-semibold text-white'
-                : 'rounded-full bg-white px-4 py-2 text-sm font-medium text-ink/70 ring-1 ring-black/5'
-            }
-          >
-            {t.label}
-          </button>
-        ))}
-        <span className="ml-auto text-sm text-ink/50">{countsLabel}</span>
+      {/* Tabs navigation */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-[#e8e0d7] pb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {TABS.map((t) => {
+            const isActive = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`rounded-xl px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all ${
+                  isActive
+                    ? 'bg-[#1c1917] text-[#fff8f5] shadow-xs'
+                    : 'border border-[#e8e0d7] bg-white text-[#55433e] hover:border-[#1c1917] hover:text-[#1c1917]'
+                }`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+        <span className="text-xs font-semibold text-[#8a8178] uppercase tracking-wider">{countsLabel}</span>
       </div>
 
-      <Panel>
+      <Panel flush>
         {loading ? (
           <DataTableLoading>Carregando eventos…</DataTableLoading>
         ) : items.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-ink/50">
-            Nenhum evento em “{TABS.find((t) => t.id === tab)?.label}”.
+          <p className="px-6 py-14 text-center text-sm text-[#8a8178]">
+            Nenhum evento listado em “{TABS.find((t) => t.id === tab)?.label}”.
           </p>
         ) : (
           <DataTable>
             <DataTableHead>
-              <DataTableHeaderCell>Evento</DataTableHeaderCell>
+              <DataTableHeaderCell>Título & Descrição</DataTableHeaderCell>
               <DataTableHeaderCell>Categoria</DataTableHeaderCell>
-              <DataTableHeaderCell>Local</DataTableHeaderCell>
-              <DataTableHeaderCell>Quando</DataTableHeaderCell>
-              <DataTableHeaderCell>Autor</DataTableHeaderCell>
+              <DataTableHeaderCell>Local & Cidade</DataTableHeaderCell>
+              <DataTableHeaderCell>Data do Evento</DataTableHeaderCell>
+              <DataTableHeaderCell>Autor / Proponente</DataTableHeaderCell>
               <DataTableHeaderCell>Status</DataTableHeaderCell>
               {canManage && tab === 'PENDING' ? (
-                <DataTableHeaderCell>Ações</DataTableHeaderCell>
+                <DataTableHeaderCell className="text-right">Ações</DataTableHeaderCell>
               ) : null}
             </DataTableHead>
             <tbody>
               {items.map((item) => (
                 <DataTableRow key={item.id}>
                   <DataTableCell>
-                    <div className="max-w-[240px]">
-                      <p className="font-semibold text-ink">{item.title}</p>
-                      <p className="line-clamp-2 text-xs text-ink/55">{item.description}</p>
+                    <div className="max-w-[280px]">
+                      <p className="font-semibold text-[#1c1917]">{item.title}</p>
+                      {item.description ? (
+                        <p className="mt-0.5 line-clamp-2 text-xs text-[#746c64] leading-relaxed">
+                          {item.description}
+                        </p>
+                      ) : null}
                     </div>
                   </DataTableCell>
                   <DataTableCell>
-                    <Badge variant="registered">{item.category || 'Outros'}</Badge>
+                    <Badge variant="neutral">{item.category || 'Geral'}</Badge>
                   </DataTableCell>
                   <DataTableCell>
-                    <div className="text-sm">
-                      <p>{item.venue || '—'}</p>
-                      <p className="text-xs text-ink/50">
+                    <div className="text-xs">
+                      <p className="font-medium text-[#1c1917]">{item.venue || 'Local não informado'}</p>
+                      <p className="text-[#8a8178]">
                         {item.city}
                         {item.region ? ` · ${item.region}` : ''}
                       </p>
                     </div>
                   </DataTableCell>
-                  <DataTableCell className="whitespace-nowrap text-sm">
+                  <DataTableCell className="whitespace-nowrap text-xs text-[#55433e]">
                     {formatDate(item.startsAt)}
                   </DataTableCell>
-                  <DataTableCell>
-                    <p className="text-sm">{item.merchantName || item.businessName || '—'}</p>
+                  <DataTableCell className="text-xs text-[#55433e]">
+                    {item.merchantName || item.businessName || 'Comunidade'}
                   </DataTableCell>
                   <DataTableCell>
-                    <Badge variant={statusVariant(item.status)}>{item.status}</Badge>
+                    <Badge variant={statusVariant(item.status)}>
+                      {item.status === 'APPROVED' ? 'Aprovado' : item.status === 'PENDING' ? 'Pendente' : 'Recusado'}
+                    </Badge>
                     {item.rejectionReason ? (
-                      <p className="mt-1 max-w-[160px] text-xs text-ink/50">{item.rejectionReason}</p>
+                      <p className="mt-1 max-w-[180px] text-[11px] text-rose-700 bg-rose-50 p-1.5 rounded-md border border-rose-200">
+                        {item.rejectionReason}
+                      </p>
                     ) : null}
                   </DataTableCell>
                   {canManage && tab === 'PENDING' ? (
-                    <DataTableCell>
-                      <div className="flex flex-wrap gap-2">
+                    <DataTableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <Button
                           type="button"
-                          className="px-3 py-1.5 text-xs"
+                          variant="coral"
+                          className="px-3 py-1.5 text-[11px]"
                           disabled={actingId === item.id}
-                          onClick={() => void onApprove(item.id)}
+                          onClick={() => void onApprove(item.id, item.title)}
                         >
-                          Aprovar
+                          {actingId === item.id ? 'Aprovando…' : 'Aprovar'}
                         </Button>
                         <Button
                           type="button"
-                          className="px-3 py-1.5 text-xs"
-                          variant="outline"
+                          variant="danger"
+                          className="px-3 py-1.5 text-[11px]"
                           disabled={actingId === item.id}
-                          onClick={() => void onReject(item.id)}
+                          onClick={() => void onReject(item.id, item.title)}
                         >
                           Recusar
                         </Button>

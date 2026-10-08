@@ -1,4 +1,5 @@
-import { company, durations, interests, moods, type JourneyChoice } from './catalog';
+import type { JourneyChoice } from './catalog';
+import { getGuide } from './guide';
 
 export interface ResultQuery {
   query: string;
@@ -70,6 +71,7 @@ export function resultPath(input: {
 }
 
 export function journeyFromQuery(spec: ResultQuery): JourneyChoice | null {
+  const { moods, company, durations, interests } = getGuide();
   const mood = moods.find((item) => item.label === spec.moodLabel);
   const withWhom = company.find((item) => item.label === spec.social);
   const time = durations.find((item) => item.id === spec.timeId);

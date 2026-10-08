@@ -4,92 +4,97 @@
 @source '../app/**/*.{js,ts,jsx,tsx}';
 @source '../lib/**/*.{js,ts,jsx,tsx}';
 
-/* ── Unbora Admin — clean / light tokens ── */
+/* ── Unbora Admin — Editorial Warm Design System (Matching unbora.com.br) ── */
 @theme {
-  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Sora', var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
 
-  /* Brand lime */
-  --color-accent: #d4ff4d;
-  --color-accent-dark: #b8e035;
-  --color-accent-light: #f4ffd6;
+  /* Primary Ink & Terracotta Palette */
+  --color-accent: #1c1917;
+  --color-accent-dark: #0f0d0c;
+  --color-accent-light: #f6f2ec;
+  --color-coral: #9a4632;
+  --color-coral-dark: #7c2f1d;
+  --color-coral-light: #faf2ee;
 
   /* Sidebar */
-  --color-sidebar: #1a1a1a;
-  --color-sidebar-dark: #111111;
-  --color-sidebar-hover: rgba(255, 255, 255, 0.06);
-  --color-sidebar-muted: rgba(255, 255, 255, 0.45);
+  --color-sidebar: #ffffff;
+  --color-sidebar-dark: #f6f2ec;
+  --color-sidebar-hover: rgba(28, 25, 23, 0.04);
+  --color-sidebar-muted: #746c64;
 
-  /* Content */
-  --color-primary: #1a1a1a;
-  --color-primary-dark: #111111;
-  --color-primary-light: #f7f7f5;
-
-  --color-canvas: #f7f7f5;
+  /* Surfaces & Backgrounds */
+  --color-canvas: #fbf9f5;
+  --color-canvas-subtle: #f6f2ec;
   --color-surface: #ffffff;
-  --color-muted: #737373;
-  --color-heading: #111111;
-  --color-border: #e8e8e4;
+  --color-surface-hover: #faf8f5;
+  --color-muted: #746c64;
+  --color-muted-light: #a89f91;
+  --color-heading: #1c1917;
+  --color-border: #e8e0d7;
+  --color-border-subtle: #f0e9e1;
 
-  --color-success: #22c55e;
-  --color-success-light: #dcfce7;
-  --color-warning: #eab308;
-  --color-warning-light: #fef9c3;
-  --color-info: #8b5cf6;
-  --color-info-light: #ede9fe;
-  --color-danger: #ef4444;
-  --color-danger-light: #fee2e2;
+  /* Semantic Feedback */
+  --color-success: #166534;
+  --color-success-light: #f0fdf4;
+  --color-warning: #92400e;
+  --color-warning-light: #fffbeb;
+  --color-info: #3730a3;
+  --color-info-light: #eef2ff;
+  --color-danger: #991b1b;
+  --color-danger-light: #fef2f2;
 
-  --color-chart-purple: #a78bfa;
-  --color-chart-green: #166534;
+  --color-chart-terracotta: #9a4632;
+  --color-chart-ink: #1c1917;
 }
 
 @layer base {
   html {
     @apply antialiased;
+    color-scheme: light;
   }
 
   body {
-    @apply bg-canvas font-sans text-[15px] text-muted;
+    @apply bg-canvas font-sans text-[14px] text-muted leading-normal;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: #ffdad2;
+    color: #1c1917;
   }
 }
 
 @layer components {
   .tabela-card {
-    @apply rounded-2xl border border-border bg-surface;
-    box-shadow: none;
+    @apply rounded-2xl border border-border bg-surface transition-shadow;
+    box-shadow: 0 1px 3px rgba(28, 25, 23, 0.03);
+  }
+
+  .tabela-card:hover {
+    box-shadow: 0 4px 12px rgba(28, 25, 23, 0.04);
   }
 
   .tabela-nav-item {
-    @apply flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-[14px] font-medium transition;
+    @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium transition-all duration-150;
   }
 
   .tabela-nav-item--active {
-    @apply bg-accent text-sidebar;
+    @apply bg-[#1c1917] text-[#fff8f5] shadow-xs font-semibold;
   }
 
   .tabela-nav-item--idle {
-    @apply text-white/55 hover:bg-sidebar-hover hover:text-white;
+    @apply text-[#55433e] hover:bg-sidebar-hover hover:text-[#1c1917];
   }
 
   .tabela-pill {
-    @apply rounded-full px-3 py-1 text-xs font-semibold transition;
+    @apply rounded-full px-3 py-1 text-xs font-semibold transition-all;
   }
 
   .tabela-pill--active {
-    @apply bg-sidebar text-white;
+    @apply bg-[#1c1917] text-white;
   }
 
   .tabela-pill--idle {
     @apply text-muted hover:text-heading;
-  }
-
-  .tabela-bar-stripe {
-    background: repeating-linear-gradient(
-      -45deg,
-      #166534,
-      #166534 4px,
-      #14532d 4px,
-      #14532d 8px
-    );
   }
 }

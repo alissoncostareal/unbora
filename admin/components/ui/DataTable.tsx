@@ -9,7 +9,7 @@ export function DataTable({
 }) {
   return (
     <div className={cn('overflow-x-auto', className)}>
-      <table className="w-full border-collapse">{children}</table>
+      <table className="w-full border-collapse text-left">{children}</table>
     </div>
   );
 }
@@ -17,7 +17,7 @@ export function DataTable({
 export function DataTableHead({ children }: { children: React.ReactNode }) {
   return (
     <thead>
-      <tr className="border-b border-border bg-canvas/80 text-left">{children}</tr>
+      <tr className="border-b border-[#e8e0d7] bg-[#fbf9f5]/80 text-left">{children}</tr>
     </thead>
   );
 }
@@ -32,7 +32,7 @@ export function DataTableHeaderCell({
   return (
     <th
       className={cn(
-        'px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted',
+        'px-6 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#746c64]',
         className,
       )}
     >
@@ -51,7 +51,7 @@ export function DataTableRow({
   return (
     <tr
       className={cn(
-        'border-b border-border transition hover:bg-canvas/60',
+        'border-b border-[#f0e9e1] transition-colors hover:bg-[#faf8f5]',
         className,
       )}
     >
@@ -70,7 +70,7 @@ export function DataTableCell({
   colSpan?: number;
 }) {
   return (
-    <td className={cn('px-6 py-4 align-middle text-sm text-muted', className)} colSpan={colSpan}>
+    <td className={cn('px-6 py-4 align-middle text-sm text-[#55433e]', className)} colSpan={colSpan}>
       {children}
     </td>
   );
@@ -79,7 +79,7 @@ export function DataTableCell({
 export function DataTableEmpty({ children, colSpan }: { children: React.ReactNode; colSpan: number }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-6 py-10 text-center text-sm text-muted">
+      <td colSpan={colSpan} className="px-6 py-12 text-center text-sm text-[#8a8178]">
         {children}
       </td>
     </tr>
@@ -87,5 +87,5 @@ export function DataTableEmpty({ children, colSpan }: { children: React.ReactNod
 }
 
 export function DataTableLoading({ children }: { children: React.ReactNode }) {
-  return <p className="px-6 py-8 text-sm text-muted">{children}</p>;
+  return <p className="px-6 py-8 text-center text-sm text-[#8a8178]">{children}</p>;
 }

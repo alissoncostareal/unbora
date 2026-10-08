@@ -5,4 +5,6 @@ export type NavIconName =
   | 'bell'
   | 'map'
   | 'shield'
-  | 'calendar';
+  | 'calendar'
+  | 'form'
+  | 'ban';
