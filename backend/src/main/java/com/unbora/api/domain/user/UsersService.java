@@ -12,7 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -58,15 +61,45 @@ public class UsersService {
         long guests = userRepository.countByIsGuestTrue();
         long registered = userRepository.countByIsGuestFalse();
 
-        Instant startOfToday = LocalDate.now(ZoneId.of("America/Fortaleza"))
-                .atStartOfDay(ZoneId.of("America/Fortaleza"))
-                .toInstant();
+        ZoneId zone = ZoneId.of("America/Fortaleza");
+        LocalDate today = LocalDate.now(zone);
+        Instant startOfToday = today.atStartOfDay(zone).toInstant();
 
-        long activeToday = userRepository.findAll().stream()
-                .filter(u -> u.getLastSeenAt() != null && u.getLastSeenAt().isAfter(startOfToday))
+        List<User> allUsers = userRepository.findAll();
+
+        long activeToday = allUsers.stream()
+                .filter(u -> u.getLastSeenAt() != null && !u.getLastSeenAt().isBefore(startOfToday))
                 .count();
 
-        return new UserStatsDto(total, guests, registered, activeToday);
+        List<Long> dailyActive = new ArrayList<>();
+        List<Long> dailyRegistered = new ArrayList<>();
+        List<String> dayLabels = new ArrayList<>();
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("EEE", Locale.forLanguageTag("pt-BR"));
+
+        for (int i = 6; i >= 0; i--) {
+            LocalDate targetDate = today.minusDays(i);
+            Instant start = targetDate.atStartOfDay(zone).toInstant();
+            Instant end = targetDate.plusDays(1).atStartOfDay(zone).toInstant();
+
+            long activeCount = allUsers.stream()
+                    .filter(u -> u.getLastSeenAt() != null && !u.getLastSeenAt().isBefore(start) && u.getLastSeenAt().isBefore(end))
+                    .count();
+
+            long regCount = allUsers.stream()
+                    .filter(u -> u.getCreatedAt() != null && !u.getCreatedAt().isBefore(start) && u.getCreatedAt().isBefore(end) && !Boolean.TRUE.equals(u.getGuest()))
+                    .count();
+
+            dailyActive.add(activeCount);
+            dailyRegistered.add(regCount);
+            String label = targetDate.format(dtf).replace(".", "");
+            if (!label.isEmpty()) {
+                label = label.substring(0, 1).toUpperCase(Locale.ROOT) + label.substring(1);
+            }
+            dayLabels.add(label);
+        }
+
+        return new UserStatsDto(total, guests, registered, activeToday, dailyActive, dailyRegistered, dayLabels);
     }
 
     @Transactional

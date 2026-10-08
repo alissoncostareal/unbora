@@ -13,6 +13,9 @@ export interface UserStats {
   guests: number;
   registered: number;
   activeToday: number;
+  dailyActive?: number[];
+  dailyRegistered?: number[];
+  dayLabels?: string[];
 }
 
 export interface RegionCatalog {

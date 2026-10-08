@@ -24,11 +24,13 @@ export default async function DashboardPage() {
   let carousels: CarouselItem[] = [];
   let pendingEventsList: CommunityEventItem[] = [];
   let pendingEvents = 0;
+  let bansCount = 0;
+  let notificationsCount = 0;
   let error: string | null = null;
   const token = await getServerToken();
 
   try {
-    const [statsRes, carouselsRes, pendingRes, pendingListRes] = await Promise.all([
+    const [statsRes, carouselsRes, pendingRes, pendingListRes, bansRes, notifsRes] = await Promise.all([
       fetchJson<UserStats>('/users/stats', token),
       fetchJson<CarouselItem[]>('/carousels'),
       token
@@ -39,11 +41,17 @@ export default async function DashboardPage() {
       token
         ? fetchJson<CommunityEventItem[]>('/admin/events?status=PENDING', token).catch(() => [])
         : Promise.resolve([]),
+      token
+        ? fetchJson<unknown[]>('/admin/bans', token).catch(() => [])
+        : Promise.resolve([]),
+      fetchJson<unknown[]>('/notifications').catch(() => []),
     ]);
     stats = statsRes;
     carousels = carouselsRes;
     pendingEvents = pendingRes.count ?? 0;
     pendingEventsList = pendingListRes.slice(0, 5);
+    bansCount = Array.isArray(bansRes) ? bansRes.length : 0;
+    notificationsCount = Array.isArray(notifsRes) ? notifsRes.length : 0;
   } catch (e) {
     error = e instanceof Error ? e.message : 'Erro ao carregar dados';
   }
@@ -56,7 +64,20 @@ export default async function DashboardPage() {
     carousels.length > 0 ? (activeHighlights / carousels.length) * 100 : 0;
 
   const topHighlights = carousels.filter((item) => item.active).slice(0, 4);
-  const barValues = [3, 5, 2, 7, 4, 6, 3];
+
+  const cityCounts = carousels.reduce<Record<string, number>>((acc, item) => {
+    const key = item.city || 'Fortaleza';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const cityData = Object.entries(cityCounts).map(([label, count]) => ({ label, count }));
+
+  const tagCounts = carousels.reduce<Record<string, number>>((acc, item) => {
+    const key = item.tag || 'Geral';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const tagData = Object.entries(tagCounts).map(([label, count]) => ({ label, count }));
 
   return (
     <>
@@ -135,10 +156,10 @@ export default async function DashboardPage() {
               />
             </Link>
             <StatCard
-              label="Atividade Hoje"
-              value={`${activeRate.toFixed(0)}%`}
+              label="Ativos Hoje"
+              value={stats.activeToday}
               trend={activeRate}
-              trendLabel="ativos"
+              trendLabel="da base"
               icon={
                 <svg className="size-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
@@ -163,7 +184,7 @@ export default async function DashboardPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-[#1c1917] group-hover:text-[#9a4632] transition-colors">Formulário</p>
-                <p className="text-[11px] text-[#8a8178] truncate">Etapas & Orçamento</p>
+                <p className="text-[11px] text-[#8a8178] truncate">Opções & Catálogo</p>
               </div>
             </Link>
 
@@ -179,7 +200,7 @@ export default async function DashboardPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-[#1c1917] group-hover:text-[#9a4632] transition-colors">Ban List</p>
-                <p className="text-[11px] text-[#8a8178] truncate">Lugares Bloqueados</p>
+                <p className="text-[11px] text-[#8a8178] truncate">{bansCount} bloqueados</p>
               </div>
             </Link>
 
@@ -195,7 +216,7 @@ export default async function DashboardPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-[#1c1917] group-hover:text-[#9a4632] transition-colors">Notificações</p>
-                <p className="text-[11px] text-[#8a8178] truncate">Transmissão de Avisos</p>
+                <p className="text-[11px] text-[#8a8178] truncate">{notificationsCount} disparadas</p>
               </div>
             </Link>
 
@@ -213,7 +234,7 @@ export default async function DashboardPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-[#1c1917] group-hover:text-[#9a4632] transition-colors">Usuários</p>
-                <p className="text-[11px] text-[#8a8178] truncate">Base Cadastrada</p>
+                <p className="text-[11px] text-[#8a8178] truncate">{stats.registered} registrados</p>
               </div>
             </Link>
           </div>
@@ -261,7 +282,11 @@ export default async function DashboardPage() {
             </section>
 
             <section className="tabela-card p-6 bg-white border border-[#e8e0d7]">
-              <UsersAreaChart />
+              <UsersAreaChart
+                dailyActive={stats.dailyActive}
+                dailyRegistered={stats.dailyRegistered}
+                dayLabels={stats.dayLabels}
+              />
               <div className="mt-4 pt-3 border-t border-[#f0e9e1] flex items-center justify-between text-xs text-[#746c64]">
                 <span>Convidados: <strong className="text-[#1c1917]">{stats.guests}</strong> ({guestRate.toFixed(0)}%)</span>
                 <span>Registrados: <strong className="text-[#1c1917]">{stats.registered}</strong></span>
@@ -273,7 +298,10 @@ export default async function DashboardPage() {
           {/* Section 2: Highlights Bar Chart + Active Highlights list */}
           <div className="grid gap-6 lg:grid-cols-2">
             <section className="tabela-card p-6 bg-white border border-[#e8e0d7]">
-              <HighlightsBarChart values={barValues} />
+              <HighlightsBarChart
+                cityData={cityData}
+                tagData={tagData}
+              />
             </section>
 
             <section className="tabela-card overflow-hidden bg-white border border-[#e8e0d7]">

@@ -2,53 +2,96 @@
 
 import { useState } from 'react';
 
-import { PeriodToggle } from '@/components/ui/PeriodToggle';
+export function UsersAreaChart({
+  dailyActive,
+  dailyRegistered,
+  dayLabels,
+}: {
+  dailyActive?: number[];
+  dailyRegistered?: number[];
+  dayLabels?: string[];
+}) {
+  const [metric, setMetric] = useState<'active' | 'registered'>('active');
 
-const DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-const VALUES = [42, 58, 45, 72, 65, 80, 55];
+  const defaultDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+  const labels = dayLabels && dayLabels.length === 7 ? dayLabels : defaultDays;
+  const activeSeries = dailyActive && dailyActive.length === 7 ? dailyActive : [0, 0, 0, 0, 0, 0, 0];
+  const registeredSeries = dailyRegistered && dailyRegistered.length === 7 ? dailyRegistered : [0, 0, 0, 0, 0, 0, 0];
 
-export function UsersAreaChart() {
-  const [period, setPeriod] = useState<'weekly' | 'monthly'>('weekly');
-  const max = Math.max(...VALUES);
+  const currentValues = metric === 'active' ? activeSeries : registeredSeries;
+  const max = Math.max(...currentValues, 1);
   const width = 400;
-  const height = 160;
-  const padX = 8;
+  const height = 150;
+  const padX = 18;
   const padY = 16;
 
-  const points = VALUES.map((v, i) => {
-    const x = padX + (i / (VALUES.length - 1)) * (width - padX * 2);
+  const points = currentValues.map((v, i) => {
+    const x = padX + (i / Math.max(currentValues.length - 1, 1)) * (width - padX * 2);
     const y = height - padY - (v / max) * (height - padY * 2);
     return { x, y, v };
   });
 
   const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`;
+  const areaPath = points.length > 0 ? `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z` : '';
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-heading">Usuários ativos</h2>
-        <PeriodToggle value={period} onChange={setPeriod} />
+        <div>
+          <h2 className="text-[15px] font-semibold text-[#1c1917]">
+            {metric === 'active' ? 'Atividade Recente' : 'Novos Cadastros'}
+          </h2>
+          <p className="text-xs text-[#8a8178]">Últimos 7 dias (tempo real)</p>
+        </div>
+        <div className="inline-flex rounded-xl bg-[#f6f2ec] p-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setMetric('active')}
+            className={`rounded-lg px-2.5 py-1 font-medium transition-all ${
+              metric === 'active' ? 'bg-white text-[#1c1917] shadow-2xs' : 'text-[#8a8178] hover:text-[#1c1917]'
+            }`}
+          >
+            Ativos
+          </button>
+          <button
+            type="button"
+            onClick={() => setMetric('registered')}
+            className={`rounded-lg px-2.5 py-1 font-medium transition-all ${
+              metric === 'registered' ? 'bg-white text-[#1c1917] shadow-2xs' : 'text-[#8a8178] hover:text-[#1c1917]'
+            }`}
+          >
+            Cadastros
+          </button>
+        </div>
       </div>
       <svg viewBox={`0 0 ${width} ${height + 24}`} className="w-full" aria-hidden>
         <defs>
           <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
+            <stop offset="0%" stopColor="#9a4632" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#9a4632" stopOpacity="0" />
           </linearGradient>
         </defs>
-        <path d={areaPath} fill="url(#areaGrad)" />
-        <path d={linePath} fill="none" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {areaPath ? <path d={areaPath} fill="url(#areaGrad)" /> : null}
+        {linePath ? (
+          <path d={linePath} fill="none" stroke="#9a4632" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        ) : null}
         {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="4" fill="white" stroke="#a78bfa" strokeWidth="2" />
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r="4" fill="white" stroke="#9a4632" strokeWidth="2" />
+            {p.v > 0 ? (
+              <text x={p.x} y={Math.max(p.y - 8, 12)} textAnchor="middle" className="fill-[#1c1917] text-[10px] font-semibold">
+                {p.v}
+              </text>
+            ) : null}
+          </g>
         ))}
-        {DAYS.map((day, i) => (
+        {labels.map((day, i) => (
           <text
-            key={day}
-            x={points[i].x}
+            key={day + i}
+            x={points[i]?.x ?? padX}
             y={height + 18}
             textAnchor="middle"
-            className="fill-muted text-[10px]"
+            className="fill-[#8a8178] text-[11px] font-medium"
           >
             {day}
           </text>

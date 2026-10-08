@@ -2,28 +2,62 @@
 
 import { useState } from 'react';
 
-import { PeriodToggle } from '@/components/ui/PeriodToggle';
-
-const DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-
-export function HighlightsBarChart({ values }: { values: number[] }) {
-  const [period, setPeriod] = useState<'weekly' | 'monthly'>('weekly');
-  const max = Math.max(...values, 1);
+export function HighlightsBarChart({
+  cityData,
+  tagData,
+}: {
+  cityData: { label: string; count: number }[];
+  tagData: { label: string; count: number }[];
+}) {
+  const [view, setView] = useState<'city' | 'tag'>('city');
+  const activeList = view === 'city' ? cityData : tagData;
+  const items = activeList.length > 0 ? activeList : [{ label: 'Nenhum', count: 0 }];
+  const max = Math.max(...items.map((i) => i.count), 1);
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-heading">Destaques por dia</h2>
-        <PeriodToggle value={period} onChange={setPeriod} />
+        <div>
+          <h2 className="text-[15px] font-semibold text-[#1c1917]">Distribuição de Destaques</h2>
+          <p className="text-xs text-[#8a8178]">
+            {view === 'city' ? 'Destaques por localidade' : 'Destaques por categoria'}
+          </p>
+        </div>
+        <div className="inline-flex rounded-xl bg-[#f6f2ec] p-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setView('city')}
+            className={`rounded-lg px-2.5 py-1 font-medium transition-all ${
+              view === 'city' ? 'bg-white text-[#1c1917] shadow-2xs' : 'text-[#8a8178] hover:text-[#1c1917]'
+            }`}
+          >
+            Por Cidade
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('tag')}
+            className={`rounded-lg px-2.5 py-1 font-medium transition-all ${
+              view === 'tag' ? 'bg-white text-[#1c1917] shadow-2xs' : 'text-[#8a8178] hover:text-[#1c1917]'
+            }`}
+          >
+            Por Tag
+          </button>
+        </div>
       </div>
-      <div className="flex items-end justify-between gap-3" style={{ height: 160 }}>
-        {values.map((v, i) => (
-          <div key={DAYS[i]} className="flex flex-1 flex-col items-center gap-2">
+      <div className="flex items-end justify-between gap-3 pt-2" style={{ height: 160 }}>
+        {items.map((item) => (
+          <div key={item.label} className="flex flex-1 flex-col items-center gap-2 min-w-0">
+            <span className="text-[11px] font-semibold text-[#1c1917]">{item.count}</span>
             <div
-              className="tabela-bar-stripe w-full rounded-t-lg transition-all"
-              style={{ height: `${(v / max) * 100}%`, minHeight: v > 0 ? 8 : 0 }}
+              className="w-full rounded-t-lg bg-[#9a4632]/85 hover:bg-[#9a4632] transition-all"
+              style={{
+                height: `${(item.count / max) * 100}%`,
+                minHeight: item.count > 0 ? 8 : 4,
+              }}
             />
-            <span className="text-[11px] text-muted">{DAYS[i]}</span>
+            <span className="truncate w-full text-center text-[11px] text-[#8a8178]" title={item.label}>
+              {item.label}
+            </span>
           </div>
         ))}
       </div>
