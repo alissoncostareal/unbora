@@ -1,5 +1,6 @@
 package com.unbora.api.ai;
 
+import com.unbora.api.common.security.InputSanitizer;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,13 +51,14 @@ public class PlacePhotoProxyController {
 
     @GetMapping("/p/{id}")
     public void photoById(@PathVariable("id") String id, HttpServletResponse response) throws IOException {
-        String src = placePhotoLinkService.resolve(id);
+        String cleanId = InputSanitizer.sanitizePlaceId(id, 64);
+        String src = placePhotoLinkService.resolve(cleanId);
         if (src == null || src.isBlank()) {
-            log.warn("[PhotoProxy] id={} não encontrado no cache", id);
+            log.warn("[PhotoProxy] id={} não encontrado no cache", cleanId);
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        log.info("[PhotoProxy] GET /p/{} -> {}", id, src.length() > 80 ? src.substring(0, 80) + "…" : src);
+        log.info("[PhotoProxy] GET /p/{} -> {}", cleanId, src.length() > 80 ? src.substring(0, 80) + "…" : src);
         streamPhoto(src, response);
     }
 
@@ -66,15 +68,14 @@ public class PlacePhotoProxyController {
     }
 
     private void streamPhoto(String src, HttpServletResponse response) throws IOException {
-        URI uri;
-        try {
-            uri = URI.create(src);
-        } catch (Exception e) {
+        if (!InputSanitizer.isSafeUrl(src, ALLOWED_HOSTS)) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-        String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase(Locale.ROOT);
-        if (!ALLOWED_HOSTS.contains(host) || !"https".equalsIgnoreCase(uri.getScheme())) {
+        URI uri;
+        try {
+            uri = URI.create(src.trim());
+        } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
