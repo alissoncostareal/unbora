@@ -26,8 +26,8 @@ public class GuideSettings {
     @Column(name = "budget_default", nullable = false)
     private int budgetDefault = 80;
 
-    @Column(name = "default_max_results", nullable = false)
-    private int defaultMaxResults = 24;
+    @Column(name = "default_max_results")
+    private Integer defaultMaxResults = 24;
 
     public String getId() {
         return id;
@@ -70,7 +70,7 @@ public class GuideSettings {
     }
 
     public int getDefaultMaxResults() {
-        return defaultMaxResults;
+        return defaultMaxResults != null ? defaultMaxResults : 24;
     }
 
     public void setDefaultMaxResults(int defaultMaxResults) {
