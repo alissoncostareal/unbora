@@ -228,6 +228,7 @@ export function MoodGuide() {
 
   const current = steps[step];
   const opening = step === 0;
+  const continueLabel = step === steps.length - 1 ? 'Ver recomendações →' : 'Continuar →';
 
   if (opening) {
     return (
@@ -309,16 +310,18 @@ export function MoodGuide() {
                   {item.label}
                 </Choice>
               ))}
+              <ContinueSlot label={continueLabel} disabled={!ready || busy} onClick={next} />
             </div>
           ) : null}
 
           {step === 2 ? (
             <div className="mt-8 grid grid-cols-3 gap-3" role="group" aria-label={current.question}>
               {company.map((item) => (
-                <Choice key={item.label} selected={social === item.label} onClick={() => { setSocial(item.label); setStep(3); }}>
+                <Choice key={item.label} selected={social === item.label} onClick={() => setSocial(item.label)}>
                   {item.label}
                 </Choice>
               ))}
+              <ContinueSlot label={continueLabel} disabled={!ready || busy} onClick={next} />
             </div>
           ) : null}
 
@@ -340,16 +343,22 @@ export function MoodGuide() {
                 <span>R$ 300+</span>
               </div>
               <p className="mt-6 text-center text-sm text-muted">Média estimada por pessoa para café, refeição ou entrada.</p>
+              <div className="mt-8 grid grid-cols-3">
+                <div className="col-start-3">
+                  <ContinueSlot label={continueLabel} disabled={!ready || busy} onClick={next} />
+                </div>
+              </div>
             </div>
           ) : null}
 
           {step === 4 ? (
             <div className="mt-8 grid grid-cols-3 gap-3" role="group" aria-label={current.question}>
               {durations.map((item) => (
-                <Choice key={item.id} selected={timeId === item.id} onClick={() => { setTimeId(item.id); void finish(item.id); }}>
+                <Choice key={item.id} selected={timeId === item.id} onClick={() => setTimeId(item.id)}>
                   {item.label}
                 </Choice>
               ))}
+              <ContinueSlot label={continueLabel} disabled={!ready || busy} onClick={next} />
             </div>
           ) : null}
 
@@ -365,14 +374,6 @@ export function MoodGuide() {
             onClick={() => setStep((currentStep) => currentStep - 1)}
           >
             ← Voltar
-          </button>
-          <button
-            type="button"
-            disabled={!ready || busy}
-            className="h-12 bg-ink px-6 text-sm text-white disabled:opacity-30"
-            onClick={next}
-          >
-            {step === steps.length - 1 ? 'Ver recomendações →' : 'Continuar →'}
           </button>
         </div>
       </div>
@@ -500,6 +501,27 @@ function ProjectCarousel({ city, label }: { city: string; label: string }) {
       </div>
     </div>
     </div>
+  );
+}
+
+function ContinueSlot({
+  label,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="flex h-full min-h-16 items-center justify-center bg-ink px-4 text-sm text-white disabled:opacity-30"
+    >
+      {label}
+    </button>
   );
 }
 
