@@ -77,6 +77,14 @@ export const DASHBOARD_NAV_SECTIONS: NavSection[] = [
         readFor: 'viewUsers',
         description: 'Carousels do app segmentados por região',
       },
+      {
+        href: '/sponsored',
+        label: 'Patrocinados',
+        icon: 'sparkles',
+        permission: 'manageEvents',
+        readFor: 'viewUsers',
+        description: 'Slot de ouro, benefícios exclusivos e destaques',
+      },
     ],
   },
   {
@@ -129,6 +137,8 @@ export const PAGE_TITLES: Record<string, string> = {
   '/events': 'Moderação de Eventos',
   '/carousels': 'Destaques do App',
   '/destaques': 'Destaques do App',
+  '/sponsored': 'Locais Patrocinados',
+  '/patrocinados': 'Locais Patrocinados',
   '/users': 'Usuários Cadastrados',
   '/team': 'Equipe do Portal',
   '/locations': 'Regiões e Cidades',

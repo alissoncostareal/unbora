@@ -53,6 +53,22 @@ public class PlaceDto {
     @JsonAlias({"priceLevel"})
     private String priceLevel;
 
+    @JsonProperty("is_sponsored")
+    @JsonAlias({"isSponsored", "sponsored"})
+    private Boolean isSponsored;
+
+    @JsonProperty("benefit_text")
+    @JsonAlias({"benefitText", "unboraPerks", "beneficio"})
+    private String benefitText;
+
+    @JsonProperty("sponsored_badge")
+    @JsonAlias({"sponsoredBadge"})
+    private String sponsoredBadge;
+
+    @JsonProperty("sponsored_id")
+    @JsonAlias({"sponsoredId"})
+    private String sponsoredId;
+
     public PlaceDto() {}
 
     public String getNome() {
@@ -206,4 +222,37 @@ public class PlaceDto {
     public void setPriceLevel(String priceLevel) {
         this.priceLevel = priceLevel;
     }
+
+    public Boolean getIsSponsored() {
+        return isSponsored;
+    }
+
+    public void setIsSponsored(Boolean isSponsored) {
+        this.isSponsored = isSponsored;
+    }
+
+    public String getBenefitText() {
+        return benefitText;
+    }
+
+    public void setBenefitText(String benefitText) {
+        this.benefitText = benefitText;
+    }
+
+    public String getSponsoredBadge() {
+        return sponsoredBadge;
+    }
+
+    public void setSponsoredBadge(String sponsoredBadge) {
+        this.sponsoredBadge = sponsoredBadge;
+    }
+
+    public String getSponsoredId() {
+        return sponsoredId;
+    }
+
+    public void setSponsoredId(String sponsoredId) {
+        this.sponsoredId = sponsoredId;
+    }
 }
+

@@ -143,4 +143,51 @@ export interface CitySuggestion {
   longitude?: number | null;
 }
 
+export interface SponsoredPlaceItem {
+  id: string;
+  name: string;
+  city: string;
+  region?: string;
+  country?: string;
+  type?: string;
+  description?: string;
+  benefitText?: string;
+  categoryTags?: string;
+  imageUrl?: string;
+  mapsUrl?: string;
+  address?: string;
+  placeId?: string;
+  rating?: number;
+  priceLevel?: string;
+  slotBoost?: boolean;
+  homeHighlight?: boolean;
+  active?: boolean;
+  sortOrder?: number;
+  impressionsCount?: number;
+  clicksCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SaveSponsoredPlaceInput {
+  name: string;
+  city: string;
+  region?: string;
+  country?: string;
+  type?: string;
+  description?: string;
+  benefitText?: string;
+  categoryTags?: string;
+  imageUrl?: string;
+  mapsUrl?: string;
+  address?: string;
+  placeId?: string;
+  rating?: number;
+  priceLevel?: string;
+  slotBoost?: boolean;
+  homeHighlight?: boolean;
+  active?: boolean;
+  sortOrder?: number;
+}
+
 

@@ -5,12 +5,15 @@ import com.unbora.api.common.exception.ApiException;
 import com.unbora.api.domain.carousel.dto.CarouselRecordDto;
 import com.unbora.api.domain.carousel.dto.CreateCarouselDto;
 import com.unbora.api.domain.carousel.dto.UpdateCarouselDto;
+import com.unbora.api.domain.sponsored.SponsoredPlace;
+import com.unbora.api.domain.sponsored.SponsoredPlaceRepository;
 import jakarta.annotation.PostConstruct;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,9 +22,14 @@ import java.util.UUID;
 public class CarouselsService {
 
     private final CarouselRepository carouselRepository;
+    private final SponsoredPlaceRepository sponsoredPlaceRepository;
 
-    public CarouselsService(CarouselRepository carouselRepository) {
+    public CarouselsService(
+            CarouselRepository carouselRepository,
+            SponsoredPlaceRepository sponsoredPlaceRepository
+    ) {
         this.carouselRepository = carouselRepository;
+        this.sponsoredPlaceRepository = sponsoredPlaceRepository;
     }
 
     @PostConstruct
@@ -76,11 +84,47 @@ public class CarouselsService {
     }
 
     public List<CarouselRecordDto> list(boolean activeOnly, String city, String region) {
-        return carouselRepository.findAllByOrderBySortOrderAscCreatedAtDesc().stream()
+        List<CarouselRecordDto> regular = carouselRepository.findAllByOrderBySortOrderAscCreatedAtDesc().stream()
                 .filter(c -> !activeOnly || Boolean.TRUE.equals(c.getActive()))
                 .filter(c -> LocationsConstants.matchesLocation(c.getCity(), c.getRegion(), city, region))
                 .map(this::toRecord)
                 .toList();
+
+        if (!activeOnly || sponsoredPlaceRepository == null) {
+            return regular;
+        }
+
+        // Método C: Injetar Destaques Patrocinados da Home
+        List<SponsoredPlace> sponsored = sponsoredPlaceRepository.findAllByOrderBySortOrderAscCreatedAtDesc().stream()
+                .filter(p -> Boolean.TRUE.equals(p.getActive()) && Boolean.TRUE.equals(p.getHomeHighlight()))
+                .filter(p -> LocationsConstants.matchesLocation(p.getCity(), p.getRegion(), city, region))
+                .toList();
+
+        if (sponsored.isEmpty()) {
+            return regular;
+        }
+
+        List<CarouselRecordDto> combined = new ArrayList<>();
+        for (SponsoredPlace sp : sponsored) {
+            String subtitle = (sp.getBenefitText() != null && !sp.getBenefitText().isBlank())
+                    ? "🎁 " + sp.getBenefitText()
+                    : sp.getDescription();
+            combined.add(new CarouselRecordDto(
+                    "sponsored-" + sp.getId(),
+                    sp.getName(),
+                    subtitle != null ? subtitle : "",
+                    "⭐ Destaque Parceiro",
+                    sp.getImageUrl() != null && !sp.getImageUrl().isBlank() ? sp.getImageUrl() : "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80",
+                    sp.getCity() != null ? sp.getCity() : LocationsConstants.DEFAULT_CITY,
+                    sp.getRegion() != null ? sp.getRegion() : LocationsConstants.DEFAULT_REGION,
+                    -100 + (sp.getSortOrder() != null ? sp.getSortOrder() : 0),
+                    true,
+                    sp.getCreatedAt() != null ? sp.getCreatedAt().toString() : "",
+                    sp.getUpdatedAt() != null ? sp.getUpdatedAt().toString() : ""
+            ));
+        }
+        combined.addAll(regular);
+        return combined;
     }
 
     @Transactional

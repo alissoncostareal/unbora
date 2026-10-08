@@ -15,6 +15,10 @@ export interface Place {
   longitude?: number;
   openNow?: boolean | null;
   priceLevel?: string;
+  isSponsored?: boolean;
+  benefitText?: string;
+  sponsoredBadge?: string;
+  sponsoredId?: string;
 }
 
 export interface Recommendation {
@@ -47,12 +51,25 @@ interface PlaceDto {
   longitude?: number;
   open_now?: boolean | null;
   price_level?: string;
+  is_sponsored?: boolean;
+  benefit_text?: string;
+  sponsored_badge?: string;
+  sponsored_id?: string;
 }
 
 interface RecommendationDto {
   titulo?: string;
   subtitulo?: string;
   lugares?: PlaceDto[];
+}
+
+export async function recordSponsoredClick(id?: string): Promise<void> {
+  if (!id) return;
+  try {
+    await fetch(`${API_BASE}/api/sponsored/${id}/click`, { method: 'POST' });
+  } catch (err) {
+    console.warn('[Sponsored] Error tracking click:', err);
+  }
 }
 
 function mediaUrl(url?: string): string | undefined {
@@ -80,6 +97,10 @@ function mapPlace(dto: PlaceDto): Place {
     longitude: dto.longitude,
     openNow: dto.open_now,
     priceLevel: dto.price_level,
+    isSponsored: dto.is_sponsored,
+    benefitText: dto.benefit_text,
+    sponsoredBadge: dto.sponsored_badge,
+    sponsoredId: dto.sponsored_id,
   };
 }
 

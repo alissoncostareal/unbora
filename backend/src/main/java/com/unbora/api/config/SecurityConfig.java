@@ -69,6 +69,7 @@ public class SecurityConfig {
                         .requestMatchers("/admin/guide/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/admin/bans/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/admin/locations/**").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")
+                        .requestMatchers("/admin/sponsored/**").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")
                         .requestMatchers(HttpMethod.GET, "/events/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/carousels/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/notifications/**").permitAll()

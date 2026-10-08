@@ -13,6 +13,8 @@ import type {
   PublicUser,
   UserStats,
   CitySuggestion,
+  SponsoredPlaceItem,
+  SaveSponsoredPlaceInput,
 } from '@/lib/types';
 
 export type {
@@ -32,6 +34,8 @@ export type {
   UserStats,
   RegionCatalog,
   CitySuggestion,
+  SponsoredPlaceItem,
+  SaveSponsoredPlaceInput,
 } from '@/lib/types';
 
 const API_BASE_URL =
@@ -302,6 +306,30 @@ export async function suggestCities(query: string, token?: string): Promise<City
   } catch {
     return [];
   }
+}
+
+export function getSponsoredPlaces(token?: string) {
+  return fetchJson<SponsoredPlaceItem[]>('/admin/sponsored', undefined, token);
+}
+
+export function getSponsoredPlace(id: string, token?: string) {
+  return fetchJson<SponsoredPlaceItem>(`/admin/sponsored/${id}`, undefined, token);
+}
+
+export function createSponsoredPlace(body: SaveSponsoredPlaceInput, token?: string) {
+  return fetchJson<SponsoredPlaceItem>('/admin/sponsored', { method: 'POST', body: JSON.stringify(body) }, token);
+}
+
+export function updateSponsoredPlace(id: string, body: Partial<SaveSponsoredPlaceInput>, token?: string) {
+  return fetchJson<SponsoredPlaceItem>(`/admin/sponsored/${id}`, { method: 'PUT', body: JSON.stringify(body) }, token);
+}
+
+export function toggleSponsoredPlaceActive(id: string, token?: string) {
+  return fetchJson<SponsoredPlaceItem>(`/admin/sponsored/${id}/toggle`, { method: 'POST', body: '{}' }, token);
+}
+
+export function deleteSponsoredPlace(id: string, token?: string) {
+  return fetchJson<{ deleted: true; id: string }>(`/admin/sponsored/${id}`, { method: 'DELETE' }, token);
 }
 
 export { API_BASE_URL };

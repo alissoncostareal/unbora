@@ -26,6 +26,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.unbora.api.domain.location.LocationSettingsService;
+import com.unbora.api.domain.sponsored.SponsoredPlace;
+import com.unbora.api.domain.sponsored.SponsoredPlaceService;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class RecommendationsService {
@@ -45,6 +49,7 @@ public class RecommendationsService {
     private final DismissedPlaceRepository dismissedPlaceRepository;
     private final PlaceBanService placeBanService;
     private final LocationSettingsService locationSettingsService;
+    private final SponsoredPlaceService sponsoredPlaceService;
     private final ExecutorService vectorIndexExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "place-vector-index");
         thread.setDaemon(true);
@@ -64,7 +69,8 @@ public class RecommendationsService {
             CityAnchor cityAnchor,
             DismissedPlaceRepository dismissedPlaceRepository,
             PlaceBanService placeBanService,
-            LocationSettingsService locationSettingsService
+            LocationSettingsService locationSettingsService,
+            SponsoredPlaceService sponsoredPlaceService
     ) {
         this.groqClient = groqClient;
         this.imageEnrichmentService = imageEnrichmentService;
@@ -79,6 +85,7 @@ public class RecommendationsService {
         this.dismissedPlaceRepository = dismissedPlaceRepository;
         this.placeBanService = placeBanService;
         this.locationSettingsService = locationSettingsService;
+        this.sponsoredPlaceService = sponsoredPlaceService;
     }
 
     public RecommendationResult recommend(RecommendDto dto) {
@@ -228,6 +235,7 @@ public class RecommendationsService {
         retainInCity(enriched, center, radiusKm, city, dismissed, dto.activities(), budgetReais);
         fillMissingMapsPhotos(enriched, city, lat, lng);
         ensurePhotographedPlaces(enriched, livePlaces, maxResults);
+        injectSponsoredPlaces(enriched, city, dto.humor(), dto.activities() != null ? dto.activities().stream().map(ActivityItemDto::label).toList() : List.of(), null, maxResults);
 
         String topPlace = enriched.getLugares() != null && !enriched.getLugares().isEmpty()
                 ? enriched.getLugares().get(0).getNome()
@@ -355,6 +363,7 @@ public class RecommendationsService {
         retainInCity(enriched, center, radiusKm, city, dismissed, null, null);
         fillMissingMapsPhotos(enriched, city, lat, lng);
         ensurePhotographedPlaces(enriched, livePlaces, maxResults);
+        injectSponsoredPlaces(enriched, city, null, List.of(), dto.query(), maxResults);
 
         String topPlace = enriched.getLugares() != null && !enriched.getLugares().isEmpty()
                 ? enriched.getLugares().get(0).getNome()
@@ -1103,5 +1112,73 @@ public class RecommendationsService {
                     vector
             );
         } catch (Exception ignored) {}
+    }
+
+    private void injectSponsoredPlaces(
+            RecommendationResult result,
+            String city,
+            String humor,
+            List<String> activities,
+            String query,
+            int maxResults
+    ) {
+        if (result == null || sponsoredPlaceService == null) return;
+        List<SponsoredPlace> sponsored = sponsoredPlaceService.getMatchingSponsoredForSearch(city, humor, activities, query);
+        if (sponsored.isEmpty()) return;
+
+        List<PlaceDto> list = result.getLugares() != null ? new ArrayList<>(result.getLugares()) : new ArrayList<>();
+
+        // Para evitar duplicatas com lugares orgânicos que tenham o mesmo nome ou placeId
+        Set<String> sponsoredNames = new HashSet<>();
+        List<PlaceDto> injectedDtos = new ArrayList<>();
+
+        for (SponsoredPlace sp : sponsored) {
+            sponsoredPlaceService.trackImpression(sp.getId());
+            sponsoredNames.add(imageEnrichmentService.normalizeText(sp.getName()));
+
+            PlaceDto dto = new PlaceDto();
+            dto.setNome(sp.getName());
+            dto.setTipo(sp.getType() != null && !sp.getType().isBlank() ? sp.getType() : "Destaque Parceiro");
+            dto.setIcone("⭐");
+            dto.setEndereco(sp.getAddress());
+            dto.setNota(sp.getRating() != null ? sp.getRating() : 4.9);
+            dto.setDescricao(sp.getDescription() != null && !sp.getDescription().isBlank() ? sp.getDescription() : "Parceiro Oficial Unbora com benefícios exclusivos.");
+            dto.setDestaque(true);
+            dto.setImagem(sp.getImageUrl());
+            String mapsUrl = sp.getMapsUrl();
+            if (mapsUrl == null || mapsUrl.isBlank()) {
+                mapsUrl = "https://maps.google.com/?q=" + URLEncoder.encode(sp.getName() + " " + sp.getCity(), StandardCharsets.UTF_8);
+            }
+            dto.setGoogleMapsUri(mapsUrl);
+            dto.setPlaceId(sp.getPlaceId());
+            dto.setPriceLevel(sp.getPriceLevel());
+            dto.setIsSponsored(true);
+            dto.setBenefitText(sp.getBenefitText());
+            dto.setSponsoredBadge("Destaque Parceiro");
+            dto.setSponsoredId(sp.getId());
+            if (sp.getCategoryTags() != null && !sp.getCategoryTags().isBlank()) {
+                dto.setTags(Arrays.stream(sp.getCategoryTags().split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .toList());
+            }
+
+            injectedDtos.add(dto);
+        }
+
+        // Remove do resultado orgânico qualquer local que coincida com o patrocinado
+        list.removeIf(p -> p.getNome() != null && sponsoredNames.contains(imageEnrichmentService.normalizeText(p.getNome())));
+
+        // Insere os patrocinados no topo (Slot de Ouro - Método A)
+        for (int i = injectedDtos.size() - 1; i >= 0; i--) {
+            list.add(0, injectedDtos.get(i));
+        }
+
+        // Limita ao número máximo permitido de resultados
+        if (list.size() > maxResults) {
+            list = new ArrayList<>(list.subList(0, maxResults));
+        }
+
+        result.setLugares(list);
     }
 }
