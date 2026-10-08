@@ -49,6 +49,10 @@ public class PlaceDto {
     @JsonAlias({"userRatingCount", "total_avaliacoes"})
     private Integer userRatingCount;
 
+    @JsonProperty("price_level")
+    @JsonAlias({"priceLevel"})
+    private String priceLevel;
+
     public PlaceDto() {}
 
     public String getNome() {
@@ -193,5 +197,13 @@ public class PlaceDto {
 
     public void setUserRatingCount(Integer userRatingCount) {
         this.userRatingCount = userRatingCount;
+    }
+
+    public String getPriceLevel() {
+        return priceLevel;
+    }
+
+    public void setPriceLevel(String priceLevel) {
+        this.priceLevel = priceLevel;
     }
 }

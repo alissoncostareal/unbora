@@ -12,5 +12,6 @@ public record RecommendationFeedbackDto(
         String categoryTag,
         String comment,
         @Min(1) @Max(5) Integer stars,
-        String placeId
+        String placeId,
+        String userId
 ) {}

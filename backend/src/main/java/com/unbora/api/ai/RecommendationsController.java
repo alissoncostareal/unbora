@@ -5,11 +5,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -40,6 +43,12 @@ public class RecommendationsController {
     public DiscoverEventsResult discoverEvents(@RequestBody(required = false) DiscoverEventsDto dto) {
         DiscoverEventsDto effective = dto != null ? dto : new DiscoverEventsDto("Fortaleza");
         return recommendationsService.discoverEvents(effective);
+    }
+
+    @GetMapping("/recomendar/dislikes")
+    @Operation(summary = "Lugares que a pessoa logada pediu para não ver de novo")
+    public List<String> dislikes(@RequestParam String userId) {
+        return recommendationsService.dismissedKeys(userId);
     }
 
     @PostMapping("/recomendar/feedback")

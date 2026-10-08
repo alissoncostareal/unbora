@@ -1,0 +1,93 @@
+# Postgres do Unbora. A imagem postgres:16 já está no nó.
+# A senha fica no secret unbora-postgres, criado no cluster, fora do git.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: unbora
+  labels:
+    app: unbora-postgres
+spec:
+  type: NodePort
+  selector:
+    app: unbora-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      nodePort: 30432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: unbora
+  labels:
+    app: unbora-postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: unbora-postgres
+  template:
+    metadata:
+      labels:
+        app: unbora-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: docker.io/library/postgres:16
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: unbora-postgres
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: unbora-postgres
+                  key: password
+            - name: POSTGRES_DB
+              value: unbora
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "unbora", "-d", "unbora"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "unbora", "-d", "unbora"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 5Gi

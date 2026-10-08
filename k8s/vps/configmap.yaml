@@ -6,9 +6,12 @@ metadata:
 data:
   PORT: "3001"
   ALLOWED_ORIGIN: "*"
-  APP_PUBLIC_BASE_URL: "https://unbora.173.212.242.9.nip.io"
+  APP_PUBLIC_BASE_URL: "https://unbora.173.212.242.9.sslip.io"
   GROQ_MODEL: "qwen/qwen3.8-27b"
+  LLM_FALLBACK_BASE_URL: "http://ollama.unbora.svc.cluster.local:11434/v1"
+  LLM_FALLBACK_MODEL: "llama3.2:3b"
   # Kafka que já roda no cluster (namespace data), o mesmo do PartiuMenu.
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka-service.data.svc.cluster.local:9092"
   UNBORA_KAFKA_ENABLED: "true"
+  UNBORA_KAFKA_CONSUMER_ENABLED: "true"
   SUPERADMIN_NAME: "Super Admin"

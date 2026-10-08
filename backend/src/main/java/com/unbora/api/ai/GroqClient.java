@@ -27,6 +27,7 @@ public class GroqClient {
     private final String groqApiKey;
     private final String configuredModel;
     private final String braveKey;
+    private final FallbackLlmClient fallbackLlmClient;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
@@ -42,7 +43,8 @@ public class GroqClient {
     public GroqClient(
             @Value("${unbora.groq.api-key:}") String groqApiKey,
             @Value("${unbora.groq.model:qwen/qwen3.8-27b}") String configuredModel,
-            @Value("${unbora.brave.api-key:}") String braveKey
+            @Value("${unbora.brave.api-key:}") String braveKey,
+            FallbackLlmClient fallbackLlmClient
     ) {
         this.groqApiKey = groqApiKey != null ? groqApiKey.trim() : "";
         String model = configuredModel != null ? configuredModel.trim() : "qwen/qwen3.8-27b";
@@ -50,6 +52,7 @@ public class GroqClient {
         if (model.isBlank()) model = "qwen/qwen3.8-27b";
         this.configuredModel = model;
         this.braveKey = braveKey != null ? braveKey.trim() : "";
+        this.fallbackLlmClient = fallbackLlmClient;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(15))
                 .build();
@@ -150,25 +153,37 @@ public class GroqClient {
             }
         }
 
+        T viaFallback = tryFallback(systemPrompt, userPrompt, responseClass, temperature, maxTokens);
+        if (viaFallback != null) return viaFallback;
+
         log.error("[Groq] Todos os modelos falharam. lastError={} dailyLimit={}", lastError, hitDailyLimit);
         throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, friendlyUserMessage(hitDailyLimit));
     }
 
     private List<String> buildModelChain() {
         List<String> models = new ArrayList<>();
-        // Se .env pede 120b, ainda tentamos leves primeiro para não queimar a cota
         if (configuredModel.contains("120b")) {
-            for (String m : FALLBACK_MODELS) {
-                if (!m.contains("120b") && !models.contains(m)) models.add(m);
+            for (String model : FALLBACK_MODELS) {
+                if (!model.contains("120b") && !models.contains(model)) models.add(model);
             }
             models.add(configuredModel);
         } else {
             models.add(configuredModel);
-            for (String m : FALLBACK_MODELS) {
-                if (!models.contains(m)) models.add(m);
+            for (String model : FALLBACK_MODELS) {
+                if (!models.contains(model)) models.add(model);
             }
         }
         return models;
+    }
+
+    private <T> T tryFallback(String systemPrompt, String userPrompt, Class<T> responseClass, double temperature, int maxTokens) {
+        if (fallbackLlmClient == null || !fallbackLlmClient.configured()) return null;
+        String content = fallbackLlmClient.completeJson(systemPrompt, userPrompt, temperature, maxTokens);
+        T result = parseJsonObject(content, responseClass);
+        if (result != null) {
+            log.warn("[LLM] Groq não respondeu — usando fallback model={}", fallbackLlmClient.model());
+        }
+        return result;
     }
 
     private static boolean isDailyTokenLimit(String body) {

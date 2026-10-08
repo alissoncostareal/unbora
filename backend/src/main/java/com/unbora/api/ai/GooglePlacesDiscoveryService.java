@@ -41,7 +41,8 @@ public class GooglePlacesDiscoveryService {
             List<String> types,
             String googleMapsUri,
             String editorialSummary,
-            String photoUrl
+            String photoUrl,
+            String priceLevel
     ) {}
 
     public GooglePlacesDiscoveryService(@Value("${unbora.google.places-api-key:}") String googlePlacesKey) {
@@ -86,13 +87,14 @@ public class GooglePlacesDiscoveryService {
             requestBody.put("languageCode", "pt-BR");
             requestBody.put("maxResultCount", Math.min(maxResults > 0 ? maxResults : 20, 20));
 
-            // Ancoragem Geográfica por Coordenadas (GPS do usuário)
             if (latitude != null && longitude != null && !latitude.isNaN() && !longitude.isNaN()) {
-                double radiusMeters = (radiusKm != null && radiusKm > 0 ? radiusKm : 25.0) * 1000.0;
-                requestBody.put("locationBias", Map.of(
-                        "circle", Map.of(
-                                "center", Map.of("latitude", latitude, "longitude", longitude),
-                                "radius", radiusMeters
+                double km = radiusKm != null && radiusKm > 0 ? radiusKm : 8.0;
+                double dLat = km / 111.0;
+                double dLng = km / (111.0 * Math.max(0.2, Math.cos(Math.toRadians(latitude))));
+                requestBody.put("locationRestriction", Map.of(
+                        "rectangle", Map.of(
+                                "low", Map.of("latitude", latitude - dLat, "longitude", longitude - dLng),
+                                "high", Map.of("latitude", latitude + dLat, "longitude", longitude + dLng)
                         )
                 ));
             }
@@ -101,7 +103,7 @@ public class GooglePlacesDiscoveryService {
                     .uri(URI.create("https://places.googleapis.com/v1/places:searchText"))
                     .header("Content-Type", "application/json")
                     .header("X-Goog-Api-Key", googlePlacesKey)
-                    .header("X-Goog-FieldMask", "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.currentOpeningHours,places.primaryType,places.types,places.googleMapsUri,places.editorialSummary,places.photos")
+                    .header("X-Goog-FieldMask", "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.currentOpeningHours,places.primaryType,places.types,places.googleMapsUri,places.editorialSummary,places.photos,places.priceLevel")
                     .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
                     .timeout(Duration.ofSeconds(6))
                     .build();
@@ -131,6 +133,8 @@ public class GooglePlacesDiscoveryService {
                 String primaryType = p.path("primaryType").asText("");
                 String googleMapsUri = p.path("googleMapsUri").asText("");
                 String editorialSummary = p.path("editorialSummary").path("text").asText("");
+                String priceLevel = p.path("priceLevel").asText("");
+                if (priceLevel.isBlank()) priceLevel = null;
 
                 List<String> types = new ArrayList<>();
                 if (p.path("types").isArray()) {
@@ -179,7 +183,8 @@ public class GooglePlacesDiscoveryService {
                             types,
                             googleMapsUri,
                             editorialSummary,
-                            photoUrl
+                            photoUrl,
+                            priceLevel
                     ));
                 }
             }

@@ -13,9 +13,10 @@ public record RecommendDto(
         String country,
         Double latitude,
         Double longitude,
-        Double radiusKm
+        Double radiusKm,
+        String userId
 ) {
     public RecommendDto(String humor, String sentir, List<ActivityItemDto> activities) {
-        this(humor, sentir, activities, null, null, null, null, null, null);
+        this(humor, sentir, activities, null, null, null, null, null, null, null);
     }
 }

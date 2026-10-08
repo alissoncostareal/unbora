@@ -8,9 +8,10 @@ public record SearchDto(
         String region,
         String country,
         Double latitude,
-        Double longitude
+        Double longitude,
+        String userId
 ) {
     public SearchDto(String query) {
-        this(query, null, null, null, null, null);
+        this(query, null, null, null, null, null, null);
     }
 }

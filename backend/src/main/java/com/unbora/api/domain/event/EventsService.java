@@ -27,13 +27,19 @@ public class EventsService {
 
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final com.unbora.api.ai.ImageEnrichmentService imageEnrichmentService;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public EventsService(EventRepository eventRepository, UserRepository userRepository) {
+    public EventsService(
+            EventRepository eventRepository,
+            UserRepository userRepository,
+            com.unbora.api.ai.ImageEnrichmentService imageEnrichmentService
+    ) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
+        this.imageEnrichmentService = imageEnrichmentService;
     }
 
     @PostConstruct
@@ -130,8 +136,15 @@ public class EventsService {
     public EventRecordDto toRecord(Event event, Map<String, User> merchantMap) {
         User merchant = merchantMap.get(event.getMerchantId());
         String imageUrl = event.getImageUrl();
-        if (imageUrl != null && isMisleadingVenuePhoto(event.getTitle(), event.getVenue(), imageUrl)) {
-            imageUrl = "";
+        if (imageUrl == null || imageUrl.isBlank() || isMisleadingVenuePhoto(event.getTitle(), event.getVenue(), imageUrl)) {
+            imageUrl = imageEnrichmentService.fetchEventImage(
+                    event.getTitle(),
+                    event.getVenue(),
+                    event.getCity(),
+                    event.getCategory(),
+                    null,
+                    event.getCategory()
+            );
         }
         return new EventRecordDto(
                 event.getId(),

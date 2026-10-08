@@ -34,9 +34,14 @@ public class KafkaConfig {
     public static final String TOPIC_IMAGE_ENRICHMENT = "unbora.image.enrichment";
 
     private final String bootstrapServers;
+    private final boolean consumerEnabled;
 
-    public KafkaConfig(@Value("${spring.kafka.bootstrap-servers:localhost:9092}") String bootstrapServers) {
+    public KafkaConfig(
+            @Value("${spring.kafka.bootstrap-servers:localhost:9092}") String bootstrapServers,
+            @Value("${unbora.kafka.consumer-enabled:false}") boolean consumerEnabled
+    ) {
         this.bootstrapServers = bootstrapServers;
+        this.consumerEnabled = consumerEnabled;
     }
 
     @Bean
@@ -73,6 +78,7 @@ public class KafkaConfig {
         ConcurrentKafkaListenerContainerFactory<String, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
+        factory.setAutoStartup(consumerEnabled);
         return factory;
     }
 

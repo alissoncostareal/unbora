@@ -1,0 +1,107 @@
+# Reserva de IA do Unbora. Só o namespace unbora.
+# Sem Ingress: a API alcança http://ollama.unbora.svc.cluster.local:11434
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models
+  namespace: unbora
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 8Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: unbora
+  labels:
+    app: ollama
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+        - name: ollama
+          image: docker.io/ollama/ollama:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: OLLAMA_MODEL
+              value: llama3.2:3b
+            - name: OLLAMA_KEEP_ALIVE
+              value: 10m
+            - name: OLLAMA_NUM_PARALLEL
+              value: "1"
+            - name: OLLAMA_MAX_LOADED_MODELS
+              value: "1"
+          command: ["bash", "-lc"]
+          args:
+            - |
+              set -euo pipefail
+              ollama serve &
+              pid=$!
+              trap 'kill "$pid"' TERM INT
+              for _ in $(seq 1 90); do
+                if ollama list >/dev/null 2>&1; then
+                  break
+                fi
+                sleep 2
+              done
+              ollama pull "${OLLAMA_MODEL}"
+              wait "$pid"
+          ports:
+            - name: http
+              containerPort: 11434
+          readinessProbe:
+            exec:
+              command: ["bash", "-lc", "ollama list | grep -q \"${OLLAMA_MODEL}\""]
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 40
+          livenessProbe:
+            httpGet:
+              path: /api/tags
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+          resources:
+            requests:
+              cpu: 250m
+              memory: 2Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-models
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: unbora
+spec:
+  type: ClusterIP
+  selector:
+    app: ollama
+  ports:
+    - name: http
+      port: 11434
+      targetPort: http

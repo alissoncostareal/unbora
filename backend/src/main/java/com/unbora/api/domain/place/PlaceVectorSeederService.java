@@ -3,8 +3,6 @@ package com.unbora.api.domain.place;
 import com.unbora.api.ai.EmbeddingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -38,7 +36,6 @@ public class PlaceVectorSeederService {
             String vibeDna
     ) {}
 
-    @EventListener(ApplicationReadyEvent.class)
     public void seedIconicPlaces() {
         try {
             long existingCount = placeEmbeddingRepository.countByCityIgnoreCase("Fortaleza");

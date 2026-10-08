@@ -13,12 +13,14 @@ TIPOS DE EXPERIÊNCIAS DESEJADAS:
 {webContext}
 
 SUA TAREFA:
-Retorne até 24 lugares reais em {city} alinhados ao humor e às atividades.
-Priorize os "CANDIDATOS VIVOS DO GOOGLE MAPS" e preencha até o limite de 24.
+Retorne lugares reais em {city} que caibam no filtro já escolhido: humor, tipos de experiência, companhia, teto de gasto, tempo e raio.
+Use somente os "CANDIDATOS VIVOS DO GOOGLE MAPS". Não invente outra categoria para completar a lista.
 
 REGRAS DE CONTEÚDO:
-- Use apenas lugares reais, ativos e consagrados na cidade de {city}.
-- Não resuma para "top 5" — o usuário quer a lista completa.
+- Cada lugar precisa estar em {city} e dentro do raio informado em "Quer se sentir".
+- Cada lugar precisa ser de um dos tipos listados. Café não vira restaurante, praia não vira bar.
+- Respeite companhia, tempo e teto de gasto descritos em "Quer se sentir".
+- Use apenas lugares reais e ativos.
 - "descricao": 1 frase curta (máximo 120 caracteres). Sem hashtags.
 - "endereco": endereço real com rua/avenida e bairro.
 - "tipo": categoria específica (ex.: Restaurante, Café, Bar, Cultural, Parque, Gelateria).

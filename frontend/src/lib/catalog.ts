@@ -1,26 +1,51 @@
+export const JOURNEY_KEY = 'unbora-journey';
+
+export interface JourneyChoice {
+  moodLabel: string;
+  moodLine: string;
+  interests: string[];
+  social: string;
+  budgetReais: number;
+  time: string;
+  city: string;
+  latitude?: number;
+  longitude?: number;
+  radiusKm: number;
+}
+
 export const moods = [
-  { label: 'Animado', value: 'animado, com energia e querendo aproveitar' },
-  { label: 'Tranquilo', value: 'tranquilo, relaxado e sem pressa' },
-  { label: 'Social', value: 'social, querendo ver gente e encontrar amigos' },
-  { label: 'Romântico', value: 'romântico, em clima intimista a dois' },
-  { label: 'Curioso', value: 'curioso, querendo descobrir novidades e lugares inéditos' },
-  { label: 'Cansado', value: 'cansado, precisando desestressar, relaxar e recarregar' },
+  { label: 'Relaxar', value: 'relaxar, em paz, sem pressa', line: 'Seu momento pede algo mais tranquilo.', note: 'Pausas lentas, sombras frescas, vinho e café.' },
+  { label: 'Animado', value: 'animado, com energia, querendo aproveitar', line: 'Seu momento pede algo mais leve.', note: 'Vozes altas, som selecionado, balcão vivo.' },
+  { label: 'Sair da rotina', value: 'sair da rotina, um programa diferente', line: 'Seu momento pede uma quebra de rotina.', note: 'Esquinas inéditas, conceitos fora do padrão.' },
+  { label: 'Encontro', value: 'um encontro, clima a dois', line: 'Seu momento pede um encontro.', note: 'Iluminação indireta, acústica para conversar.' },
+  { label: 'Curioso', value: 'curioso, querendo descobrir algo novo', line: 'Seu momento pede algo que você ainda não conhece.', note: 'Galerias de bairro, feiras locais, cardápios autorais.' },
+  { label: 'Em paz', value: 'em paz, um tempo só seu', line: 'Seu momento pede um tempo só seu.', note: 'Brisa atlântica, pouca gente, silêncio protegido.' },
 ];
 
-export const feelings = [
-  { label: 'Alegre', value: 'alegre, se divertindo, celebrando e dando risadas' },
-  { label: 'Calmo', value: 'calmo, em paz, sossego e atmosfera serena' },
-  { label: 'Energizado', value: 'energizado, animado com música e agito' },
-  { label: 'Conectado', value: 'conectado com amigos em boa conversa e confraternização' },
-  { label: 'Inspirado', value: 'inspirado por arte, boa gastronomia e estética bonita' },
-  { label: 'Encantado', value: 'encantado, em clima charmoso, requintado e especial' },
+export const interests = [
+  { id: 'cafe', label: 'Cafés', searchHint: 'cafés, padarias e brunch' },
+  { id: 'music', label: 'Música', searchHint: 'música ao vivo, bares com show e casas de show' },
+  { id: 'nature', label: 'Natureza', searchHint: 'parques, trilhas, mirantes e áreas verdes' },
+  { id: 'food', label: 'Gastronomia', searchHint: 'restaurantes, bistrôs, almoço e jantar' },
+  { id: 'culture', label: 'Cultura', searchHint: 'museus, teatros, centros culturais e feiras' },
+  { id: 'games', label: 'Games', searchHint: 'fliperamas, board games e jogos' },
+  { id: 'beach', label: 'Praia', searchHint: 'praia, orla e quiosques' },
+  { id: 'cinema', label: 'Cinema', searchHint: 'cinemas e sessões de filme' },
 ];
 
-export const activities = [
-  { id: 'food', label: 'Restaurantes', searchHint: 'restaurantes, bistrôs, pizzarias artesanais, carnes nobres e frutos do mar' },
-  { id: 'bars', label: 'Bares & Pubs', searchHint: 'gastrobares, cervejarias artesanais, chopp gelado, coquetelaria e petiscos' },
-  { id: 'cafe', label: 'Cafeterias', searchHint: 'cafés especiais, docerias artesanais, confeitarias, brunch e padarias' },
-  { id: 'beach', label: 'Praia & Sunset', searchHint: 'barracas de praia, beach clubs, quiosques na orla e mirantes ao pôr do sol' },
-  { id: 'live-music', label: 'Shows & Noite', searchHint: 'música ao vivo, forró, samba, jazz, pubs com show e baladas' },
-  { id: 'culture', label: 'Cultura & Lazer', searchHint: 'museus, teatros, centros culturais, praças arborizadas e feiras artesanais' },
+export const activities = interests;
+
+export const company = [
+  { label: 'Sozinho', value: 'sozinho' },
+  { label: 'A dois', value: 'a dois' },
+  { label: 'Com amigos', value: 'com amigos' },
+  { label: 'Com família', value: 'em família' },
+  { label: 'Conhecendo pessoas', value: 'aberto a conhecer pessoas' },
+];
+
+export const durations = [
+  { id: '30', label: '30 min', value: '30 minutos' },
+  { id: '60', label: '1h', value: '1 hora' },
+  { id: '120', label: '2h', value: '2 horas' },
+  { id: '180', label: '3h+', value: '3 horas ou mais' },
 ];

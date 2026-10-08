@@ -29,7 +29,10 @@ public class UnboraApiApplication {
             String jwtSecret = env.getProperty("unbora.jwt.secret", "");
             boolean kafkaEnabled = Boolean.parseBoolean(env.getProperty("unbora.kafka.enabled", "false"));
 
+            String fallbackBase = env.getProperty("unbora.llm-fallback.base-url", "");
+            String fallbackModel = env.getProperty("unbora.llm-fallback.model", "llama3.2:3b");
             boolean groqReady = groqKey != null && !groqKey.isBlank();
+            boolean fallbackReady = fallbackBase != null && !fallbackBase.isBlank();
             boolean dbReady = dbUrl != null && !dbUrl.isBlank();
             boolean braveReady = braveKey != null && !braveKey.isBlank();
             boolean placesReady = placesKey != null && !placesKey.isBlank();

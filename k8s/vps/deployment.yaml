@@ -21,7 +21,7 @@ spec:
           command:
             - sh
             - -c
-            - until nc -z postgres.data.svc.cluster.local 5432; do sleep 2; done
+            - until nc -z postgres.unbora.svc.cluster.local 5432; do sleep 2; done
       containers:
         - name: unbora-api
           image: docker.io/library/unbora-api:latest

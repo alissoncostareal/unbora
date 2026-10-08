@@ -30,6 +30,10 @@ public class DotenvLoader {
         // Set properties into System properties
         setPropIfPresent(envMap, "GROQ_API_KEY", "unbora.groq.api-key");
         setPropIfPresent(envMap, "GROQ_MODEL", "unbora.groq.model");
+        setPropIfPresent(envMap, "OPENAI_API_KEY", "unbora.openai.api-key");
+        setPropIfPresent(envMap, "LLM_FALLBACK_API_KEY", "unbora.llm-fallback.api-key");
+        setPropIfPresent(envMap, "LLM_FALLBACK_BASE_URL", "unbora.llm-fallback.base-url");
+        setPropIfPresent(envMap, "LLM_FALLBACK_MODEL", "unbora.llm-fallback.model");
         setPropIfPresent(envMap, "BRAVE_API_KEY", "unbora.brave.api-key");
 
         String placesKey = envMap.get("GOOGLE_PLACES_API_KEY");

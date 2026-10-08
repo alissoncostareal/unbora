@@ -1,6 +1,6 @@
 #!/bin/bash
 # Publica o Unbora na VPS (k3s), no namespace unbora.
-# Reusa o Postgres e o Kafka do namespace data. Cria o banco `unbora` se ainda não existir.
+# Sobe o Postgres do namespace unbora e publica a API.
 # Não altera o namespace partiumenu.
 set -euo pipefail
 
@@ -43,45 +43,23 @@ decode_b64() {
 }
 
 kubectl apply -f k8s/vps/namespace.yaml
+kubectl apply -f k8s/vps/postgres.yaml
+kubectl -n unbora rollout status statefulset/postgres --timeout=180s
 
-# Credencial do Postgres que já serve o PartiuMenu. A senha não vai para o log.
-DB_USER=$(kubectl -n partiumenu get secret partiumenu-secrets -o jsonpath='{.data.DB_USERNAME}' | base64 -d)
-DB_PASS=$(kubectl -n partiumenu get secret partiumenu-secrets -o jsonpath='{.data.DB_PASSWORD}' | base64 -d)
+DB_USER=$(kubectl -n unbora get secret unbora-postgres -o jsonpath='{.data.username}' | base64 -d)
+DB_PASS=$(kubectl -n unbora get secret unbora-postgres -o jsonpath='{.data.password}' | base64 -d)
 if [ -z "$DB_USER" ] || [ -z "$DB_PASS" ]; then
-  echo "Não achei DB_USERNAME/DB_PASSWORD em partiumenu/partiumenu-secrets."
+  echo "Não achei o secret unbora/unbora-postgres."
   exit 1
 fi
-
-kubectl -n unbora delete pod unbora-pg-init --ignore-not-found --wait=true >/dev/null
-kubectl -n unbora run unbora-pg-init --restart=Never --image=postgres:16-alpine \
-  --env "PGHOST=postgres.data.svc.cluster.local" \
-  --env "PGUSER=${DB_USER}" \
-  --env "PGPASSWORD=${DB_PASS}" \
-  --env "PGDATABASE=postgres" \
-  --command -- sh -ec "$(cat <<'EOS'
-if ! psql -tAc "SELECT 1 FROM pg_database WHERE datname = 'unbora'" | grep -qx 1; then
-  psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE unbora OWNER \"${PGUSER}\""
-fi
-psql -v ON_ERROR_STOP=1 -d unbora -c "CREATE EXTENSION IF NOT EXISTS vector;" || echo "AVISO: extensao vector indisponivel neste Postgres"
-EOS
-)"
-
-if ! kubectl -n unbora wait --for=jsonpath='{.status.phase}'=Succeeded pod/unbora-pg-init --timeout=180s; then
-  echo "Falha ao criar o banco unbora."
-  kubectl -n unbora logs pod/unbora-pg-init || true
-  kubectl -n unbora delete pod unbora-pg-init --ignore-not-found >/dev/null
-  exit 1
-fi
-kubectl -n unbora logs pod/unbora-pg-init
-kubectl -n unbora delete pod unbora-pg-init --ignore-not-found >/dev/null
-echo "Banco unbora pronto em postgres.data.svc.cluster.local."
+echo "Banco unbora pronto em postgres.unbora.svc.cluster.local."
 
 DATABASE_URL=$(DB_USER="$DB_USER" DB_PASS="$DB_PASS" python3 - <<'PY'
 import os
 from urllib.parse import quote
 user = quote(os.environ["DB_USER"], safe="")
 password = quote(os.environ["DB_PASS"], safe="")
-print(f"postgresql://{user}:{password}@postgres.data.svc.cluster.local:5432/unbora?sslmode=disable")
+print(f"postgresql://{user}:{password}@postgres.unbora.svc.cluster.local:5432/unbora?sslmode=disable")
 PY
 )
 
@@ -147,6 +125,7 @@ unset DB_PASS DATABASE_URL
 docker build -t unbora-api:latest -f backend/Dockerfile backend
 docker save unbora-api:latest | k3s ctr images import -
 
+kubectl apply -f k8s/vps/ollama.yaml
 kubectl apply -f k8s/vps/configmap.yaml
 kubectl apply -f k8s/vps/deployment.yaml
 kubectl apply -f k8s/vps/service.yaml
@@ -155,4 +134,4 @@ kubectl apply -f k8s/vps/ingress.yaml
 kubectl -n unbora rollout restart deploy/unbora-backend
 kubectl -n unbora rollout status deploy/unbora-backend --timeout=300s
 echo "DEPLOY_OK $(git rev-parse --short HEAD)"
-echo "API https://unbora.173.212.242.9.nip.io/health"
+echo "API https://unbora.173.212.242.9.sslip.io/health"
