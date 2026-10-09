@@ -448,3 +448,23 @@ export function getAvailablePlans(): Promise<PlanTierOption[]> {
   return get<PlanTierOption[]>('/merchant/sponsored/plans');
 }
 
+export interface PartnerPageSettings {
+  badgeText: string;
+  headline: string;
+  subheadline: string;
+  feature1Title: string;
+  feature1Description: string;
+  feature2Title: string;
+  feature2Description: string;
+  feature3Title: string;
+  feature3Description: string;
+  ctaPrimaryText: string;
+  ctaSecondaryText: string;
+  updatedAt?: string;
+}
+
+export function getPartnerPageSettings(): Promise<PartnerPageSettings> {
+  return get<PartnerPageSettings>('/partner-settings');
+}
+
+

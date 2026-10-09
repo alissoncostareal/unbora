@@ -12,6 +12,8 @@ import {
   type MerchantPlace,
   type PlanTierOption,
   getAvailablePlans,
+  getPartnerPageSettings,
+  type PartnerPageSettings,
 } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useCity } from '../lib/city';
@@ -92,6 +94,28 @@ export function MerchantPage() {
     contactPhone: '',
     contactEmail: '',
   });
+
+  const [partnerSettings, setPartnerSettings] = useState<PartnerPageSettings>({
+    badgeText: 'Programa de Parceiros Unbora',
+    headline: 'Coloque seu estabelecimento no radar de quem decide onde ir agora.',
+    subheadline: 'Milhares de pessoas usam o Unbora todos os dias para descobrir restaurantes, bares, cafés e eventos. Anuncie com destaque garantido, benefícios exclusivos e modelos flexíveis.',
+    feature1Title: 'Slot de Ouro nas Buscas',
+    feature1Description: 'Apareça no topo dos resultados recomendados quando os usuários procurarem por opções no seu estilo e cidade.',
+    feature2Title: 'Unbora Perks Exclusivo',
+    feature2Description: 'Ofereça um benefício especial (ex: 15% de desconto ou drink de boas-vindas) para atrair e fidelizar clientes.',
+    feature3Title: 'Pagamento Rápido via PIX',
+    feature3Description: 'Ativação instantânea via PIX Copia e Cola. Escolha planos mensais fixos ou créditos pré-pagos por clique.',
+    ctaPrimaryText: 'Criar Conta de Lojista',
+    ctaSecondaryText: 'Já sou cadastrado · Entrar',
+  });
+
+  useEffect(() => {
+    getPartnerPageSettings()
+      .then((data) => {
+        if (data) setPartnerSettings(data);
+      })
+      .catch((err) => console.error('Error fetching partner page settings:', err));
+  }, []);
 
   useEffect(() => {
     if (isMerchant && user?.id) {
@@ -283,13 +307,13 @@ export function MerchantPage() {
       <div className="min-h-screen bg-[#faf8f5] py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#7c2f1d]/10 text-[#7c2f1d] text-xs font-semibold uppercase tracking-wider">
-            Programa de Parceiros Unbora
+            {partnerSettings.badgeText || 'Programa de Parceiros Unbora'}
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-[#1e1b19] tracking-tight">
-            Coloque seu estabelecimento no radar de quem decide onde ir agora.
+            {partnerSettings.headline || 'Coloque seu estabelecimento no radar de quem decide onde ir agora.'}
           </h1>
           <p className="text-lg text-[#55433e] max-w-2xl mx-auto">
-            Milhares de pessoas usam o Unbora todos os dias para descobrir restaurantes, bares, cafés e eventos. Anuncie com destaque garantido, benefícios exclusivos e modelos flexíveis.
+            {partnerSettings.subheadline || 'Milhares de pessoas usam o Unbora todos os dias para descobrir restaurantes, bares, cafés e eventos. Anuncie com destaque garantido, benefícios exclusivos e modelos flexíveis.'}
           </p>
 
           <div className="grid sm:grid-cols-3 gap-6 text-left pt-6">
@@ -301,9 +325,9 @@ export function MerchantPage() {
                   <circle cx="12" cy="12" r="2" />
                 </svg>
               </div>
-              <h3 className="font-bold text-lg text-[#1e1b19]">Slot de Ouro nas Buscas</h3>
+              <h3 className="font-bold text-lg text-[#1e1b19]">{partnerSettings.feature1Title || 'Slot de Ouro nas Buscas'}</h3>
               <p className="text-sm text-[#73685e]">
-                Apareça no topo dos resultados recomendados quando os usuários procurarem por opções no seu estilo e cidade.
+                {partnerSettings.feature1Description || 'Apareça no topo dos resultados recomendados quando os usuários procurarem por opções no seu estilo e cidade.'}
               </p>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-[#eadfd4] shadow-sm space-y-3">
@@ -316,9 +340,9 @@ export function MerchantPage() {
                   <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
                 </svg>
               </div>
-              <h3 className="font-bold text-lg text-[#1e1b19]">Unbora Perks Exclusivo</h3>
+              <h3 className="font-bold text-lg text-[#1e1b19]">{partnerSettings.feature2Title || 'Unbora Perks Exclusivo'}</h3>
               <p className="text-sm text-[#73685e]">
-                Ofereça um benefício especial (ex: 15% de desconto ou drink de boas-vindas) para atrair e fidelizar clientes.
+                {partnerSettings.feature2Description || 'Ofereça um benefício especial (ex: 15% de desconto ou drink de boas-vindas) para atrair e fidelizar clientes.'}
               </p>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-[#eadfd4] shadow-sm space-y-3">
@@ -327,9 +351,9 @@ export function MerchantPage() {
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
               </div>
-              <h3 className="font-bold text-lg text-[#1e1b19]">Pagamento Rápido via PIX</h3>
+              <h3 className="font-bold text-lg text-[#1e1b19]">{partnerSettings.feature3Title || 'Pagamento Rápido via PIX'}</h3>
               <p className="text-sm text-[#73685e]">
-                Ativação instantânea via PIX Copia e Cola. Escolha planos mensais fixos ou créditos pré-pagos por clique.
+                {partnerSettings.feature3Description || 'Ativação instantânea via PIX Copia e Cola. Escolha planos mensais fixos ou créditos pré-pagos por clique.'}
               </p>
             </div>
           </div>
@@ -339,13 +363,13 @@ export function MerchantPage() {
               to="/register"
               className="w-full sm:w-auto px-8 py-4 bg-[#7c2f1d] hover:bg-[#602416] text-white font-bold rounded-xl shadow-lg transition"
             >
-              Criar Conta de Lojista
+              {partnerSettings.ctaPrimaryText || 'Criar Conta de Lojista'}
             </Link>
             <Link
               to="/login"
               className="w-full sm:w-auto px-8 py-4 bg-white border border-[#eadfd4] text-[#1e1b19] font-bold rounded-xl hover:bg-[#f3ede6] transition"
             >
-              Já sou cadastrado · Entrar
+              {partnerSettings.ctaSecondaryText || 'Já sou cadastrado · Entrar'}
             </Link>
           </div>
         </div>

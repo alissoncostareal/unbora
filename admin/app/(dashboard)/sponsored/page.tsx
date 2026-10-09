@@ -28,6 +28,8 @@ import {
   rechargeSponsoredCredits,
   toggleSponsoredPlaceActive,
   updateSponsoredPlace,
+  getPartnerPageSettings,
+  updatePartnerPageSettings,
   type BillingModel,
   type CitySuggestion,
   type InvoiceStatus,
@@ -38,11 +40,12 @@ import {
   type SponsoredFinancialOverview,
   type SponsoredInvoiceItem,
   type SponsoredPlaceItem,
+  type PartnerPageSettings,
 } from '@/lib/api';
 import { getClientSession } from '@/lib/auth';
 import { can } from '@/lib/permissions';
 
-type TabType = 'places' | 'invoices' | 'financial';
+type TabType = 'places' | 'invoices' | 'financial' | 'partnerPage';
 
 const emptyForm: SaveSponsoredPlaceInput = {
   name: '',
@@ -117,6 +120,22 @@ export default function SponsoredPlacesPage() {
 
   const [pixModalData, setPixModalData] = useState<{ name: string; amount: number; pixCode: string } | null>(null);
 
+  // Estado da Página de Parceiros (Landing)
+  const [partnerSettingsForm, setPartnerSettingsForm] = useState<PartnerPageSettings>({
+    badgeText: 'Programa de Parceiros Unbora',
+    headline: 'Coloque seu estabelecimento no radar de quem decide onde ir agora.',
+    subheadline: 'Milhares de pessoas usam o Unbora todos os dias para descobrir restaurantes, bares, cafés e eventos. Anuncie com destaque garantido, benefícios exclusivos e modelos flexíveis.',
+    feature1Title: 'Slot de Ouro nas Buscas',
+    feature1Description: 'Apareça no topo dos resultados recomendados quando os usuários procurarem por opções no seu estilo e cidade.',
+    feature2Title: 'Unbora Perks Exclusivo',
+    feature2Description: 'Ofereça um benefício especial (ex: 15% de desconto ou drink de boas-vindas) para atrair e fidelizar clientes.',
+    feature3Title: 'Pagamento Rápido via PIX',
+    feature3Description: 'Ativação instantânea via PIX Copia e Cola. Escolha planos mensais fixos ou créditos pré-pagos por clique.',
+    ctaPrimaryText: 'Criar Conta de Lojista',
+    ctaSecondaryText: 'Já sou cadastrado · Entrar',
+  });
+  const [savingPartnerSettings, setSavingPartnerSettings] = useState(false);
+
   const session = getClientSession();
   const canManage = can(session?.role, 'manageEvents');
 
@@ -124,18 +143,38 @@ export default function SponsoredPlacesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [placesData, invoicesData, overviewData] = await Promise.all([
+      const [placesData, invoicesData, overviewData, partnerSettingsData] = await Promise.all([
         getSponsoredPlaces(),
         getSponsoredInvoices(),
         getSponsoredFinancialOverview().catch(() => null),
+        getPartnerPageSettings().catch(() => null),
       ]);
       setItems(placesData);
       setInvoices(invoicesData);
       setFinancial(overviewData);
+      if (partnerSettingsData) {
+        setPartnerSettingsForm(partnerSettingsData);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar dados de monetização e patrocinados');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSavePartnerSettings(e: FormEvent) {
+    e.preventDefault();
+    setSavingPartnerSettings(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const updated = await updatePartnerPageSettings(partnerSettingsForm);
+      setPartnerSettingsForm(updated);
+      setSuccess('Configurações da Landing Page de Parceiros salvas com sucesso!');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao salvar configurações da página de parceiros');
+    } finally {
+      setSavingPartnerSettings(false);
     }
   }
 
@@ -520,6 +559,18 @@ export default function SponsoredPlacesPage() {
           }`}
         >
           📊 Modelos & Planos de Monetização
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('partnerPage')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${
+            activeTab === 'partnerPage'
+              ? 'border-ink text-ink bg-[#faf8f5]'
+              : 'border-transparent text-muted hover:text-ink'
+          }`}
+        >
+          📄 Página de Parceiros (Landing)
         </button>
       </div>
 
@@ -1287,6 +1338,234 @@ export default function SponsoredPlacesPage() {
               usuário real clica no botão &quot;Ver no mapa&quot; ou interage com a recomendação (R$ 0,75 por clique). O
               sistema debita o saldo automaticamente e pausa a campanha caso os créditos cheguem a zero.
             </p>
+          </Panel>
+        </div>
+      )}
+
+      {/* TAB 4: Conteúdo da Página de Parceiros (Landing Page) */}
+      {activeTab === 'partnerPage' && (
+        <div className="space-y-6">
+          <Panel className="p-6 border-[#e8e0d7] bg-white">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#e8e0d7] pb-4">
+              <div>
+                <h2 className="text-lg font-bold text-ink flex items-center gap-2">
+                  <span>📄</span> Conteúdo da Página de Parceiros (/merchant)
+                </h2>
+                <p className="text-xs text-muted mt-0.5">
+                  Personalize os textos principais, títulos de recursos e chamadas para ação da landing page de parceiros e lojistas.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://unbora.com.br/merchant"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-[#e8e0d7] text-ink hover:bg-[#faf8f5] transition flex items-center gap-1.5"
+                >
+                  <span>🔗</span> Ver no Portal Público
+                </a>
+              </div>
+            </div>
+
+            <form onSubmit={handleSavePartnerSettings} className="mt-6 space-y-6">
+              {/* 1. Cabeçalho / Hero */}
+              <div className="rounded-2xl border border-[#e8e0d7] bg-[#faf8f5] p-5 space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-2">
+                  <span>✨</span> Destaque Principal (Hero & Badge)
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Texto do Badge Superior">
+                    <input
+                      type="text"
+                      maxLength={120}
+                      value={partnerSettingsForm.badgeText}
+                      onChange={(e) => setPartnerSettingsForm({ ...partnerSettingsForm, badgeText: e.target.value })}
+                      placeholder="Ex: Programa de Parceiros Unbora"
+                      className={inputClassName}
+                    />
+                  </Field>
+
+                  <Field label="Título Principal (Headline)">
+                    <input
+                      type="text"
+                      maxLength={300}
+                      value={partnerSettingsForm.headline}
+                      onChange={(e) => setPartnerSettingsForm({ ...partnerSettingsForm, headline: e.target.value })}
+                      placeholder="Ex: Coloque seu estabelecimento no radar..."
+                      className={inputClassName}
+                    />
+                  </Field>
+                </div>
+
+                <Field label="Subtítulo Descritivo (Subheadline)">
+                  <textarea
+                    rows={3}
+                    maxLength={800}
+                    value={partnerSettingsForm.subheadline}
+                    onChange={(e) => setPartnerSettingsForm({ ...partnerSettingsForm, subheadline: e.target.value })}
+                    placeholder="Descrição do programa de parceiros..."
+                    className={textareaClassName}
+                  />
+                </Field>
+              </div>
+
+              {/* 2. Três Recursos / Destaques */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Feature 1 */}
+                <div className="rounded-2xl border border-[#e8e0d7] bg-white p-5 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink">
+                    <span className="w-6 h-6 rounded-lg bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d] text-xs">1</span>
+                    Destaque 1 (Slot de Ouro)
+                  </div>
+                  <Field label="Título">
+                    <input
+                      type="text"
+                      maxLength={150}
+                      value={partnerSettingsForm.feature1Title}
+                      onChange={(e) => setPartnerSettingsForm({ ...partnerSettingsForm, feature1Title: e.target.value })}
+                      className={inputClassName}
+                    />
+                  </Field>
+                  <Field label="Descrição">
+                    <textarea
+                      rows={3}
+                      maxLength={500}
+                      value={partnerSettingsForm.feature1Description}
+                      onChange={(e) => setPartnerSettingsForm({ ...partnerSettingsForm, feature1Description: e.target.value })}
+                      className={textareaClassName}
+                    />
+                  </Field>
+                </div>
+
+                {/* Feature 2 */}
+                <div className="rounded-2xl border border-[#e8e0d7] bg-white p-5 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink">
+                    <span className="w-6 h-6 rounded-lg bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d] text-xs">2</span>
+                    Destaque 2 (Benefício/Perks)
+                  </div>
+                  <Field label="Título">
+                    <input
+                      type="text"
+                      maxLength={150}
+                      value={partnerSettingsForm.feature2Title}
+                      onChange={(e) => setPartnerSettingsForm({ ...partnerSettingsForm, feature2Title: e.target.value })}
+                      className={inputClassName}
+                    />
+                  </Field>
+                  <Field label="Descrição">
+                    <textarea
+                      rows={3}
+                      maxLength={500}
+                      value={partnerSettingsForm.feature2Description}
+                      onChange={(e) => setPartnerSettingsForm({ ...partnerSettingsForm, feature2Description: e.target.value })}
+                      className={textareaClassName}
+                    />
+                  </Field>
+                </div>
+
+                {/* Feature 3 */}
+                <div className="rounded-2xl border border-[#e8e0d7] bg-white p-5 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink">
+                    <span className="w-6 h-6 rounded-lg bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d] text-xs">3</span>
+                    Destaque 3 (Pagamentos/PIX)
+                  </div>
+                  <Field label="Título">
+                    <input
+                      type="text"
+                      maxLength={150}
+                      value={partnerSettingsForm.feature3Title}
+                      onChange={(e) => setPartnerSettingsForm({ ...partnerSettingsForm, feature3Title: e.target.value })}
+                      className={inputClassName}
+                    />
+                  </Field>
+                  <Field label="Descrição">
+                    <textarea
+                      rows={3}
+                      maxLength={500}
+                      value={partnerSettingsForm.feature3Description}
+                      onChange={(e) => setPartnerSettingsForm({ ...partnerSettingsForm, feature3Description: e.target.value })}
+                      className={textareaClassName}
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              {/* 3. Botões de Ação (CTA) */}
+              <div className="rounded-2xl border border-[#e8e0d7] bg-[#faf8f5] p-5 space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-2">
+                  <span>🎯</span> Botões de Ação (Chamadas para Ação)
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Texto do Botão Primário">
+                    <input
+                      type="text"
+                      maxLength={100}
+                      value={partnerSettingsForm.ctaPrimaryText}
+                      onChange={(e) => setPartnerSettingsForm({ ...partnerSettingsForm, ctaPrimaryText: e.target.value })}
+                      placeholder="Ex: Criar Conta de Lojista"
+                      className={inputClassName}
+                    />
+                  </Field>
+
+                  <Field label="Texto do Botão Secundário">
+                    <input
+                      type="text"
+                      maxLength={100}
+                      value={partnerSettingsForm.ctaSecondaryText}
+                      onChange={(e) => setPartnerSettingsForm({ ...partnerSettingsForm, ctaSecondaryText: e.target.value })}
+                      placeholder="Ex: Já sou cadastrado · Entrar"
+                      className={inputClassName}
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Live Preview Box */}
+              <div className="rounded-2xl border border-[#eadfd4] bg-white p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                    <span>👁️</span> Pré-visualização em Tempo Real
+                  </span>
+                  <span className="text-[10px] text-muted">Como os futuros parceiros verão no portal</span>
+                </div>
+
+                <div className="bg-[#faf8f5] p-6 rounded-xl border border-[#eadfd4] text-center space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#7c2f1d]/10 text-[#7c2f1d] text-xs font-semibold uppercase tracking-wider">
+                    {partnerSettingsForm.badgeText || 'Badge'}
+                  </div>
+                  <h4 className="text-xl sm:text-2xl font-black text-[#1e1b19]">
+                    {partnerSettingsForm.headline || 'Headline do Programa de Parceiros'}
+                  </h4>
+                  <p className="text-xs text-[#55433e] max-w-xl mx-auto">
+                    {partnerSettingsForm.subheadline || 'Subheadline descritiva...'}
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    <span className="px-4 py-2 bg-[#7c2f1d] text-white font-bold text-xs rounded-xl shadow-xs">
+                      {partnerSettingsForm.ctaPrimaryText || 'Botão Primário'}
+                    </span>
+                    <span className="px-4 py-2 bg-white border border-[#eadfd4] text-[#1e1b19] font-bold text-xs rounded-xl">
+                      {partnerSettingsForm.ctaSecondaryText || 'Botão Secundário'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              {canManage && (
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={savingPartnerSettings}
+                    className="min-w-[200px]"
+                  >
+                    {savingPartnerSettings ? 'Salvando Alterações...' : 'Salvar Conteúdo da Página'}
+                  </Button>
+                </div>
+              )}
+            </form>
           </Panel>
         </div>
       )}

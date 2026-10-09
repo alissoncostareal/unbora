@@ -24,6 +24,7 @@ import type {
   CreateInvoiceInput,
   RechargeCreditsInput,
   SponsoredFinancialOverview,
+  PartnerPageSettings,
 } from '@/lib/types';
 
 export type {
@@ -54,6 +55,7 @@ export type {
   CreateInvoiceInput,
   RechargeCreditsInput,
   SponsoredFinancialOverview,
+  PartnerPageSettings,
 } from '@/lib/types';
 
 const API_BASE_URL =
@@ -378,5 +380,17 @@ export function cancelSponsoredInvoice(invoiceId: string, token?: string) {
   return fetchJson<SponsoredInvoiceItem>(`/admin/sponsored/invoices/${invoiceId}/cancel`, { method: 'POST', body: '{}' }, token);
 }
 
+export function getPartnerPageSettings(token?: string) {
+  return fetchJson<PartnerPageSettings>('/admin/partner-settings', undefined, token);
+}
+
+export function updatePartnerPageSettings(body: Partial<PartnerPageSettings>, token?: string) {
+  return fetchJson<PartnerPageSettings>('/admin/partner-settings', {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  }, token);
+}
+
 export { API_BASE_URL };
+
 
