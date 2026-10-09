@@ -12,7 +12,6 @@ export function SiteMenu() {
   const location = useLocation();
   const path = location.pathname;
   const home = path === '/home';
-  const results = path === '/results';
   const { user, logout } = useAuth();
   const { city, region, country, latitude, longitude, modelCity } = useCity();
   const [query, setQuery] = useState('');
@@ -88,7 +87,7 @@ export function SiteMenu() {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[#e7dfd8] bg-white/95 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-[#e7dfd8] bg-white">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
         {/* Logo e Localização */}
         <div className="flex min-w-0 items-center gap-3 sm:gap-4 lg:gap-6">
@@ -101,9 +100,9 @@ export function SiteMenu() {
           </div>
         </div>
 
-        {/* Menu Desktop Espaçado e Elegante */}
+        {/* Menu Desktop Espaçado e com Cores Uniformes */}
         {home ? (
-          <nav className="hidden xl:flex min-w-0 items-center justify-center gap-1.5 lg:gap-2">
+          <nav className="hidden xl:flex min-w-0 items-center justify-center gap-2 lg:gap-4">
             {homeSections.map((section) => {
               const isActive = active === section.id;
               return (
@@ -114,10 +113,10 @@ export function SiteMenu() {
                     event.preventDefault();
                     handleNavClick(section.id);
                   }}
-                  className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-[13px] tracking-wide transition-all ${
+                  className={`shrink-0 whitespace-nowrap px-2.5 py-1 text-[13px] tracking-wide transition-colors ${
                     isActive
-                      ? 'bg-[#faf2ee] font-semibold text-[#7c2f1d]'
-                      : 'text-[#55433e] hover:bg-[#faf2ee]/70 hover:text-[#1e1b19]'
+                      ? 'font-bold text-[#7c2f1d]'
+                      : 'font-medium text-[#55433e] hover:text-[#1e1b19]'
                   }`}
                 >
                   {section.label}
@@ -129,7 +128,7 @@ export function SiteMenu() {
 
             <NavLink
               to="/merchant"
-              className="shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-[13px] font-bold text-[#7c2f1d] hover:bg-[#faf2ee] hover:text-[#5c2114] tracking-wide transition"
+              className="shrink-0 whitespace-nowrap px-2.5 py-1 text-[13px] font-bold text-[#7c2f1d] hover:text-[#5c2114] tracking-wide transition-colors"
             >
               Anuncie seu Local
             </NavLink>
@@ -156,16 +155,16 @@ export function SiteMenu() {
           {user?.role === 'merchant' && (
             <NavLink
               to="/merchant"
-              className="px-3 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-lg text-xs font-bold hover:bg-amber-100 flex items-center gap-1.5 transition shadow-2xs whitespace-nowrap"
+              className="px-3 py-1.5 bg-[#faf2ee] border border-[#dbc1bb] text-[#7c2f1d] rounded-lg text-xs font-bold hover:bg-[#f5e8e2] flex items-center transition whitespace-nowrap"
             >
-              <span>🏢</span> Painel do Parceiro
+              Painel do Parceiro
             </NavLink>
           )}
 
           {!home && user?.role !== 'merchant' && (
             <NavLink
               to="/merchant"
-              className="px-3 py-1.5 text-xs text-[#7c2f1d] font-bold hover:bg-[#faf2ee] rounded-lg transition whitespace-nowrap"
+              className="px-3 py-1.5 text-xs text-[#7c2f1d] font-bold hover:text-[#5c2114] rounded-lg transition whitespace-nowrap"
             >
               Anuncie seu Local
             </NavLink>
@@ -185,7 +184,7 @@ export function SiteMenu() {
             <div className="flex items-center gap-2">
               <NavLink
                 to="/login"
-                className="px-3 py-1.5 text-[13px] font-medium text-[#55433e] hover:text-[#1e1b19] hover:bg-[#faf2ee] rounded-lg transition whitespace-nowrap"
+                className="px-3 py-1.5 text-[13px] font-medium text-[#55433e] hover:text-[#1e1b19] rounded-lg transition whitespace-nowrap"
               >
                 Entrar
               </NavLink>
@@ -214,7 +213,7 @@ export function SiteMenu() {
           <button
             type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e7dfd8] bg-[#faf2ee]/70 text-[#1e1b19] hover:bg-[#faf2ee] transition cursor-pointer"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e7dfd8] bg-white text-[#1e1b19] hover:bg-[#faf2ee] transition cursor-pointer"
             aria-label={mobileOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
             aria-expanded={mobileOpen}
           >
@@ -234,7 +233,7 @@ export function SiteMenu() {
         </div>
       </div>
 
-      {/* Drawer / Menu Mobile Suspenso com Animação */}
+      {/* Drawer / Menu Mobile Suspenso */}
       {mobileOpen && (
         <div className="xl:hidden fixed inset-x-0 top-20 bottom-0 z-40 bg-black/40 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white border-b border-[#e7dfd8] shadow-2xl max-h-[calc(100vh-80px)] overflow-y-auto px-6 py-6 flex flex-col gap-6">
@@ -264,10 +263,10 @@ export function SiteMenu() {
                       event.preventDefault();
                       handleNavClick(section.id);
                     }}
-                    className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition ${
+                    className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm transition ${
                       isActive
-                        ? 'bg-[#faf2ee] text-[#7c2f1d] font-bold border-l-4 border-[#7c2f1d]'
-                        : 'text-[#1e1b19] hover:bg-[#faf2ee]/70'
+                        ? 'text-[#7c2f1d] font-bold bg-[#faf2ee]'
+                        : 'text-[#1e1b19] hover:bg-[#faf2ee]/70 font-medium'
                     }`}
                   >
                     <span>{section.label}</span>
@@ -279,12 +278,9 @@ export function SiteMenu() {
               <NavLink
                 to="/merchant"
                 onClick={() => setMobileOpen(false)}
-                className="mt-2 flex items-center justify-between rounded-xl bg-[#7c2f1d]/10 px-4 py-3 text-sm font-bold text-[#7c2f1d] hover:bg-[#7c2f1d]/15 border border-[#7c2f1d]/20 transition"
+                className="mt-2 flex items-center justify-between rounded-xl bg-[#faf2ee] px-4 py-3 text-sm font-bold text-[#7c2f1d] hover:bg-[#f5e8e2] border border-[#dbc1bb] transition"
               >
-                <div className="flex items-center gap-2">
-                  <span>🏢</span>
-                  <span>Anuncie seu Local</span>
-                </div>
+                <span>Anuncie seu Local</span>
                 <span className="text-[10px] font-bold uppercase tracking-wider bg-[#7c2f1d] text-white px-2 py-0.5 rounded">
                   Parceiros
                 </span>
