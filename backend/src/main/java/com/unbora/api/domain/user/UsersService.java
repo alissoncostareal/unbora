@@ -21,6 +21,9 @@ import com.unbora.api.domain.email.EmailService;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import com.unbora.api.common.security.BruteForceProtectionService;
+import com.unbora.api.common.security.HttpRequestUtil;
+
 @Service
 public class UsersService {
 
@@ -28,17 +31,20 @@ public class UsersService {
     private final KafkaEventPublisher kafkaEventPublisher;
     private final GoogleAuthService googleAuthService;
     private final EmailService emailService;
+    private final BruteForceProtectionService bruteForceProtectionService;
 
     public UsersService(
             UserRepository userRepository,
             KafkaEventPublisher kafkaEventPublisher,
             GoogleAuthService googleAuthService,
-            EmailService emailService
+            EmailService emailService,
+            BruteForceProtectionService bruteForceProtectionService
     ) {
         this.userRepository = userRepository;
         this.kafkaEventPublisher = kafkaEventPublisher;
         this.googleAuthService = googleAuthService;
         this.emailService = emailService;
+        this.bruteForceProtectionService = bruteForceProtectionService;
     }
 
     public PublicUserDto toPublic(User user) {
@@ -198,15 +204,23 @@ public class UsersService {
 
     @Transactional
     public PublicUserDto login(LoginUserDto dto) {
+        String ip = HttpRequestUtil.getClientIp();
         String email = dto.email().trim().toLowerCase();
+
+        // 1. Valida se a autenticação está bloqueada para este IP ou Conta
+        bruteForceProtectionService.checkLoginAllowed(ip, email);
 
         User user = userRepository.findByEmail(email)
                 .filter(u -> !Boolean.TRUE.equals(u.getGuest()))
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos."));
+                .orElse(null);
 
-        if (!PasswordUtil.verify(dto.password(), user.getPasswordHash())) {
+        if (user == null || !PasswordUtil.verify(dto.password(), user.getPasswordHash())) {
+            bruteForceProtectionService.recordLoginFailure(ip, email);
             throw new ApiException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos.");
         }
+
+        // 2. Autenticação bem-sucedida: reseta contadores de falhas
+        bruteForceProtectionService.recordLoginSuccess(ip, email);
 
         user.setLastSeenAt(Instant.now());
         PublicUserDto saved = toPublic(userRepository.save(user));
@@ -218,7 +232,7 @@ public class UsersService {
                 saved.role(),
                 saved.platform(),
                 Instant.now(),
-                Map.of()
+                Map.of("ip", ip)
         ));
 
         return saved;
@@ -392,7 +406,12 @@ public class UsersService {
 
     @Transactional
     public MessageResponseDto forgotPassword(ForgotPasswordDto dto) {
+        String ip = HttpRequestUtil.getClientIp();
         String email = dto.email().trim().toLowerCase();
+
+        // Validação anti-flood e anti-spam de e-mails
+        bruteForceProtectionService.checkForgotPasswordAllowed(ip, email);
+        bruteForceProtectionService.recordForgotPasswordRequest(ip, email);
 
         userRepository.findByEmail(email)
                 .filter(u -> !Boolean.TRUE.equals(u.getGuest()))
@@ -411,7 +430,7 @@ public class UsersService {
                             user.getRole(),
                             user.getPlatform(),
                             Instant.now(),
-                            Map.of()
+                            Map.of("ip", ip)
                     ));
                 });
 

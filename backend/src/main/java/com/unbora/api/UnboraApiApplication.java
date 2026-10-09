@@ -8,7 +8,10 @@ import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 
+import org.springframework.scheduling.annotation.EnableScheduling;
+
 @SpringBootApplication(exclude = {KafkaAutoConfiguration.class})
+@EnableScheduling
 public class UnboraApiApplication {
 
     public static void main(String[] args) {

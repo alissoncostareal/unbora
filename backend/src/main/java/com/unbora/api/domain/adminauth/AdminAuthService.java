@@ -6,6 +6,8 @@ import com.unbora.api.domain.adminauth.dto.*;
 import com.unbora.api.domain.user.PortalUser;
 import com.unbora.api.domain.user.PortalUserRepository;
 import com.unbora.api.security.JwtService;
+import com.unbora.api.common.security.BruteForceProtectionService;
+import com.unbora.api.common.security.HttpRequestUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class AdminAuthService {
 
     private final PortalUserRepository portalUserRepository;
     private final JwtService jwtService;
+    private final BruteForceProtectionService bruteForceProtectionService;
     private final String superadminEmail;
     private final String superadminPassword;
     private final String superadminName;
@@ -27,25 +30,34 @@ public class AdminAuthService {
     public AdminAuthService(
             PortalUserRepository portalUserRepository,
             JwtService jwtService,
+            BruteForceProtectionService bruteForceProtectionService,
             @Value("${unbora.superadmin.email:}") String superadminEmail,
             @Value("${unbora.superadmin.password:}") String superadminPassword,
             @Value("${unbora.superadmin.name:Super Admin}") String superadminName
     ) {
         this.portalUserRepository = portalUserRepository;
         this.jwtService = jwtService;
+        this.bruteForceProtectionService = bruteForceProtectionService;
         this.superadminEmail = superadminEmail != null ? superadminEmail.trim().toLowerCase() : "";
         this.superadminPassword = superadminPassword != null ? superadminPassword.trim() : "";
         this.superadminName = superadminName != null ? superadminName.trim() : "Super Admin";
     }
 
     public AdminLoginResponseDto login(AdminLoginDto dto) {
+        String ip = HttpRequestUtil.getClientIp();
         String email = dto.email().trim().toLowerCase();
 
-        // 1. Check superadmin environment credentials
+        // 1. Valida se o login admin está bloqueado por excesso de tentativas
+        bruteForceProtectionService.checkLoginAllowed(ip, email);
+
+        // 2. Verifica credenciais do superadmin via variáveis de ambiente
         if (!superadminEmail.isBlank() && !superadminPassword.isBlank() && email.equals(superadminEmail)) {
             if (!dto.password().equals(superadminPassword)) {
+                bruteForceProtectionService.recordLoginFailure(ip, email);
                 throw new ApiException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos.");
             }
+
+            bruteForceProtectionService.recordLoginSuccess(ip, email);
 
             AdminSessionDto session = new AdminSessionDto(
                     "superadmin",
@@ -57,13 +69,16 @@ public class AdminAuthService {
             return new AdminLoginResponseDto(token, session);
         }
 
-        // 2. Check portal users in database
-        PortalUser portalUser = portalUserRepository.findByEmail(email)
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos."));
+        // 3. Verifica usuários do portal administrativo no banco de dados
+        PortalUser portalUser = portalUserRepository.findByEmail(email).orElse(null);
 
-        if (!PasswordUtil.verify(dto.password(), portalUser.getPasswordHash())) {
+        if (portalUser == null || !PasswordUtil.verify(dto.password(), portalUser.getPasswordHash())) {
+            bruteForceProtectionService.recordLoginFailure(ip, email);
             throw new ApiException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos.");
         }
+
+        // Login bem sucedido: reseta contadores de falhas
+        bruteForceProtectionService.recordLoginSuccess(ip, email);
 
         AdminSessionDto session = new AdminSessionDto(
                 portalUser.getId(),
