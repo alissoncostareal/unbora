@@ -1,12 +1,87 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>Unbora · O que fazer hoje? Descubra lugares, rolês e restaurantes com IA</title>
+    <meta name="title" content="Unbora · O que fazer hoje? Descubra lugares, rolês e restaurantes com IA" />
+    <meta name="description" content="Descubra os melhores bares, restaurantes, cafeterias e eventos culturais na sua cidade com inteligência artificial. Recomendações personalizadas por humor e momento." />
+    <meta name="keywords" content="unbora, o que fazer hoje, onde ir, restaurantes, bares, cafeterias, eventos, rolês, curitiba, fortaleza, inteligência artificial, guia gastronômico, passeios, vida noturna" />
+    <meta name="author" content="Unbora" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://unbora.com.br/" />
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://unbora.com.br/" />
+    <meta property="og:site_name" content="Unbora" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Unbora · O que fazer hoje? Descubra lugares, rolês e restaurantes com IA" />
+    <meta property="og:description" content="Descubra onde ir na sua cidade. Recomendações inteligentes de bares, cafés, restaurantes e eventos culturais com IA instantânea." />
+    <meta property="og:image" content="https://unbora.com.br/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Unbora - Recomendações inteligentes de lugares e rolês com IA" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://unbora.com.br/" />
+    <meta name="twitter:title" content="Unbora · O que fazer hoje? Descubra lugares com IA" />
+    <meta name="twitter:description" content="Recomendações inteligentes de bares, cafeterias, restaurantes e eventos culturais na sua cidade." />
+    <meta name="twitter:image" content="https://unbora.com.br/og-image.jpg" />
+
+    <!-- PWA & Mobile Web App -->
+    <meta name="theme-color" content="#9a4632" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Unbora" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Fonts & Preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <title>Unbora</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Structured Data / JSON-LD for Google Search -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://unbora.com.br/#website",
+          "url": "https://unbora.com.br/",
+          "name": "Unbora",
+          "description": "Guia e recomendações inteligentes de lugares, gastronomia e eventos com inteligência artificial",
+          "inLanguage": "pt-BR",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://unbora.com.br/?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://unbora.com.br/#app",
+          "name": "Unbora",
+          "url": "https://unbora.com.br/",
+          "applicationCategory": "LifestyleApplication",
+          "operatingSystem": "All",
+          "browserRequirements": "Requires JavaScript. Requires HTML5.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "BRL"
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

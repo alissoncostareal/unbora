@@ -1,0 +1,16 @@
+{
+  "name": "Unbora · Recomendações e Lugares com IA",
+  "short_name": "Unbora",
+  "description": "Descubra os melhores bares, cafeterias, restaurantes e eventos culturais na sua cidade com inteligência artificial.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#9a4632",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Allow: /plans
+Disallow: /settings
+Disallow: /invoices
+
+# Sitemaps
+Sitemap: https://business.unbora.com.br/sitemap.xml
