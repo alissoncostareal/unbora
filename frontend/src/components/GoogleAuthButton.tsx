@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  '133234893176-j1u7phtjse1usa5i38vm9tnk0lifqigc.apps.googleusercontent.com';
 
 interface GoogleAccounts {
   accounts: {
