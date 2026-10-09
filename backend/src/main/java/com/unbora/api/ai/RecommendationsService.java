@@ -130,17 +130,18 @@ public class RecommendationsService {
         );
 
         if (googlePlacesDiscoveryService.isConfigured()) {
-            List<String> queries = buildTargetedPlacesQueries(dto, city);
+            List<String> queries = buildTargetedPlacesQueries(dto, city, maxResults);
+            Double searchRadiusKm = maxResults > 20 ? Math.max(radiusKm, 16.0) : radiusKm;
             List<CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>>> futures = queries.stream()
                     .map(q -> CompletableFuture.supplyAsync(
-                            () -> googlePlacesDiscoveryService.searchPlaces(q, lat, lng, radiusKm, city, country, 20),
+                            () -> googlePlacesDiscoveryService.searchPlaces(q, lat, lng, searchRadiusKm, city, country, 20),
                             discoveryExecutor
                     ))
                     .toList();
 
             for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
                 try {
-                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.get(3, TimeUnit.SECONDS);
+                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.get(4, TimeUnit.SECONDS);
                     if (found != null) {
                         for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
                             String key = p.placeId() != null && !p.placeId().isBlank()
@@ -177,9 +178,23 @@ public class RecommendationsService {
                         .append("\n");
             }
             groundingContext.append("=== FIM DOS CANDIDATOS DO GOOGLE MAPS ===\n");
-            groundingContext.append("INSTRUÇÃO: use somente estes candidatos. Eles já estão em ")
-                    .append(city)
-                    .append(", no raio e no filtro escolhidos. Não acrescente outra categoria nem outra cidade.\n");
+            if (livePlaces.size() >= maxResults) {
+                groundingContext.append("INSTRUÇÃO: use estes candidatos reais. Eles já estão em ")
+                        .append(city)
+                        .append(", no raio e no filtro escolhidos. Gere até ")
+                        .append(maxResults)
+                        .append(" recomendações detalhadas.\n");
+            } else {
+                groundingContext.append("INSTRUÇÃO: use todos os candidatos reais do Google Maps listados acima. Como a lista atual tem ")
+                        .append(livePlaces.size())
+                        .append(" lugares e a meta são ")
+                        .append(maxResults)
+                        .append(" experiências, complemente com outros lugares reais, famosos e bem avaliados de ")
+                        .append(city)
+                        .append(" que combinem com as atividades e perfil, totalizando ")
+                        .append(maxResults)
+                        .append(" experiências.\n");
+            }
         }
 
         StringBuilder activitiesText = new StringBuilder();
@@ -207,13 +222,14 @@ public class RecommendationsService {
         RecommendationResult result;
         try {
             boolean hasLive = !livePlaces.isEmpty();
+            int maxTokens = Math.max(3500, Math.min(8192, maxResults * 160));
             result = groqClient.callGroqJson(
                     systemPrompt,
                     userPrompt,
                     RecommendationResult.class,
                     0.3,
-                    hasLive ? Math.max(1200, maxResults * 75) : 3500,
-                    hasLive ? Duration.ofSeconds(12) : Duration.ofSeconds(40),
+                    maxTokens,
+                    hasLive ? Duration.ofSeconds(16) : Duration.ofSeconds(40),
                     hasLive ? 1 : Integer.MAX_VALUE
             );
         } catch (Exception e) {
@@ -292,7 +308,7 @@ public class RecommendationsService {
         );
 
         if (googlePlacesDiscoveryService.isConfigured()) {
-            List<String> searchQueries = buildSearchPlacesQueries(query, city);
+            List<String> searchQueries = buildSearchPlacesQueries(query, city, maxResults);
             List<CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>>> futures = searchQueries.stream()
                     .map(q -> CompletableFuture.supplyAsync(
                             () -> googlePlacesDiscoveryService.searchPlaces(q, lat, lng, radiusKm, city, country, 20),
@@ -302,7 +318,7 @@ public class RecommendationsService {
 
             for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
                 try {
-                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.get(3, TimeUnit.SECONDS);
+                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.get(4, TimeUnit.SECONDS);
                     if (found != null) {
                         for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
                             String key = p.placeId() != null && !p.placeId().isBlank()
@@ -330,14 +346,22 @@ public class RecommendationsService {
             groundingContext.append("\n=== CANDIDATOS VIVOS DO GOOGLE MAPS ===\n");
             int count = 0;
             for (GooglePlacesDiscoveryService.DiscoveredPlace p : livePlaces) {
-                if (count++ >= Math.min(maxResults, 24)) break;
+                if (count++ >= maxResults) break;
                 groundingContext.append("- ").append(p.displayName()).append(" (").append(p.formattedAddress()).append(")")
                         .append(" | Nota: ").append(p.rating() != null ? p.rating() : 4.7)
                         .append(" | Avaliações: ").append(p.userRatingCount() != null ? p.userRatingCount() : 0)
                         .append("\n");
             }
             groundingContext.append("=== FIM DOS CANDIDATOS ===\n");
-            groundingContext.append("INSTRUÇÃO: inclua estes candidatos na lista de lugares.\n");
+            if (livePlaces.size() >= maxResults) {
+                groundingContext.append("INSTRUÇÃO: inclua preferencialmente estes candidatos reais do Google Maps na lista de lugares.\n");
+            } else {
+                groundingContext.append("INSTRUÇÃO: inclua todos os candidatos reais listados acima e complemente com outros lugares reais, notórios e bem avaliados de ")
+                        .append(city)
+                        .append(" até atingir ")
+                        .append(maxResults)
+                        .append(" experiências.\n");
+            }
         }
 
         String systemPrompt = promptTemplateService.getTemplate("system-prompt");
@@ -353,13 +377,14 @@ public class RecommendationsService {
         RecommendationResult result;
         try {
             boolean hasLive = !livePlaces.isEmpty();
+            int maxTokens = Math.max(3500, Math.min(8192, maxResults * 160));
             result = groqClient.callGroqJson(
                     systemPrompt,
                     userPrompt,
                     RecommendationResult.class,
                     0.3,
-                    hasLive ? Math.max(1200, maxResults * 75) : 3500,
-                    hasLive ? Duration.ofSeconds(12) : Duration.ofSeconds(40),
+                    maxTokens,
+                    hasLive ? Duration.ofSeconds(16) : Duration.ofSeconds(40),
                     hasLive ? 1 : Integer.MAX_VALUE
             );
         } catch (Exception e) {
@@ -575,14 +600,14 @@ public class RecommendationsService {
         for (ActivityItemDto activity : activities) {
             String label = fold((activity.label() == null ? "" : activity.label()) + " "
                     + (activity.searchHint() == null ? "" : activity.searchHint()));
-            if (label.contains("caf") && containsAny(hay, "cafe", "coffee", "padaria", "brunch", "bakery")) return true;
-            if ((label.contains("mus") || label.contains("show")) && containsAny(hay, "bar", "pub", "music", "show", "night", "live")) return true;
-            if (label.contains("natureza") && containsAny(hay, "parque", "park", "trilha", "jardim", "natureza", "mirante")) return true;
-            if ((label.contains("gastro") || label.contains("comida")) && containsAny(hay, "restaur", "bistr", "food", "meal")) return true;
-            if (label.contains("cultura") && containsAny(hay, "museu", "museum", "teatro", "theater", "cultur", "galeria", "art")) return true;
-            if (label.contains("game") && containsAny(hay, "game", "jogo", "boliche", "bowling", "fliper")) return true;
-            if (label.contains("praia") && containsAny(hay, "praia", "beach", "orla")) return true;
-            if (label.contains("cinema") && containsAny(hay, "cinema", "movie", "filme")) return true;
+            if (label.contains("caf") && containsAny(hay, "cafe", "coffee", "padaria", "brunch", "bakery", "confeit", "doce", "panificadora", "espresso", "bistro")) return true;
+            if ((label.contains("mus") || label.contains("show")) && containsAny(hay, "bar", "pub", "music", "show", "night", "live", "balada", "festa", "clube", "choperia")) return true;
+            if (label.contains("natureza") && containsAny(hay, "parque", "park", "trilha", "jardim", "natureza", "mirante", "lago", "bosque", "verde", "praca")) return true;
+            if ((label.contains("gastro") || label.contains("comida")) && containsAny(hay, "restaur", "bistr", "food", "meal", "gastro", "pizza", "hamburg", "sushi", "grill", "churras", "culinaria", "barraca")) return true;
+            if (label.contains("cultura") && containsAny(hay, "museu", "museum", "teatro", "theater", "cultur", "galeria", "art", "histor", "cinema", "centro cultural")) return true;
+            if (label.contains("game") && containsAny(hay, "game", "jogo", "boliche", "bowling", "fliper", "arcade", "escape", "diversao")) return true;
+            if (label.contains("praia") && containsAny(hay, "praia", "beach", "orla", "quiosque", "barraca", "mar")) return true;
+            if (label.contains("cinema") && containsAny(hay, "cinema", "movie", "filme", "cine")) return true;
         }
         return false;
     }
@@ -899,7 +924,7 @@ public class RecommendationsService {
         return result;
     }
 
-    private List<String> buildTargetedPlacesQueries(RecommendDto dto, String city) {
+    private List<String> buildTargetedPlacesQueries(RecommendDto dto, String city, int maxResults) {
         List<String> queries = new ArrayList<>();
         String mood = fold(dto.humor());
         String company = fold(dto.sentir());
@@ -910,45 +935,102 @@ public class RecommendationsService {
                         : activity.label();
                 if (hint == null || hint.isBlank()) continue;
                 queries.add(hint + " em " + city);
+                queries.add("melhores " + hint + " em " + city);
+                queries.add(hint + " bem avaliados em " + city);
+                queries.add(hint + " famosos em " + city);
+                queries.add(hint + " recomendados em " + city);
+
                 if (mood.contains("relax") || mood.contains("paz")) {
                     queries.add(hint + " tranquilos em " + city);
+                    queries.add(hint + " aconchegantes em " + city);
                 } else if (mood.contains("animad") || mood.contains("energia")) {
                     queries.add(hint + " movimentados em " + city);
+                    queries.add(hint + " badalados em " + city);
                 } else if (company.contains("a dois") || company.contains("encontro")) {
-                    queries.add(hint + " para dois em " + city);
+                    queries.add(hint + " romanticos para dois em " + city);
+                    queries.add(hint + " intimistas em " + city);
+                }
+
+                String label = fold((activity.label() == null ? "" : activity.label()) + " "
+                        + (activity.searchHint() == null ? "" : activity.searchHint()));
+                if (label.contains("caf")) {
+                    queries.add("cafeterias especiais em " + city);
+                    queries.add("padarias artesanais e confeitarias em " + city);
+                    queries.add("brunch e cafés em " + city);
+                    queries.add("bistrôs com café em " + city);
+                } else if (label.contains("gastro") || label.contains("comida")) {
+                    queries.add("restaurantes bem avaliados em " + city);
+                    queries.add("bistrôs e gastronomia contemporânea em " + city);
+                    queries.add("restaurantes tradicionais e regionais em " + city);
+                    queries.add("pizzarias e hamburguerias artesanais em " + city);
+                } else if (label.contains("mus") || label.contains("bar") || label.contains("show")) {
+                    queries.add("bares com musica ao vivo em " + city);
+                    queries.add("pubs e gastrobares em " + city);
+                    queries.add("botecos e chopeiras em " + city);
+                } else if (label.contains("natureza") || label.contains("parque")) {
+                    queries.add("parques e praças em " + city);
+                    queries.add("mirantes e áreas verdes em " + city);
+                } else if (label.contains("praia")) {
+                    queries.add("barracas de praia famosas em " + city);
+                    queries.add("orla e quiosques em " + city);
+                } else if (label.contains("cultura")) {
+                    queries.add("museus e centros culturais em " + city);
+                    queries.add("teatros e galerias de arte em " + city);
                 }
             }
         }
         if (queries.isEmpty()) {
             queries.add("lugares para sair em " + city);
+            queries.add("melhores restaurantes em " + city);
+            queries.add("melhores bares em " + city);
+            queries.add("pontos turisticos e passeios em " + city);
         }
-        return queries.stream().distinct().limit(6).toList();
+        int queryLimit = maxResults > 20 ? 15 : 8;
+        return queries.stream().distinct().limit(queryLimit).toList();
     }
 
-    private List<String> buildSearchPlacesQueries(String query, String city) {
+    private List<String> buildSearchPlacesQueries(String query, String city, int maxResults) {
         String q = query != null ? query.trim() : "";
-        String lower = q.toLowerCase(Locale.ROOT);
+        String lower = fold(q);
         List<String> queries = new ArrayList<>();
         queries.add(q);
         queries.add(q + " em " + city);
         queries.add("melhores " + q + " em " + city);
         queries.add(q + " bem avaliados em " + city);
         queries.add(q + " famosos em " + city);
+        queries.add(q + " recomendados em " + city);
+        queries.add(q + " populares em " + city);
 
-        if (lower.contains("restaurante") || lower.equals("comida") || lower.contains("gastronom")) {
+        if (lower.contains("restaurante") || lower.contains("comida") || lower.contains("gastronom")) {
             queries.add("restaurantes em " + city);
             queries.add("restaurantes tradicionais em " + city);
-            queries.add("bistrôs em " + city);
+            queries.add("bistrôs e gastronomia em " + city);
             queries.add("restaurantes contemporâneos em " + city);
+            queries.add("pizzarias e hamburguerias em " + city);
+            queries.add("frutos do mar e culinária regional em " + city);
         } else if (lower.contains("bar") || lower.contains("pub")) {
             queries.add("bares em " + city);
             queries.add("pubs e gastrobares em " + city);
-        } else if (lower.contains("café") || lower.contains("cafe")) {
+            queries.add("botecos tradicionais em " + city);
+            queries.add("rooftops e drinks em " + city);
+        } else if (lower.contains("caf") || lower.contains("coffee")) {
             queries.add("cafeterias em " + city);
             queries.add("cafés especiais em " + city);
+            queries.add("padarias artesanais em " + city);
+            queries.add("confeitarias e brunch em " + city);
+        } else if (lower.contains("praia")) {
+            queries.add("barracas de praia em " + city);
+            queries.add("orla e quiosques em " + city);
+        } else if (lower.contains("parque") || lower.contains("natureza")) {
+            queries.add("parques e praças em " + city);
+            queries.add("áreas verdes e passeios ao ar livre em " + city);
+        } else if (lower.contains("cultura") || lower.contains("museu")) {
+            queries.add("museus e centros culturais em " + city);
+            queries.add("pontos turísticos em " + city);
         }
 
-        return queries.stream().distinct().limit(8).toList();
+        int queryLimit = maxResults > 20 ? 15 : 8;
+        return queries.stream().distinct().limit(queryLimit).toList();
     }
 
     /** Monta resultado só com Places quando a IA falha ou devolve lista vazia. */

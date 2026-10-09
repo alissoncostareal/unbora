@@ -9,6 +9,8 @@ RUN mkdir -p public
 
 ARG NEXT_PUBLIC_API_BASE_URL=https://api.unbora.com.br
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_API_URL=https://api.unbora.com.br
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN npm run build
 

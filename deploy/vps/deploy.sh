@@ -139,6 +139,7 @@ unset VITE_GOOGLE_CLIENT_ID VITE_GOOGLE_MAPS_API_KEY
 
 docker build \
   --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.unbora.com.br \
+  --build-arg NEXT_PUBLIC_API_URL=https://api.unbora.com.br \
   -t unbora-admin:latest \
   -f admin/Dockerfile \
   admin
@@ -146,6 +147,7 @@ docker save unbora-admin:latest | k3s ctr images import -
 
 docker build \
   --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.unbora.com.br \
+  --build-arg NEXT_PUBLIC_API_URL=https://api.unbora.com.br \
   -t unbora-business:latest \
   -f business/Dockerfile \
   business
