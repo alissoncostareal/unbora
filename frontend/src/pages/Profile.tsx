@@ -1,8 +1,19 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { fetchRevisits, type RevisitGroup } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
 export function ProfilePage() {
   const { user, logout } = useAuth();
+  const [revisitData, setRevisitData] = useState<RevisitGroup | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchRevisits(user.id)
+        .then(setRevisitData)
+        .catch((e) => console.warn('Não foi possível carregar visitas:', e));
+    }
+  }, [user]);
 
   if (!user) {
     return (
@@ -36,6 +47,8 @@ export function ProfilePage() {
   }
 
   const isMerchant = user.role === 'merchant';
+  const totalCheckins = revisitData?.totalCheckins || 0;
+  const suggestionsCount = revisitData?.revisitSuggestions?.length || 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 py-10 px-4 sm:px-6">
@@ -66,10 +79,50 @@ export function ProfilePage() {
         <button
           type="button"
           onClick={logout}
-          className="px-4 py-2 border border-[#eadfd4] text-[#73685e] hover:text-[#1e1b19] hover:bg-[#faf8f5] rounded-xl text-xs font-bold transition self-start sm:self-auto"
+          className="px-4 py-2 border border-[#eadfd4] text-[#73685e] hover:text-[#1e1b19] hover:bg-[#faf8f5] rounded-xl text-xs font-bold transition self-start sm:self-auto cursor-pointer"
         >
           Sair da Conta
         </button>
+      </div>
+
+      {/* Destaque do Passaporte & Check-ins do Usuário */}
+      <div className="bg-gradient-to-br from-[#faf2ee] via-amber-50/40 to-[#faf8f5] rounded-3xl border border-amber-200/80 p-6 sm:p-8 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#7c2f1d] flex items-center gap-1.5">
+            <span>🗺️</span> Passaporte Urbano Unbora
+          </span>
+          <span className="rounded-full bg-white border border-[#eadfd4] px-3 py-1 text-xs font-bold text-[#1e1b19]">
+            {totalCheckins} {totalCheckins === 1 ? 'visita' : 'visitas'}
+          </span>
+        </div>
+
+        <h2 className="text-xl sm:text-2xl font-black text-[#1e1b19]">
+          Seu Diário de Experiências & Reencontros
+        </h2>
+        
+        <p className="text-xs sm:text-sm text-[#73685e] leading-relaxed">
+          Acompanhe todos os locais que você visitou esta semana, semana passada ou mês passado.
+          {suggestionsCount > 0 ? (
+            <span className="text-[#7c2f1d] font-semibold"> Você tem {suggestionsCount} lugares chamando para matar a saudade!</span>
+          ) : (
+            ' Faça check-ins nos resultados de busca para registrar suas memórias.'
+          )}
+        </p>
+
+        <div className="pt-2 flex flex-wrap gap-3">
+          <Link
+            to="/favorites"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#7c2f1d] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition"
+          >
+            Abrir Diário & Passaporte →
+          </Link>
+          <Link
+            to="/home"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#eadfd4] bg-white px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#1e1b19] hover:bg-stone-50 transition"
+          >
+            Explorar Locais
+          </Link>
+        </div>
       </div>
 
       {/* Card para Lojista ou Banner de Upgrade para Usuário */}
@@ -123,10 +176,10 @@ export function ProfilePage() {
           className="p-5 bg-white rounded-2xl border border-[#eadfd4] hover:border-[#7c2f1d] transition flex items-center justify-between"
         >
           <div className="flex items-center gap-3">
-            <span className="text-2xl">❤️</span>
+            <span className="text-2xl">🗺️</span>
             <div>
-              <h3 className="font-bold text-sm text-[#1e1b19]">Lugares Favoritos</h3>
-              <p className="text-[11px] text-[#8a8178]">Seus locais salvos para ir</p>
+              <h3 className="font-bold text-sm text-[#1e1b19]">Passaporte & Visitas</h3>
+              <p className="text-[11px] text-[#8a8178]">Histórico de lugares e check-ins</p>
             </div>
           </div>
           <span className="text-xs text-[#8a8178]">→</span>

@@ -9,6 +9,8 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findByEmail(String email);
+    Optional<User> findByPasswordResetToken(String passwordResetToken);
+    Optional<User> findByEmailConfirmationToken(String emailConfirmationToken);
     List<User> findAllByOrderByLastSeenAtDesc();
     long countByIsGuestFalse();
     long countByIsGuestTrue();

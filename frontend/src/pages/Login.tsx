@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { GoogleAuthButton } from '../components/GoogleAuthButton';
+import { forgotPassword } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
 export function LoginPage() {
@@ -13,6 +14,13 @@ export function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Estados de Esqueci Minha Senha
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState<string | null>(null);
+  const [forgotError, setForgotError] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -38,6 +46,21 @@ export function LoginPage() {
       setError(err instanceof Error ? err.message : 'Falha no Google');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onForgotPasswordSubmit(e: FormEvent) {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotError(null);
+    setForgotMessage(null);
+    try {
+      const res = await forgotPassword(forgotEmail.trim());
+      setForgotMessage(res.message);
+    } catch (err) {
+      setForgotError(err instanceof Error ? err.message : 'Erro ao solicitar recuperação de senha.');
+    } finally {
+      setForgotLoading(false);
     }
   }
 
@@ -113,8 +136,13 @@ export function LoginPage() {
                   </label>
                   <button
                     type="button"
-                    className="text-xs font-medium text-[#7c2f1d] hover:text-[#1e1b19]"
-                    onClick={() => setError('A recuperação de senha ainda não está disponível.')}
+                    className="text-xs font-medium text-[#7c2f1d] hover:text-[#1e1b19] cursor-pointer"
+                    onClick={() => {
+                      setForgotEmail(email);
+                      setForgotMessage(null);
+                      setForgotError(null);
+                      setShowForgotModal(true);
+                    }}
                   >
                     Esqueceu a senha?
                   </button>
@@ -133,7 +161,7 @@ export function LoginPage() {
                   />
                   <button
                     type="button"
-                    className="absolute top-1/2 right-3 -translate-y-1/2 text-[#88726d] hover:text-[#1e1b19]"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-[#88726d] hover:text-[#1e1b19] cursor-pointer"
                     aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                     onClick={() => setShowPassword((current) => !current)}
                   >
@@ -160,7 +188,7 @@ export function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 flex h-12 w-full items-center justify-center gap-2 bg-[#33302d] text-[11px] font-semibold tracking-[0.14em] text-[#f7efeb] uppercase transition-colors hover:bg-[#7c2f1d] disabled:opacity-60"
+                className="mt-2 flex h-12 w-full items-center justify-center gap-2 bg-[#33302d] text-[11px] font-semibold tracking-[0.14em] text-[#f7efeb] uppercase transition-colors hover:bg-[#7c2f1d] disabled:opacity-60 cursor-pointer"
               >
                 {loading ? 'Consultando arquivo' : 'Entrar no Unbora'}
                 <Arrow />
@@ -189,6 +217,87 @@ export function LoginPage() {
           </div>
         </section>
       </div>
+
+      {/* Modal de Recuperação de Senha */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-stone-200">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <h3 className="text-xl font-bold text-[#1c1917]">Recuperar Senha</h3>
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(false)}
+                className="text-stone-400 hover:text-stone-700 p-1 text-lg leading-none cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {forgotMessage ? (
+              <div className="mt-5 space-y-4 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-2xl">
+                  ✉️
+                </div>
+                <h4 className="text-base font-bold text-stone-900">E-mail Enviado!</h4>
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  {forgotMessage}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(false)}
+                  className="w-full rounded-xl bg-[#1c1917] py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#7c2f1d] transition cursor-pointer"
+                >
+                  Fechar
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={onForgotPasswordSubmit} className="mt-5 space-y-4">
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  Digite seu e-mail cadastrado. Enviaremos um link seguro para você redefinir sua senha em instantes.
+                </p>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-stone-700 mb-1.5" htmlFor="forgot-email">
+                    Seu E-mail
+                  </label>
+                  <input
+                    id="forgot-email"
+                    type="email"
+                    required
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="nome@exemplo.com"
+                    className="h-12 w-full rounded-xl border border-stone-300 px-4 text-sm text-stone-900 focus:border-[#7c2f1d] focus:ring-1 focus:ring-[#7c2f1d] outline-none"
+                  />
+                </div>
+
+                {forgotError && (
+                  <p className="text-xs font-medium text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200">
+                    {forgotError}
+                  </p>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(false)}
+                    className="flex-1 rounded-xl border border-stone-200 py-3 text-xs font-bold uppercase tracking-wider text-stone-600 hover:bg-stone-50 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="flex-1 rounded-xl bg-[#7c2f1d] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition disabled:opacity-50 cursor-pointer"
+                  >
+                    {forgotLoading ? 'Enviando...' : 'Enviar Link'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

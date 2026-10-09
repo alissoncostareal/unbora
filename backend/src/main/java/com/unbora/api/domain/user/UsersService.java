@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import com.unbora.api.domain.email.EmailService;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
@@ -25,15 +27,18 @@ public class UsersService {
     private final UserRepository userRepository;
     private final KafkaEventPublisher kafkaEventPublisher;
     private final GoogleAuthService googleAuthService;
+    private final EmailService emailService;
 
     public UsersService(
             UserRepository userRepository,
             KafkaEventPublisher kafkaEventPublisher,
-            GoogleAuthService googleAuthService
+            GoogleAuthService googleAuthService,
+            EmailService emailService
     ) {
         this.userRepository = userRepository;
         this.kafkaEventPublisher = kafkaEventPublisher;
         this.googleAuthService = googleAuthService;
+        this.emailService = emailService;
     }
 
     public PublicUserDto toPublic(User user) {
@@ -114,6 +119,8 @@ public class UsersService {
             throw new ApiException(HttpStatus.CONFLICT, "Este e-mail já está cadastrado.");
         }
 
+        String confirmToken = UUID.randomUUID().toString();
+
         User user = new User();
         user.setId(UUID.randomUUID().toString());
         user.setName(dto.name().trim());
@@ -122,10 +129,14 @@ public class UsersService {
         user.setPasswordHash(PasswordUtil.hashPassword(dto.password()));
         user.setPlatform(dto.platform());
         user.setRole("user");
+        user.setEmailConfirmed(false);
+        user.setEmailConfirmationToken(confirmToken);
         user.setCreatedAt(Instant.now());
         user.setLastSeenAt(Instant.now());
 
         PublicUserDto saved = toPublic(userRepository.save(user));
+
+        emailService.sendAccountConfirmationEmail(saved.email(), saved.name(), confirmToken);
 
         kafkaEventPublisher.publishUserActivity(new UserActivityEvent(
                 "USER_REGISTERED",
@@ -152,6 +163,8 @@ public class UsersService {
             throw new ApiException(HttpStatus.CONFLICT, "Este e-mail já está cadastrado.");
         }
 
+        String confirmToken = UUID.randomUUID().toString();
+
         User user = new User();
         user.setId(UUID.randomUUID().toString());
         user.setName(dto.name().trim());
@@ -161,10 +174,14 @@ public class UsersService {
         user.setPlatform(dto.platform());
         user.setRole("merchant");
         user.setBusinessName(dto.businessName().trim());
+        user.setEmailConfirmed(false);
+        user.setEmailConfirmationToken(confirmToken);
         user.setCreatedAt(Instant.now());
         user.setLastSeenAt(Instant.now());
 
         PublicUserDto saved = toPublic(userRepository.save(user));
+
+        emailService.sendAccountConfirmationEmail(saved.email(), saved.name(), confirmToken);
 
         kafkaEventPublisher.publishUserActivity(new UserActivityEvent(
                 "MERCHANT_REGISTERED",
@@ -371,5 +388,95 @@ public class UsersService {
         ));
 
         return saved;
+    }
+
+    @Transactional
+    public MessageResponseDto forgotPassword(ForgotPasswordDto dto) {
+        String email = dto.email().trim().toLowerCase();
+
+        userRepository.findByEmail(email)
+                .filter(u -> !Boolean.TRUE.equals(u.getGuest()))
+                .ifPresent(user -> {
+                    String token = UUID.randomUUID().toString();
+                    user.setPasswordResetToken(token);
+                    user.setPasswordResetExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
+                    userRepository.save(user);
+
+                    emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), token);
+
+                    kafkaEventPublisher.publishUserActivity(new UserActivityEvent(
+                            "USER_FORGOT_PASSWORD",
+                            user.getId(),
+                            user.getEmail(),
+                            user.getRole(),
+                            user.getPlatform(),
+                            Instant.now(),
+                            Map.of()
+                    ));
+                });
+
+        return new MessageResponseDto(
+                "Se o e-mail informado estiver cadastrado, você receberá o link de redefinição de senha em instantes.",
+                true
+        );
+    }
+
+    @Transactional
+    public MessageResponseDto resetPassword(ResetPasswordDto dto) {
+        String token = dto.token().trim();
+
+        User user = userRepository.findByPasswordResetToken(token)
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Token de recuperação inválido ou expirado."));
+
+        if (user.getPasswordResetExpiresAt() == null || user.getPasswordResetExpiresAt().isBefore(Instant.now())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "O link de recuperação expirou. Solicite um novo.");
+        }
+
+        user.setPasswordHash(PasswordUtil.hashPassword(dto.newPassword()));
+        user.setPasswordResetToken(null);
+        user.setPasswordResetExpiresAt(null);
+        userRepository.save(user);
+
+        kafkaEventPublisher.publishUserActivity(new UserActivityEvent(
+                "USER_PASSWORD_RESET",
+                user.getId(),
+                user.getEmail(),
+                user.getRole(),
+                user.getPlatform(),
+                Instant.now(),
+                Map.of()
+        ));
+
+        return new MessageResponseDto(
+                "Sua senha foi atualizada com sucesso! Agora você já pode entrar com a nova senha.",
+                true
+        );
+    }
+
+    @Transactional
+    public MessageResponseDto confirmAccount(ConfirmAccountDto dto) {
+        String token = dto.token().trim();
+
+        User user = userRepository.findByEmailConfirmationToken(token)
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Token de confirmação inválido ou já utilizado."));
+
+        user.setEmailConfirmed(true);
+        user.setEmailConfirmationToken(null);
+        userRepository.save(user);
+
+        kafkaEventPublisher.publishUserActivity(new UserActivityEvent(
+                "USER_EMAIL_CONFIRMED",
+                user.getId(),
+                user.getEmail(),
+                user.getRole(),
+                user.getPlatform(),
+                Instant.now(),
+                Map.of()
+        ));
+
+        return new MessageResponseDto(
+                "E-mail confirmado com sucesso! Sua conta está 100% verificada.",
+                true
+        );
     }
 }

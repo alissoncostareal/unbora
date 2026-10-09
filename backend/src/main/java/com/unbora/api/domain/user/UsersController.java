@@ -80,4 +80,22 @@ public class UsersController {
     public PublicUserDto upgradeToMerchant(@Valid @RequestBody UpgradeToMerchantDto dto) {
         return usersService.upgradeToMerchant(dto);
     }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Solicitar recuperação de senha por e-mail")
+    public MessageResponseDto forgotPassword(@Valid @RequestBody ForgotPasswordDto dto) {
+        return usersService.forgotPassword(dto);
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Redefinir senha usando token recebido por e-mail")
+    public MessageResponseDto resetPassword(@Valid @RequestBody ResetPasswordDto dto) {
+        return usersService.resetPassword(dto);
+    }
+
+    @PostMapping("/confirm-account")
+    @Operation(summary = "Confirmar conta de usuário usando token de e-mail")
+    public MessageResponseDto confirmAccount(@Valid @RequestBody ConfirmAccountDto dto) {
+        return usersService.confirmAccount(dto);
+    }
 }

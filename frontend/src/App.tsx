@@ -14,6 +14,8 @@ import { RegisterPage } from './pages/Register';
 import { NotificationsPage } from './pages/Notifications';
 import { ProfilePage } from './pages/Profile';
 import { RatingsPage } from './pages/Ratings';
+import { ResetPasswordPage } from './pages/ResetPassword';
+import { ConfirmAccountPage } from './pages/ConfirmAccount';
 import { ResultPage } from './pages/Result';
 import { SearchPage } from './pages/Search';
 
@@ -41,7 +43,7 @@ export function App() {
   const { modelCity } = useCity();
   const legacy = legacyRoutes[path];
   const focused = path === '/home' || path === '/results';
-  const bare = path === '/' || path === '/login' || path === '/register';
+  const bare = path === '/' || path === '/login' || path === '/register' || path === '/reset-password' || path === '/confirm-account';
 
   if (legacy) return <Navigate to={`${legacy}${search}${hash}`} replace />;
   if (modelCity && path !== '/' && !bare) return <Navigate to="/" replace />;
@@ -56,6 +58,8 @@ export function App() {
           <Route path="/results" element={<ResultPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/confirm-account" element={<ConfirmAccountPage />} />
           <Route path="/merchant" element={<MerchantPage />} />
           <Route element={<GuideShell />}>
             <Route path="/search" element={<SearchPage />} />

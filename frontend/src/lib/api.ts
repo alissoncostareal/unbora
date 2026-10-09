@@ -467,4 +467,90 @@ export function getPartnerPageSettings(): Promise<PartnerPageSettings> {
   return get<PartnerPageSettings>('/partner-settings');
 }
 
+// --- Check-ins & Revisit Architecture ---
+
+export interface Checkin {
+  id: string;
+  userId: string;
+  placeId: string;
+  placeName: string;
+  placeType?: string;
+  city?: string;
+  imageUrl?: string;
+  mapsUrl?: string;
+  rating?: number;
+  notes?: string;
+  visitedAt: string;
+  createdAt: string;
+}
+
+export interface RevisitSuggestion {
+  placeId: string;
+  placeName: string;
+  placeType?: string;
+  city?: string;
+  imageUrl?: string;
+  mapsUrl?: string;
+  rating?: number;
+  notes?: string;
+  lastVisitedAt: string;
+  daysSinceLastVisit: number;
+  inviteMessage: string;
+}
+
+export interface RevisitGroup {
+  totalCheckins: number;
+  thisWeek: Checkin[];
+  lastWeek: Checkin[];
+  lastMonth: Checkin[];
+  older: Checkin[];
+  revisitSuggestions: RevisitSuggestion[];
+}
+
+export interface CreateCheckinInput {
+  placeId: string;
+  placeName: string;
+  placeType?: string;
+  city?: string;
+  imageUrl?: string;
+  mapsUrl?: string;
+  rating?: number;
+  notes?: string;
+  visitedAt?: string;
+}
+
+export function createCheckin(userId: string, data: CreateCheckinInput): Promise<Checkin> {
+  return post<Checkin>(`/checkins?userId=${encodeURIComponent(userId)}`, data);
+}
+
+export function fetchCheckins(userId: string): Promise<Checkin[]> {
+  return get<Checkin[]>(`/checkins?userId=${encodeURIComponent(userId)}`);
+}
+
+export function fetchRevisits(userId: string): Promise<RevisitGroup> {
+  return get<RevisitGroup>(`/checkins/revisit?userId=${encodeURIComponent(userId)}`);
+}
+
+export async function deleteCheckin(id: string, userId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/checkins/${encodeURIComponent(id)}?userId=${encodeURIComponent(userId)}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error(await errorMessage(response));
+}
+
+// --- Auth Recovery & Account Confirmation ---
+
+export function forgotPassword(email: string): Promise<{ message: string; success: boolean }> {
+  return post<{ message: string; success: boolean }>('/users/forgot-password', { email });
+}
+
+export function resetPassword(token: string, newPassword: string): Promise<{ message: string; success: boolean }> {
+  return post<{ message: string; success: boolean }>('/users/reset-password', { token, newPassword });
+}
+
+export function confirmAccount(token: string): Promise<{ message: string; success: boolean }> {
+  return post<{ message: string; success: boolean }>('/users/confirm-account', { token });
+}
+
+
 
