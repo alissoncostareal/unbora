@@ -1,45 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <defs>
-    <linearGradient id="unbora-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#e26a4e" />
-      <stop offset="50%" stop-color="#c8563c" />
-      <stop offset="100%" stop-color="#8a301c" />
-    </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.25" />
-    </filter>
-  </defs>
+  <!-- Fundo Preto Premium -->
+  <rect width="512" height="512" rx="128" fill="#121212" />
 
-  <!-- Background rounded squircle -->
-  <rect width="512" height="512" rx="128" fill="url(#unbora-grad)" />
+  <!-- Borda sutil para contraste nítido em qualquer fundo de aba -->
+  <rect x="2" y="2" width="508" height="508" rx="126" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4" />
 
-  <!-- Inner subtle glow border -->
-  <rect x="12" y="12" width="488" height="488" rx="116" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="6" />
+  <!-- Unbora 'U' em Branco Puro -->
+  <path
+    d="M 148,112
+       C 148,103.16 155.16,96 164,96
+       L 204,96
+       C 212.84,96 220,103.16 220,112
+       L 220,264
+       C 220,283.88 236.12,300 256,300
+       C 275.88,300 292,283.88 292,264
+       L 292,112
+       C 292,103.16 299.16,96 308,96
+       L 348,96
+       C 356.84,96 364,103.16 364,112
+       L 364,264
+       C 364,323.65 315.65,372 256,372
+       C 196.35,372 148,323.65 148,264
+       Z"
+    fill="#FFFFFF"
+  />
 
-  <!-- Unbora 'U' & Location Discovery Pin Silhouette -->
-  <g filter="url(#shadow)">
-    <!-- Modern 'U' Glyph -->
-    <path
-      d="M156 128
-         C156 114.7 166.7 104 180 104
-         C193.3 104 204 114.7 204 128
-         V260
-         C204 288.7 227.3 312 256 312
-         C284.7 312 308 288.7 308 260
-         V128
-         C308 114.7 318.7 104 332 104
-         C345.3 104 356 114.7 356 128
-         V260
-         C356 315.2 311.2 360 256 360
-         C200.8 360 156 315.2 156 260
-         Z"
-      fill="#FFFFFF"
-    />
-
-    <!-- Compass / Discovery Sparkle Dot inside U -->
-    <circle cx="256" cy="188" r="28" fill="#FFFFFF" />
-    
-    <!-- Pulse pointer dot beneath U base -->
-    <circle cx="256" cy="404" r="16" fill="#FFFFFF" opacity="0.9" />
-  </g>
+  <!-- Ponto de Destino / Descoberta Unbora -->
+  <circle cx="256" cy="422" r="18" fill="#FFFFFF" />
 </svg>
