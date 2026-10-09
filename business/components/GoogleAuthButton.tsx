@@ -41,7 +41,7 @@ export function GoogleAuthButton({
         client_id: GOOGLE_CLIENT_ID,
         callback: (response) => onCredentialRef.current(response.credential),
       });
-      google.accounts.id.renderButton(host.current, { theme: 'filled_black', size: 'large', width: 360 });
+      google.accounts.id.renderButton(host.current, { theme: 'outline', size: 'large', width: 360 });
     };
     document.body.appendChild(script);
     return () => {
@@ -54,7 +54,7 @@ export function GoogleAuthButton({
     <>
       <button
         type="button"
-        className="w-full h-12 flex items-center justify-center gap-3 rounded-xl bg-[#20242c] hover:bg-[#282d37] border border-slate-700 text-white font-bold text-xs sm:text-sm shadow-md transition cursor-pointer"
+        className="flex h-12 w-full cursor-pointer items-center justify-center gap-3 bg-white text-[11px] font-semibold tracking-[0.12em] text-[#1e1b19] uppercase shadow-[inset_0_0_0_1px_#dbc1bb] transition-colors hover:bg-[#faf2ee]"
         onClick={() => {
           if (!GOOGLE_CLIENT_ID) {
             onError('O login com Google ainda não está configurado.');
