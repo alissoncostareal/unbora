@@ -133,11 +133,29 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function put<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(await errorMessage(response));
+  return response.json() as Promise<T>;
+}
+
+async function get<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`);
+  if (!response.ok) throw new Error(await errorMessage(response));
+  return response.json() as Promise<T>;
+}
+
 export interface SessionUser {
   id: string;
   name: string;
   email: string;
   role?: string;
+  businessName?: string;
+  platform?: string;
 }
 
 export function loginWithPassword(email: string, password: string): Promise<SessionUser> {
@@ -310,3 +328,123 @@ export async function searchPlaces(query: string, scope: CityPlace, userId?: str
   });
   return mapRecommendation(data);
 }
+
+// --- Merchant & Monetization Portal ---
+
+export interface MerchantPlace {
+  id: string;
+  name: string;
+  city: string;
+  region: string;
+  country: string;
+  type: string;
+  description: string;
+  benefitText: string;
+  categoryTags: string;
+  imageUrl: string;
+  mapsUrl: string;
+  address: string;
+  placeId: string;
+  rating: number;
+  priceLevel: string;
+  slotBoost: boolean;
+  homeHighlight: boolean;
+  active: boolean;
+  sortOrder: number;
+  impressionsCount: number;
+  clicksCount: number;
+  billingModel: 'SUBSCRIPTION' | 'CPC_CREDITS' | 'HYBRID' | 'COURTESY';
+  planTier: 'BRONZE' | 'SILVER' | 'GOLD' | 'CUSTOM';
+  monthlyPrice: number;
+  creditBalance: number;
+  costPerClick: number;
+  costPerImpression: number;
+  dailyBudget: number;
+  spentToday: number;
+  totalSpent: number;
+  paymentStatus: 'PAID' | 'PENDING' | 'OVERDUE' | 'TRIAL' | 'EXPIRED' | 'CANCELED';
+  currentCycleStart?: string;
+  nextBillingDate?: string;
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  cnpjCpf?: string;
+  billingNotes?: string;
+  autoRenew: boolean;
+  merchantId?: string;
+  merchantName?: string;
+  merchantEmail?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MerchantInvoice {
+  id: string;
+  sponsoredPlaceId: string;
+  placeName: string;
+  merchantId?: string;
+  amount: number;
+  dueDate?: string;
+  paidAt?: string;
+  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELED';
+  paymentMethod: 'PIX' | 'CREDIT_CARD' | 'BOLETO' | 'MANUAL';
+  referencePeriod: string;
+  pixCopyPaste?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PlanTierOption {
+  tier: string;
+  name: string;
+  monthlyPrice: number;
+  description: string;
+  features: string[];
+  slotBoost: boolean;
+  homeHighlight: boolean;
+}
+
+export function upgradeToMerchant(userId: string, businessName: string, cnpjCpf?: string, phone?: string): Promise<SessionUser> {
+  return post<SessionUser>('/users/upgrade-to-merchant', { userId, businessName, cnpjCpf, phone });
+}
+
+export function getMerchantPlaces(merchantId: string): Promise<MerchantPlace[]> {
+  return get<MerchantPlace[]>(`/merchant/sponsored/places?merchantId=${encodeURIComponent(merchantId)}`);
+}
+
+export function createMerchantPlace(merchantId: string, data: Partial<MerchantPlace>): Promise<MerchantPlace> {
+  return post<MerchantPlace>(`/merchant/sponsored/places?merchantId=${encodeURIComponent(merchantId)}`, data);
+}
+
+export function updateMerchantPlace(merchantId: string, placeId: string, data: Partial<MerchantPlace>): Promise<MerchantPlace> {
+  return put<MerchantPlace>(`/merchant/sponsored/places/${encodeURIComponent(placeId)}?merchantId=${encodeURIComponent(merchantId)}`, data);
+}
+
+export function toggleMerchantPlaceActive(placeId: string): Promise<MerchantPlace> {
+  return post<MerchantPlace>(`/merchant/sponsored/places/${encodeURIComponent(placeId)}/toggle-active`, {});
+}
+
+export function rechargeMerchantCredits(placeId: string, amount: number, notes?: string): Promise<MerchantInvoice> {
+  return post<MerchantInvoice>(`/merchant/sponsored/places/${encodeURIComponent(placeId)}/recharge`, {
+    amount,
+    paymentMethod: 'PIX',
+    notes,
+  });
+}
+
+export function changeMerchantPlan(placeId: string, planTier: string, billingModel: string = 'SUBSCRIPTION'): Promise<MerchantInvoice> {
+  return post<MerchantInvoice>(`/merchant/sponsored/places/${encodeURIComponent(placeId)}/change-plan`, {
+    planTier,
+    billingModel,
+  });
+}
+
+export function getMerchantInvoices(merchantId: string): Promise<MerchantInvoice[]> {
+  return get<MerchantInvoice[]>(`/merchant/sponsored/invoices?merchantId=${encodeURIComponent(merchantId)}`);
+}
+
+export function getAvailablePlans(): Promise<PlanTierOption[]> {
+  return get<PlanTierOption[]>('/merchant/sponsored/plans');
+}
+

@@ -46,6 +46,9 @@ public record SponsoredPlaceDto(
         String cnpjCpf,
         String billingNotes,
         Boolean autoRenew,
+        String merchantId,
+        String merchantName,
+        String merchantEmail,
         String createdAt,
         String updatedAt
 ) {}

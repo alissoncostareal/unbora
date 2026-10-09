@@ -337,6 +337,7 @@ public class SponsoredPlaceService {
         inv.setId(UUID.randomUUID().toString());
         inv.setSponsoredPlaceId(place.getId());
         inv.setPlaceName(place.getName());
+        inv.setMerchantId(place.getMerchantId());
         inv.setAmount(dto.amount());
         inv.setDueDate(dto.dueDate() != null && !dto.dueDate().isBlank() ? LocalDate.parse(dto.dueDate()) : LocalDate.now().plusDays(5));
         inv.setPaymentMethod(dto.paymentMethod() != null ? dto.paymentMethod() : PaymentMethod.PIX);
@@ -373,6 +374,7 @@ public class SponsoredPlaceService {
         inv.setId(UUID.randomUUID().toString());
         inv.setSponsoredPlaceId(place.getId());
         inv.setPlaceName(place.getName());
+        inv.setMerchantId(place.getMerchantId());
         inv.setAmount(dto.amount());
         inv.setDueDate(LocalDate.now());
         inv.setPaidAt(Instant.now());
@@ -482,12 +484,112 @@ public class SponsoredPlaceService {
         );
     }
 
+    public List<SponsoredPlaceDto> listByMerchant(String merchantId) {
+        if (merchantId == null || merchantId.isBlank()) return List.of();
+        return repository.findByMerchantIdOrderByCreatedAtDesc(merchantId).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    public List<SponsoredInvoiceDto> listInvoicesByMerchant(String merchantId) {
+        if (merchantId == null || merchantId.isBlank()) return List.of();
+        return invoiceRepository.findByMerchantIdOrderByCreatedAtDesc(merchantId).stream()
+                .map(this::toInvoiceDto)
+                .toList();
+    }
+
+    @Transactional
+    public SponsoredPlaceDto createForMerchant(String merchantId, SaveSponsoredPlaceDto dto) {
+        if (merchantId == null || merchantId.isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Identificador de lojista obrigatório.");
+        }
+        if (dto.name() == null || dto.name().isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "O nome do estabelecimento é obrigatório.");
+        }
+        if (dto.city() == null || dto.city().isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "A cidade é obrigatória.");
+        }
+
+        SponsoredPlace entity = new SponsoredPlace();
+        entity.setId(UUID.randomUUID().toString());
+        applyDto(entity, dto);
+        entity.setMerchantId(merchantId);
+        entity.setCreatedAt(Instant.now());
+        entity.setUpdatedAt(Instant.now());
+
+        SponsoredPlace saved = repository.save(entity);
+
+        // Se for cadastrado com modelo de assinatura ou CPC, gerar fatura inicial
+        if (saved.getBillingModel() == BillingModel.SUBSCRIPTION && saved.getPaymentStatus() == PaymentStatus.PENDING) {
+            generateInvoiceForPlace(saved, saved.getMonthlyPrice(), "Assinatura Inicial - Plano " + (saved.getPlanTier() != null ? saved.getPlanTier().name() : "PADRÃO"));
+        } else if (saved.getBillingModel() == BillingModel.CPC_CREDITS && saved.getCreditBalance().compareTo(BigDecimal.ZERO) > 0) {
+            generateInvoiceForPlace(saved, saved.getCreditBalance(), "Recarga Inicial de Saldo CPC");
+        }
+
+        return toDto(saved);
+    }
+
+    @Transactional
+    public SponsoredPlaceDto updateForMerchant(String merchantId, String placeId, SaveSponsoredPlaceDto dto) {
+        SponsoredPlace entity = repository.findById(placeId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Local patrocinado não encontrado."));
+
+        if (entity.getMerchantId() != null && !entity.getMerchantId().equals(merchantId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Você não tem permissão para editar este estabelecimento.");
+        }
+
+        applyDto(entity, dto);
+        entity.setMerchantId(merchantId);
+        entity.setUpdatedAt(Instant.now());
+        return toDto(repository.save(entity));
+    }
+
+    @Transactional
+    public SponsoredInvoiceDto changePlan(String placeId, PlanTier newTier, BillingModel newModel) {
+        SponsoredPlace place = repository.findById(placeId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Local patrocinado não encontrado."));
+
+        BigDecimal price = switch (newTier) {
+            case BRONZE -> BigDecimal.valueOf(99.00);
+            case SILVER -> BigDecimal.valueOf(179.00);
+            case GOLD -> BigDecimal.valueOf(299.00);
+            case CUSTOM -> place.getMonthlyPrice() != null ? place.getMonthlyPrice() : BigDecimal.valueOf(199.00);
+        };
+
+        place.setPlanTier(newTier);
+        if (newModel != null) {
+            place.setBillingModel(newModel);
+        }
+        place.setMonthlyPrice(price);
+        place.setPaymentStatus(PaymentStatus.PENDING);
+        repository.save(place);
+
+        // Gera nova fatura do plano alterado
+        SponsoredInvoice inv = new SponsoredInvoice();
+        inv.setId(UUID.randomUUID().toString());
+        inv.setSponsoredPlaceId(place.getId());
+        inv.setPlaceName(place.getName());
+        inv.setMerchantId(place.getMerchantId());
+        inv.setAmount(price);
+        inv.setDueDate(LocalDate.now().plusDays(3));
+        inv.setStatus(InvoiceStatus.PENDING);
+        inv.setPaymentMethod(PaymentMethod.PIX);
+        inv.setReferencePeriod("Upgrade para " + newTier.name());
+        inv.setPixCopyPaste(generatePixCopyPaste(place.getName(), price));
+        inv.setNotes("Alteração de plano para " + newTier.name() + " (R$ " + price + "/mês)");
+        inv.setCreatedAt(Instant.now());
+        inv.setUpdatedAt(Instant.now());
+
+        return toInvoiceDto(invoiceRepository.save(inv));
+    }
+
     private void generateInvoiceForPlace(SponsoredPlace place, BigDecimal amount, String notes) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) return;
         SponsoredInvoice inv = new SponsoredInvoice();
         inv.setId(UUID.randomUUID().toString());
         inv.setSponsoredPlaceId(place.getId());
         inv.setPlaceName(place.getName());
+        inv.setMerchantId(place.getMerchantId());
         inv.setAmount(amount);
         inv.setDueDate(LocalDate.now().plusDays(5));
         inv.setStatus(InvoiceStatus.PENDING);
@@ -552,6 +654,9 @@ public class SponsoredPlaceService {
         if (dto.cnpjCpf() != null) entity.setCnpjCpf(dto.cnpjCpf().trim());
         if (dto.billingNotes() != null) entity.setBillingNotes(dto.billingNotes().trim());
         if (dto.autoRenew() != null) entity.setAutoRenew(dto.autoRenew());
+        if (dto.merchantId() != null) entity.setMerchantId(dto.merchantId().trim());
+        if (dto.merchantName() != null) entity.setMerchantName(dto.merchantName().trim());
+        if (dto.merchantEmail() != null) entity.setMerchantEmail(dto.merchantEmail().trim());
     }
 
     private SponsoredPlaceDto toDto(SponsoredPlace p) {
@@ -595,6 +700,9 @@ public class SponsoredPlaceService {
                 p.getCnpjCpf(),
                 p.getBillingNotes(),
                 p.getAutoRenew(),
+                p.getMerchantId(),
+                p.getMerchantName(),
+                p.getMerchantEmail(),
                 p.getCreatedAt() != null ? p.getCreatedAt().toString() : "",
                 p.getUpdatedAt() != null ? p.getUpdatedAt().toString() : ""
         );
@@ -605,6 +713,7 @@ public class SponsoredPlaceService {
                 i.getId(),
                 i.getSponsoredPlaceId(),
                 i.getPlaceName(),
+                i.getMerchantId(),
                 i.getAmount(),
                 i.getDueDate() != null ? i.getDueDate().toString() : "",
                 i.getPaidAt() != null ? i.getPaidAt().toString() : "",

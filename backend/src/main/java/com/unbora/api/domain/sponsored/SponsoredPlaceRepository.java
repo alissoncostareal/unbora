@@ -15,4 +15,6 @@ public interface SponsoredPlaceRepository extends JpaRepository<SponsoredPlace, 
     List<SponsoredPlace> findByActiveTrueAndSlotBoostTrueAndCityIgnoreCase(String city);
 
     List<SponsoredPlace> findByActiveTrueAndHomeHighlightTrueAndCityIgnoreCase(String city);
+
+    List<SponsoredPlace> findByMerchantIdOrderByCreatedAtDesc(String merchantId);
 }

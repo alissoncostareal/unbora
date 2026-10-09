@@ -12,5 +12,7 @@ public interface SponsoredInvoiceRepository extends JpaRepository<SponsoredInvoi
 
     List<SponsoredInvoice> findBySponsoredPlaceIdOrderByCreatedAtDesc(String sponsoredPlaceId);
 
+    List<SponsoredInvoice> findByMerchantIdOrderByCreatedAtDesc(String merchantId);
+
     List<SponsoredInvoice> findByStatusOrderByDueDateAsc(InvoiceStatus status);
 }

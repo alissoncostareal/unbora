@@ -131,6 +131,15 @@ public class SponsoredPlace {
     @Column(name = "billing_notes", length = 1000)
     private String billingNotes;
 
+    @Column(name = "merchant_id")
+    private String merchantId;
+
+    @Column(name = "merchant_name")
+    private String merchantName;
+
+    @Column(name = "merchant_email")
+    private String merchantEmail;
+
     @Column(name = "auto_renew", nullable = false)
     private Boolean autoRenew = true;
 
@@ -476,6 +485,30 @@ public class SponsoredPlace {
 
     public void setBillingNotes(String billingNotes) {
         this.billingNotes = billingNotes;
+    }
+
+    public String getMerchantId() {
+        return merchantId;
+    }
+
+    public void setMerchantId(String merchantId) {
+        this.merchantId = merchantId;
+    }
+
+    public String getMerchantName() {
+        return merchantName;
+    }
+
+    public void setMerchantName(String merchantName) {
+        this.merchantName = merchantName;
+    }
+
+    public String getMerchantEmail() {
+        return merchantEmail;
+    }
+
+    public void setMerchantEmail(String merchantEmail) {
+        this.merchantEmail = merchantEmail;
     }
 
     public Boolean getAutoRenew() {

@@ -9,6 +9,7 @@ import { CreatePage } from './pages/Create';
 import { FavoritesPage } from './pages/Favorites';
 import { HomePage } from './pages/Home';
 import { LoginPage } from './pages/Login';
+import { MerchantPage } from './pages/Merchant';
 import { RegisterPage } from './pages/Register';
 import { NotificationsPage } from './pages/Notifications';
 import { ProfilePage } from './pages/Profile';
@@ -30,6 +31,9 @@ const legacyRoutes: Record<string, string> = {
   '/favoritos': '/favorites',
   '/notificacoes': '/notifications',
   '/perfil': '/profile',
+  '/anuncie': '/merchant',
+  '/parceiro': '/merchant',
+  '/lojista': '/merchant',
 };
 
 export function App() {
@@ -52,6 +56,7 @@ export function App() {
           <Route path="/results" element={<ResultPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/merchant" element={<MerchantPage />} />
           <Route element={<GuideShell />}>
             <Route path="/search" element={<SearchPage />} />
             <Route path="/create" element={<CreatePage />} />

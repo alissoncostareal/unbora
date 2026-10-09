@@ -20,6 +20,9 @@ public class SponsoredInvoice {
     @Column(name = "place_name", nullable = false)
     private String placeName;
 
+    @Column(name = "merchant_id")
+    private String merchantId;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount = BigDecimal.ZERO;
 
@@ -92,6 +95,14 @@ public class SponsoredInvoice {
 
     public void setPlaceName(String placeName) {
         this.placeName = placeName;
+    }
+
+    public String getMerchantId() {
+        return merchantId;
+    }
+
+    public void setMerchantId(String merchantId) {
+        this.merchantId = merchantId;
     }
 
     public BigDecimal getAmount() {

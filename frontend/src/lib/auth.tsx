@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 
-import { loginWithGoogle, loginWithPassword, registerUser, type SessionUser } from './api';
+import { loginWithGoogle, loginWithPassword, registerUser, upgradeToMerchant, type SessionUser } from './api';
 
 const STORAGE_KEY = 'unbora-user';
 
@@ -9,6 +9,8 @@ interface AuthContextValue {
   login: (email: string, password: string, remember?: boolean) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   loginGoogle: (idToken: string) => Promise<void>;
+  upgradeToMerchantRole: (businessName: string, cnpjCpf?: string, phone?: string) => Promise<SessionUser>;
+  updateUser: (user: SessionUser) => void;
   logout: () => void;
 }
 
@@ -51,6 +53,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const session = await loginWithGoogle(idToken);
       storeSession(session, true);
       setUser(session);
+    },
+    async upgradeToMerchantRole(businessName, cnpjCpf, phone) {
+      if (!user) throw new Error('Usuário não autenticado');
+      const updated = await upgradeToMerchant(user.id, businessName, cnpjCpf, phone);
+      storeSession(updated, true);
+      setUser(updated);
+      return updated;
+    },
+    updateUser(newSession) {
+      storeSession(newSession, true);
+      setUser(newSession);
     },
     logout() {
       localStorage.removeItem(STORAGE_KEY);

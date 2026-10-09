@@ -42,5 +42,8 @@ public record SaveSponsoredPlaceDto(
         String contactEmail,
         String cnpjCpf,
         String billingNotes,
-        Boolean autoRenew
+        Boolean autoRenew,
+        String merchantId,
+        String merchantName,
+        String merchantEmail
 ) {}

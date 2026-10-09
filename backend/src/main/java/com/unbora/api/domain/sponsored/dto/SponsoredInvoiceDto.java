@@ -9,6 +9,7 @@ public record SponsoredInvoiceDto(
         String id,
         String sponsoredPlaceId,
         String placeName,
+        String merchantId,
         BigDecimal amount,
         String dueDate,
         String paidAt,

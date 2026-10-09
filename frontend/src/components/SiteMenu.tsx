@@ -83,13 +83,28 @@ export function SiteMenu() {
             ))}
           </nav>
           <div className="flex items-center gap-3">
+            {user?.role === 'merchant' ? (
+              <NavLink
+                to="/merchant"
+                className="px-3 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-full text-xs font-bold hover:bg-amber-100 flex items-center gap-1.5 transition shadow-2xs"
+              >
+                <span>🏢</span> Painel do Parceiro
+              </NavLink>
+            ) : (
+              <NavLink
+                to="/merchant"
+                className="hidden sm:inline-flex text-[13px] text-[#7c2f1d] font-bold hover:text-[#5c2114] tracking-wide"
+              >
+                Anuncie seu Local
+              </NavLink>
+            )}
             {user ? null : (
               <NavLink to="/login" className="px-2 py-1 text-[13px] text-[#55433e] hover:text-[#1e1b19]">
                 Entrar
               </NavLink>
             )}
             {user ? (
-              <NavLink to="/profile" className="px-2 py-1 text-[13px] text-[#55433e] hover:text-[#1e1b19]">
+              <NavLink to="/profile" className="px-2 py-1 text-[13px] text-[#55433e] hover:text-[#1e1b19] font-medium">
                 {user.name}
               </NavLink>
             ) : (
@@ -121,6 +136,21 @@ export function SiteMenu() {
         </form>
 
         <div className="ml-auto flex items-center gap-3">
+          {user?.role === 'merchant' ? (
+            <NavLink
+              to="/merchant"
+              className="px-2.5 py-1 bg-amber-50 border border-amber-300 text-amber-900 rounded-full text-xs font-bold hover:bg-amber-100 flex items-center gap-1 transition"
+            >
+              <span>🏢</span> Painel do Parceiro
+            </NavLink>
+          ) : (
+            <NavLink
+              to="/merchant"
+              className="hidden sm:inline-flex text-xs text-[#7c2f1d] font-bold hover:underline"
+            >
+              Anunciar Local
+            </NavLink>
+          )}
           {results && !user ? (
             <>
               <NavLink to="/login" className="border border-[#1e1b19] px-4 py-2 text-[11px] font-semibold tracking-[0.14em] text-[#1e1b19] uppercase">

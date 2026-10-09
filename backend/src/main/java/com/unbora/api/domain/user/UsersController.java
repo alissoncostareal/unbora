@@ -74,4 +74,10 @@ public class UsersController {
     public PublicUserDto sync(@Valid @RequestBody SyncUserDto dto) {
         return usersService.sync(dto);
     }
+
+    @PostMapping("/upgrade-to-merchant")
+    @Operation(summary = "Fazer upgrade da conta de usuário para lojista parceiro")
+    public PublicUserDto upgradeToMerchant(@Valid @RequestBody UpgradeToMerchantDto dto) {
+        return usersService.upgradeToMerchant(dto);
+    }
 }

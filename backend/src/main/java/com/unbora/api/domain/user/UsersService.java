@@ -345,4 +345,28 @@ public class UsersService {
                 .map(this::toPublic)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Usuário não encontrado."));
     }
+
+    @Transactional
+    public PublicUserDto upgradeToMerchant(UpgradeToMerchantDto dto) {
+        User user = userRepository.findById(dto.userId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Usuário não encontrado."));
+
+        user.setRole("merchant");
+        user.setBusinessName(dto.businessName().trim());
+        user.setLastSeenAt(Instant.now());
+
+        PublicUserDto saved = toPublic(userRepository.save(user));
+
+        kafkaEventPublisher.publishUserActivity(new UserActivityEvent(
+                "USER_UPGRADED_TO_MERCHANT",
+                saved.id(),
+                saved.email(),
+                saved.role(),
+                saved.platform(),
+                Instant.now(),
+                Map.of("businessName", dto.businessName())
+        ));
+
+        return saved;
+    }
 }
