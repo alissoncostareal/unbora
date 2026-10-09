@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unbora-business
+  namespace: unbora
+  labels:
+    app: unbora-business
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: unbora-business
+  template:
+    metadata:
+      labels:
+        app: unbora-business
+    spec:
+      containers:
+        - name: business
+          image: docker.io/library/unbora-business:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            - name: NEXT_PUBLIC_API_BASE_URL
+              value: https://api.unbora.com.br
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unbora-business-service
+  namespace: unbora
+  labels:
+    app: unbora-business
+spec:
+  type: ClusterIP
+  selector:
+    app: unbora-business
+  ports:
+    - name: http
+      port: 3003
+      targetPort: http

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Publica o Unbora na VPS (k3s), no namespace unbora.
-# Sobe o Postgres do namespace unbora e publica o site, o admin e a API.
+# Sobe o Postgres do namespace unbora e publica o site, o admin, o business e a API.
 # Não altera o namespace partiumenu.
 set -euo pipefail
 
@@ -144,19 +144,29 @@ docker build \
   admin
 docker save unbora-admin:latest | k3s ctr images import -
 
+docker build \
+  --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.unbora.com.br \
+  -t unbora-business:latest \
+  -f business/Dockerfile \
+  business
+docker save unbora-business:latest | k3s ctr images import -
+
 kubectl apply -f k8s/vps/ollama.yaml
 kubectl apply -f k8s/vps/configmap.yaml
 kubectl apply -f k8s/vps/deployment.yaml
 kubectl apply -f k8s/vps/service.yaml
 kubectl apply -f k8s/vps/web.yaml
 kubectl apply -f k8s/vps/admin.yaml
+kubectl apply -f k8s/vps/business.yaml
 kubectl apply -f k8s/vps/ingress.yaml
 
-kubectl -n unbora rollout restart deploy/unbora-backend deploy/unbora-web deploy/unbora-admin
+kubectl -n unbora rollout restart deploy/unbora-backend deploy/unbora-web deploy/unbora-admin deploy/unbora-business
 kubectl -n unbora rollout status deploy/unbora-backend --timeout=300s
 kubectl -n unbora rollout status deploy/unbora-web --timeout=180s
 kubectl -n unbora rollout status deploy/unbora-admin --timeout=180s
+kubectl -n unbora rollout status deploy/unbora-business --timeout=180s
 echo "DEPLOY_OK $(git rev-parse --short HEAD)"
 echo "Site https://unbora.com.br"
 echo "Admin https://admin.unbora.com.br"
+echo "Business https://business.unbora.com.br"
 echo "API https://api.unbora.com.br/health"
