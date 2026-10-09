@@ -66,7 +66,7 @@ export function SiteMenu() {
             </NavLink>
             <span className="hidden text-[11px] font-semibold tracking-[0.12em] text-[#55433e] uppercase xl:inline">{place}</span>
           </div>
-          <nav className="hidden min-w-0 items-center gap-4 overflow-x-auto md:flex">
+          <nav className="hidden min-w-0 items-center justify-center gap-5 lg:gap-7 md:flex">
             {homeSections.map((section) => (
               <a
                 key={section.id}
@@ -76,41 +76,42 @@ export function SiteMenu() {
                   setActive(section.id);
                   goToSection(section.id);
                 }}
-                className={`shrink-0 text-[13px] tracking-wide ${active === section.id ? 'font-semibold text-[#7c2f1d]' : 'text-[#55433e] hover:text-[#1e1b19]'}`}
+                className={`shrink-0 whitespace-nowrap text-[13px] tracking-wide transition-colors ${
+                  active === section.id ? 'font-semibold text-[#7c2f1d]' : 'text-[#55433e] hover:text-[#1e1b19]'
+                }`}
               >
                 {section.label}
               </a>
             ))}
+            <NavLink
+              to="/merchant"
+              className="shrink-0 whitespace-nowrap text-[13px] font-bold text-[#7c2f1d] hover:text-[#5c2114] tracking-wide"
+            >
+              Anuncie seu Local
+            </NavLink>
           </nav>
-          <div className="flex items-center gap-3">
-            {user?.role === 'merchant' ? (
+          <div className="flex shrink-0 items-center gap-3">
+            {user?.role === 'merchant' && (
               <NavLink
                 to="/merchant"
-                className="px-3 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-full text-xs font-bold hover:bg-amber-100 flex items-center gap-1.5 transition shadow-2xs"
+                className="px-3 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-full text-xs font-bold hover:bg-amber-100 flex items-center gap-1.5 transition shadow-2xs whitespace-nowrap"
               >
                 <span>🏢</span> Painel do Parceiro
               </NavLink>
-            ) : (
-              <NavLink
-                to="/merchant"
-                className="hidden sm:inline-flex text-[13px] text-[#7c2f1d] font-bold hover:text-[#5c2114] tracking-wide"
-              >
-                Anuncie seu Local
-              </NavLink>
-            )}
-            {user ? null : (
-              <NavLink to="/login" className="px-2 py-1 text-[13px] text-[#55433e] hover:text-[#1e1b19]">
-                Entrar
-              </NavLink>
             )}
             {user ? (
-              <NavLink to="/profile" className="px-2 py-1 text-[13px] text-[#55433e] hover:text-[#1e1b19] font-medium">
+              <NavLink to="/profile" className="px-2 py-1 text-[13px] text-[#55433e] hover:text-[#1e1b19] font-medium whitespace-nowrap">
                 {user.name}
               </NavLink>
             ) : (
-              <NavLink to="/register" className="hidden bg-[#1e1b19] px-4 py-2 text-[11px] font-semibold tracking-[0.14em] text-[#fff8f5] uppercase hover:bg-[#7c2f1d] sm:inline-flex">
-                Cadastrar-se
-              </NavLink>
+              <>
+                <NavLink to="/login" className="px-2 py-1 text-[13px] text-[#55433e] hover:text-[#1e1b19] font-medium whitespace-nowrap">
+                  Entrar
+                </NavLink>
+                <NavLink to="/register" className="hidden bg-[#1e1b19] px-4 py-2 text-[11px] font-semibold tracking-[0.14em] text-[#fff8f5] uppercase hover:bg-[#7c2f1d] sm:inline-flex whitespace-nowrap">
+                  Cadastrar
+                </NavLink>
+              </>
             )}
           </div>
         </div>
