@@ -50,6 +50,11 @@ public class RecommendationsService {
     private final PlaceBanService placeBanService;
     private final LocationSettingsService locationSettingsService;
     private final SponsoredPlaceService sponsoredPlaceService;
+    private final ExecutorService discoveryExecutor = Executors.newFixedThreadPool(8, r -> {
+        Thread thread = new Thread(r, "places-discovery-pool");
+        thread.setDaemon(true);
+        return thread;
+    });
     private final ExecutorService vectorIndexExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "place-vector-index");
         thread.setDaemon(true);
@@ -119,37 +124,32 @@ public class RecommendationsService {
         Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
         Double budgetReais = budgetCeiling(sentir);
 
+        CompletableFuture<String> webContextFuture = CompletableFuture.supplyAsync(
+                () -> groqClient.fetchWebContext(city, labels, mesAno),
+                discoveryExecutor
+        );
+
         if (googlePlacesDiscoveryService.isConfigured()) {
             List<String> queries = buildTargetedPlacesQueries(dto, city);
-            for (String query : queries) {
-                List<GooglePlacesDiscoveryService.DiscoveredPlace> found =
-                        googlePlacesDiscoveryService.searchPlaces(query, lat, lng, radiusKm, city, country, 20);
-                for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
-                    String key = p.placeId() != null && !p.placeId().isBlank()
-                            ? p.placeId()
-                            : imageEnrichmentService.normalizeText(p.displayName());
-                    placeMap.putIfAbsent(key, p);
-                }
-            }
+            List<CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>>> futures = queries.stream()
+                    .map(q -> CompletableFuture.supplyAsync(
+                            () -> googlePlacesDiscoveryService.searchPlaces(q, lat, lng, radiusKm, city, country, 20),
+                            discoveryExecutor
+                    ))
+                    .toList();
 
-            // Se o limite de resultados configurado for maior (ex: 30, 40) e ainda tivermos poucos candidatos, busca buscas complementares
-            if (placeMap.size() < maxResults) {
-                List<String> supplementary = List.of(
-                        "lugares e experiências em " + city,
-                        "pontos turísticos e lazer em " + city,
-                        "gastronomia e passeios em " + city
-                );
-                for (String q : supplementary) {
-                    if (placeMap.size() >= maxResults + 10) break;
-                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found =
-                            googlePlacesDiscoveryService.searchPlaces(q, lat, lng, radiusKm, city, country, 20);
-                    for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
-                        String key = p.placeId() != null && !p.placeId().isBlank()
-                                ? p.placeId()
-                                : imageEnrichmentService.normalizeText(p.displayName());
-                        placeMap.putIfAbsent(key, p);
+            for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
+                try {
+                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.get(3, TimeUnit.SECONDS);
+                    if (found != null) {
+                        for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
+                            String key = p.placeId() != null && !p.placeId().isBlank()
+                                    ? p.placeId()
+                                    : imageEnrichmentService.normalizeText(p.displayName());
+                            placeMap.putIfAbsent(key, p);
+                        }
                     }
-                }
+                } catch (Exception ignored) {}
             }
         }
 
@@ -157,7 +157,10 @@ public class RecommendationsService {
         List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces = new ArrayList<>(placeMap.values());
 
         // 2. Contexto da Web (Agenda local e Instagram ao vivo)
-        String webContext = groqClient.fetchWebContext(city, labels, mesAno);
+        String webContext = "";
+        try {
+            webContext = webContextFuture.get(2, TimeUnit.SECONDS);
+        } catch (Exception ignored) {}
 
         // 3. Grounding amplo — lista completa para a IA (e para merge posterior)
         StringBuilder groundingContext = new StringBuilder();
@@ -283,26 +286,44 @@ public class RecommendationsService {
 
         Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
 
+        CompletableFuture<String> webContextFuture = CompletableFuture.supplyAsync(
+                () -> groqClient.fetchWebContext(city, List.of(dto.query()), mesAno),
+                discoveryExecutor
+        );
+
         if (googlePlacesDiscoveryService.isConfigured()) {
             List<String> searchQueries = buildSearchPlacesQueries(query, city);
-            for (String q : searchQueries) {
-                List<GooglePlacesDiscoveryService.DiscoveredPlace> found =
-                        googlePlacesDiscoveryService.searchPlaces(q, lat, lng, radiusKm, city, country, 20);
-                for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
-                    String key = p.placeId() != null && !p.placeId().isBlank()
-                            ? p.placeId()
-                            : imageEnrichmentService.normalizeText(p.displayName());
-                    placeMap.putIfAbsent(key, p);
-                }
+            List<CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>>> futures = searchQueries.stream()
+                    .map(q -> CompletableFuture.supplyAsync(
+                            () -> googlePlacesDiscoveryService.searchPlaces(q, lat, lng, radiusKm, city, country, 20),
+                            discoveryExecutor
+                    ))
+                    .toList();
+
+            for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
+                try {
+                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.get(3, TimeUnit.SECONDS);
+                    if (found != null) {
+                        for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
+                            String key = p.placeId() != null && !p.placeId().isBlank()
+                                    ? p.placeId()
+                                    : imageEnrichmentService.normalizeText(p.displayName());
+                            placeMap.putIfAbsent(key, p);
+                        }
+                    }
+                } catch (Exception ignored) {}
             }
         }
         keepInCity(placeMap, center, radiusKm, city, dismissed, null, null);
         List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces = new ArrayList<>(placeMap.values());
 
-        String webContext = groqClient.fetchWebContext(city, List.of(dto.query()), mesAno);
-        if (webContext != null && webContext.length() > 900) {
-            webContext = webContext.substring(0, 900);
-        }
+        String webContext = "";
+        try {
+            webContext = webContextFuture.get(2, TimeUnit.SECONDS);
+            if (webContext != null && webContext.length() > 900) {
+                webContext = webContext.substring(0, 900);
+            }
+        } catch (Exception ignored) {}
 
         StringBuilder groundingContext = new StringBuilder();
         if (!livePlaces.isEmpty()) {

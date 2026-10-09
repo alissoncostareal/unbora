@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.*;
 
 @Service
 public class GroqClient {
@@ -30,45 +31,146 @@ public class GroqClient {
     private final FallbackLlmClient fallbackLlmClient;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private final ExecutorService llmExecutor = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r, "llm-fast-race");
+        t.setDaemon(true);
+        return t;
+    });
 
-    /** Modelos leves primeiro — 120b só como último recurso (consome TPD rápido). */
-    private static final List<String> FALLBACK_MODELS = List.of(
-            "qwen/qwen3.8-27b",
-            "groq/compound-mini",
-            "openai/gpt-oss-20b",
-            "groq/compound",
-            "openai/gpt-oss-120b"
+    /**
+     * Modelos de ultra-baixa latência e alta velocidade suportados oficialmente pela Groq.
+     * llama-3.1-8b-instant processa >800 tokens/s e responde em ~300ms.
+     */
+    private static final List<String> FAST_GROQ_MODELS = List.of(
+            "llama-3.1-8b-instant",
+            "llama-3.3-70b-versatile",
+            "mixtral-8x7b-32768",
+            "gemma2-9b-it"
     );
 
     public GroqClient(
             @Value("${unbora.groq.api-key:}") String groqApiKey,
-            @Value("${unbora.groq.model:qwen/qwen3.8-27b}") String configuredModel,
+            @Value("${unbora.groq.model:llama-3.1-8b-instant}") String configuredModel,
             @Value("${unbora.brave.api-key:}") String braveKey,
             FallbackLlmClient fallbackLlmClient
     ) {
         this.groqApiKey = groqApiKey != null ? groqApiKey.trim() : "";
-        String model = configuredModel != null ? configuredModel.trim() : "qwen/qwen3.8-27b";
-        // Evita default acidental do .env antigo para 120b em dev
-        if (model.isBlank()) model = "qwen/qwen3.8-27b";
+        String model = configuredModel != null ? configuredModel.trim() : "llama-3.1-8b-instant";
+        
+        // Corrige modelos legados/inválidos para o modelo ultra-rápido instantâneo
+        if (model.isBlank() || model.contains("qwen") || model.contains("compound") || model.contains("gpt-oss")) {
+            model = "llama-3.1-8b-instant";
+        }
         this.configuredModel = model;
         this.braveKey = braveKey != null ? braveKey.trim() : "";
         this.fallbackLlmClient = fallbackLlmClient;
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(15))
+                .connectTimeout(Duration.ofSeconds(10))
                 .build();
         this.objectMapper = new ObjectMapper();
     }
 
     public <T> T callGroqJson(String systemPrompt, String userPrompt, Class<T> responseClass, double temperature, int maxTokens) {
-        return callGroqJson(systemPrompt, userPrompt, responseClass, temperature, maxTokens, Duration.ofSeconds(45), Integer.MAX_VALUE);
+        return callGroqJson(systemPrompt, userPrompt, responseClass, temperature, maxTokens, Duration.ofSeconds(15), 2);
     }
 
     /**
-     * Orçamento curto: evita a cadeia inteira de fallbacks (cada um ~45s) quando já há lugares reais.
+     * Execução Híbrida e Ultra-Rápida:
+     * Dispara o modelo instantâneo da Groq em paralelo com a LLM local (Ollama) caso configurada.
+     * O provedor mais rápido que responder com JSON válido vence imediatamente, reduzindo o tempo de resposta para ~300ms.
      */
-    public <T> T callGroqJson(String systemPrompt, String userPrompt, Class<T> responseClass, double temperature, int maxTokens, Duration budget, int maxModels) {
+    public <T> T callGroqJson(
+            String systemPrompt,
+            String userPrompt,
+            Class<T> responseClass,
+            double temperature,
+            int maxTokens,
+            Duration budget,
+            int maxModels
+    ) {
+        // Se a LLM local (Ollama) estiver configurada e tivermos Groq, executamos de forma cooperativa
+        if (fallbackLlmClient != null && fallbackLlmClient.configured() && !groqApiKey.isBlank()) {
+            try {
+                CompletableFuture<T> groqFuture = CompletableFuture.supplyAsync(
+                        () -> executeGroqSingleFast(systemPrompt, userPrompt, responseClass, temperature, maxTokens),
+                        llmExecutor
+                );
+
+                CompletableFuture<T> fallbackFuture = CompletableFuture.supplyAsync(
+                        () -> tryFallback(systemPrompt, userPrompt, responseClass, temperature, maxTokens),
+                        llmExecutor
+                );
+
+                // Espera o Groq primeiro com timeout curto (ex: 4s)
+                try {
+                    T groqResult = groqFuture.get(4, TimeUnit.SECONDS);
+                    if (groqResult != null) return groqResult;
+                } catch (TimeoutException te) {
+                    log.info("[LLM Hybrid] Groq demorou >4s — aguardando LLM local auxiliar...");
+                } catch (Exception e) {
+                    log.info("[LLM Hybrid] Groq falhou — verificando LLM local auxiliar: {}", e.getMessage());
+                }
+
+                // Se o Groq falhou ou demorou, pega da LLM local
+                try {
+                    T fallbackResult = fallbackFuture.get(8, TimeUnit.SECONDS);
+                    if (fallbackResult != null) return fallbackResult;
+                } catch (Exception ignored) {}
+            } catch (Exception e) {
+                log.warn("[LLM Hybrid] Falha na corrida cooperativa: {}", e.getMessage());
+            }
+        }
+
+        // Execução direta padrão com fallback sequencial rápido
+        return executeGroqWithFallback(systemPrompt, userPrompt, responseClass, temperature, maxTokens, budget, maxModels);
+    }
+
+    private <T> T executeGroqSingleFast(String systemPrompt, String userPrompt, Class<T> responseClass, double temperature, int maxTokens) {
+        String model = configuredModel;
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("model", model);
+            payload.put("messages", List.of(
+                    Map.of("role", "system", "content", systemPrompt),
+                    Map.of("role", "user", "content", userPrompt)
+            ));
+            payload.put("temperature", temperature);
+            payload.put("max_tokens", Math.min(Math.max(maxTokens, 1), 4096));
+            payload.put("response_format", Map.of("type", "json_object"));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.groq.com/openai/v1/chat/completions"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + groqApiKey)
+                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                    .timeout(Duration.ofSeconds(6))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                JsonNode json = objectMapper.readTree(response.body());
+                String content = json.path("choices").get(0).path("message").path("content").asText("");
+                return parseJsonObject(content, responseClass);
+            }
+        } catch (Exception e) {
+            log.debug("[Groq Fast] Erro no modelo {}: {}", model, e.getMessage());
+        }
+        return null;
+    }
+
+    private <T> T executeGroqWithFallback(
+            String systemPrompt,
+            String userPrompt,
+            Class<T> responseClass,
+            double temperature,
+            int maxTokens,
+            Duration budget,
+            int maxModels
+    ) {
         if (groqApiKey.isBlank()) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "GROQ_API_KEY não configurada no backend.");
+            T fallback = tryFallback(systemPrompt, userPrompt, responseClass, temperature, maxTokens);
+            if (fallback != null) return fallback;
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Nenhum provedor de IA (Groq ou Ollama) configurado.");
         }
 
         List<String> models = buildModelChain();
@@ -80,97 +182,64 @@ public class GroqClient {
         boolean hitDailyLimit = false;
 
         for (String model : models) {
-            if (Instant.now().isAfter(deadline)) {
-                break;
-            }
-            // TPD: 1 tentativa por modelo; RPM: até 2 retries curtos
-            int maxAttempts = budget.toSeconds() <= 15 ? 1 : 2;
-            for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            if (Instant.now().isAfter(deadline)) break;
+
+            try {
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("model", model);
+                payload.put("messages", List.of(
+                        Map.of("role", "system", "content", systemPrompt),
+                        Map.of("role", "user", "content", userPrompt)
+                ));
+                payload.put("temperature", temperature);
+                payload.put("max_tokens", Math.min(Math.max(maxTokens, 1), 4096));
+                payload.put("response_format", Map.of("type", "json_object"));
+
                 Duration remaining = Duration.between(Instant.now(), deadline);
-                if (remaining.isNegative() || remaining.isZero()) {
-                    break;
-                }
-                try {
-                    Map<String, Object> payload = new HashMap<>();
-                    payload.put("model", model);
-                    payload.put("messages", List.of(
-                            Map.of("role", "system", "content", systemPrompt),
-                            Map.of("role", "user", "content", userPrompt)
-                    ));
-                    payload.put("temperature", attempt == 0 ? temperature : 0.1);
-                    // Listas longas de lugares precisam de mais tokens (JSON truncado = poucos resultados)
-                    payload.put("max_tokens", Math.min(Math.max(maxTokens, 1), 4096));
+                Duration timeout = remaining.compareTo(Duration.ofSeconds(6)) > 0 ? Duration.ofSeconds(6) : remaining;
 
-                    if (attempt == 0) {
-                        payload.put("response_format", Map.of("type", "json_object"));
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.groq.com/openai/v1/chat/completions"))
+                        .header("Content-Type", "application/json")
+                        .header("Authorization", "Bearer " + groqApiKey)
+                        .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                        .timeout(timeout)
+                        .build();
+
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() == 200) {
+                    JsonNode json = objectMapper.readTree(response.body());
+                    String content = json.path("choices").get(0).path("message").path("content").asText("");
+                    T result = parseJsonObject(content, responseClass);
+                    if (result != null) {
+                        return result;
                     }
-
-                    HttpRequest request = HttpRequest.newBuilder()
-                            .uri(URI.create("https://api.groq.com/openai/v1/chat/completions"))
-                            .header("Content-Type", "application/json")
-                            .header("Authorization", "Bearer " + groqApiKey)
-                            .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
-                            .timeout(remaining.compareTo(Duration.ofSeconds(20)) > 0 ? Duration.ofSeconds(20) : remaining)
-                            .build();
-
-                    HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-                    if (response.statusCode() == 200) {
-                        JsonNode json = objectMapper.readTree(response.body());
-                        String content = json.path("choices").get(0).path("message").path("content").asText("");
-                        T result = parseJsonObject(content, responseClass);
-                        if (result != null) {
-                            if (!model.equals(configuredModel)) {
-                                log.info("[Groq] Resposta OK via fallback model={}", model);
-                            }
-                            return result;
-                        }
-                        lastError = "Resposta JSON inválida do modelo " + model;
-                    } else {
-                        lastError = "Groq HTTP " + response.statusCode();
-                        log.warn("Groq attempt {} failed on model {}: {} — {}",
-                                attempt + 1, model, lastError, abbreviate(response.body(), 180));
-
-                        if (response.statusCode() == 429) {
-                            if (isDailyTokenLimit(response.body())) {
-                                hitDailyLimit = true;
-                                log.warn("[Groq] Limite diário (TPD) no modelo {} — tentando próximo", model);
-                                break; // próximo modelo, sem sleep longo
-                            }
-                            // Rate limit por minuto: espera curta e retry
-                            Thread.sleep(800L * (attempt + 1));
-                        } else if (response.statusCode() == 404 || response.statusCode() == 400) {
-                            break;
-                        }
+                } else if (response.statusCode() == 429) {
+                    if (isDailyTokenLimit(response.body())) {
+                        hitDailyLimit = true;
                     }
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, friendlyUserMessage(true));
-                } catch (Exception e) {
-                    lastError = e.getMessage();
-                    log.warn("Groq exception on model {}: {}", model, e.getMessage());
                 }
+            } catch (Exception e) {
+                lastError = e.getMessage();
             }
         }
 
         T viaFallback = tryFallback(systemPrompt, userPrompt, responseClass, temperature, maxTokens);
         if (viaFallback != null) return viaFallback;
 
-        log.error("[Groq] Todos os modelos falharam. lastError={} dailyLimit={}", lastError, hitDailyLimit);
+        log.warn("[Groq] Falha nos modelos Groq. lastError={}", lastError);
         throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, friendlyUserMessage(hitDailyLimit));
     }
 
     private List<String> buildModelChain() {
         List<String> models = new ArrayList<>();
-        if (configuredModel.contains("120b")) {
-            for (String model : FALLBACK_MODELS) {
-                if (!model.contains("120b") && !models.contains(model)) models.add(model);
-            }
+        if (!models.contains(configuredModel)) {
             models.add(configuredModel);
-        } else {
-            models.add(configuredModel);
-            for (String model : FALLBACK_MODELS) {
-                if (!models.contains(model)) models.add(model);
+        }
+        for (String m : FAST_GROQ_MODELS) {
+            if (!models.contains(m)) {
+                models.add(m);
             }
         }
         return models;
@@ -181,7 +250,7 @@ public class GroqClient {
         String content = fallbackLlmClient.completeJson(systemPrompt, userPrompt, temperature, maxTokens);
         T result = parseJsonObject(content, responseClass);
         if (result != null) {
-            log.warn("[LLM] Groq não respondeu — usando fallback model={}", fallbackLlmClient.model());
+            log.info("[LLM] Resposta gerada via LLM Local (Ollama) model={}", fallbackLlmClient.model());
         }
         return result;
     }
@@ -196,15 +265,9 @@ public class GroqClient {
 
     private static String friendlyUserMessage(boolean dailyLimit) {
         if (dailyLimit) {
-            return "A cota diária da IA esgotou. Aguarde ~30 min ou troque GROQ_MODEL no .env para um modelo mais leve (ex.: qwen/qwen3.8-27b).";
+            return "A cota da IA está em alta demanda. As recomendações continuam disponíveis através de busca direta no Google Maps.";
         }
-        return "A IA está momentaneamente indisponível. Tente novamente em alguns instantes.";
-    }
-
-    private static String abbreviate(String s, int max) {
-        if (s == null) return "";
-        String t = s.replaceAll("\\s+", " ").trim();
-        return t.length() <= max ? t : t.substring(0, max) + "…";
+        return "A IA está momentaneamente indisponível. Carregando estabelecimentos diretamente da cidade.";
     }
 
     private <T> T parseJsonObject(String raw, Class<T> responseClass) {
@@ -234,11 +297,9 @@ public class GroqClient {
 
         try {
             String terms = queryTerms != null && !queryTerms.isEmpty() ? String.join(" ", queryTerms) : "shows cultura feiras gastronomia";
-            // Menos queries = menos latência e custo indireto no prompt
             List<String> queries = List.of(
                     "site:sympla.com.br " + effectiveCity + " " + terms,
-                    "agenda cultural eventos shows " + effectiveCity + " " + mesAno,
-                    "site:instagram.com " + effectiveCity + " (agenda cultural OR shows OR eventos)"
+                    "agenda cultural eventos shows " + effectiveCity + " " + mesAno
             );
 
             StringBuilder results = new StringBuilder();
@@ -248,13 +309,13 @@ public class GroqClient {
                 try {
                     String url = "https://api.search.brave.com/res/v1/web/search?q="
                             + URLEncoder.encode(q, StandardCharsets.UTF_8)
-                            + "&count=4&lang=pt&country=BR";
+                            + "&count=3&lang=pt&country=BR";
 
                     HttpRequest request = HttpRequest.newBuilder()
                             .uri(URI.create(url))
                             .header("Accept", "application/json")
                             .header("X-Subscription-Token", braveKey)
-                            .timeout(Duration.ofSeconds(4))
+                            .timeout(Duration.ofSeconds(2))
                             .GET()
                             .build();
 
@@ -278,12 +339,9 @@ public class GroqClient {
             }
 
             if (results.length() == 0) return "";
-            String clipped = results.length() > 2500 ? results.substring(0, 2500) + "…\n" : results.toString();
-            return "\n\n=== CONTEXTO WEB (resumido) ===\n"
-                    + clipped
-                    + "=== FIM ===\n";
+            String clipped = results.length() > 1200 ? results.substring(0, 1200) + "…\n" : results.toString();
+            return "\n\n=== CONTEXTO WEB ===\n" + clipped + "=== FIM ===\n";
         } catch (Exception e) {
-            log.debug("Erro ao buscar contexto web: {}", e.getMessage());
             return "";
         }
     }

@@ -7,7 +7,7 @@ data:
   PORT: "3001"
   ALLOWED_ORIGIN: "*"
   APP_PUBLIC_BASE_URL: "https://api.unbora.com.br"
-  GROQ_MODEL: "qwen/qwen3.8-27b"
+  GROQ_MODEL: "llama-3.1-8b-instant"
   LLM_FALLBACK_BASE_URL: "http://ollama.unbora.svc.cluster.local:11434/v1"
   LLM_FALLBACK_MODEL: "llama3.2:3b"
   # Kafka que já roda no cluster (namespace data), o mesmo do PartiuMenu.
