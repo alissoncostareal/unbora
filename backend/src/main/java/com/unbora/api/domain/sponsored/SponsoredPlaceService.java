@@ -356,13 +356,13 @@ public class SponsoredPlaceService {
         SponsoredPlace place = repository.findById(placeId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Local patrocinado não encontrado."));
 
-        if (dto.amount() == null || dto.amount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "O valor da recarga deve ser maior que zero.");
+        if (dto.amount() == null || dto.amount().compareTo(BigDecimal.ZERO) <= 0 || dto.amount().compareTo(BigDecimal.valueOf(50000.00)) > 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "O valor da recarga deve estar entre R$ 1,00 e R$ 50.000,00.");
         }
 
         // Adiciona saldo ao local
         BigDecimal current = place.getCreditBalance() != null ? place.getCreditBalance() : BigDecimal.ZERO;
-        place.setCreditBalance(current.add(dto.amount()));
+        place.setCreditBalance(current.add(dto.amount()).min(BigDecimal.valueOf(100000.00)));
         place.setPaymentStatus(PaymentStatus.PAID);
         if (!Boolean.TRUE.equals(place.getActive())) {
             place.setActive(true);
@@ -614,20 +614,20 @@ public class SponsoredPlaceService {
     }
 
     private void applyDto(SponsoredPlace entity, SaveSponsoredPlaceDto dto) {
-        if (dto.name() != null) entity.setName(dto.name().trim());
-        if (dto.city() != null) entity.setCity(dto.city().trim());
-        if (dto.region() != null) entity.setRegion(dto.region().trim());
-        if (dto.country() != null && !dto.country().isBlank()) entity.setCountry(dto.country().trim());
-        if (dto.type() != null) entity.setType(dto.type().trim());
-        if (dto.description() != null) entity.setDescription(dto.description().trim());
-        if (dto.benefitText() != null) entity.setBenefitText(dto.benefitText().trim());
-        if (dto.categoryTags() != null) entity.setCategoryTags(dto.categoryTags().trim());
-        if (dto.imageUrl() != null) entity.setImageUrl(dto.imageUrl().trim());
-        if (dto.mapsUrl() != null) entity.setMapsUrl(dto.mapsUrl().trim());
-        if (dto.address() != null) entity.setAddress(dto.address().trim());
-        if (dto.placeId() != null) entity.setPlaceId(dto.placeId().trim());
-        if (dto.rating() != null) entity.setRating(dto.rating());
-        if (dto.priceLevel() != null) entity.setPriceLevel(dto.priceLevel().trim());
+        if (dto.name() != null) entity.setName(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.name(), 120));
+        if (dto.city() != null) entity.setCity(com.unbora.api.common.security.InputSanitizer.sanitizeCityOrCountry(dto.city(), 80));
+        if (dto.region() != null) entity.setRegion(com.unbora.api.common.security.InputSanitizer.sanitizeCityOrCountry(dto.region(), 80));
+        if (dto.country() != null && !dto.country().isBlank()) entity.setCountry(com.unbora.api.common.security.InputSanitizer.sanitizeCityOrCountry(dto.country(), 60));
+        if (dto.type() != null) entity.setType(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.type(), 80));
+        if (dto.description() != null) entity.setDescription(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.description(), 1000));
+        if (dto.benefitText() != null) entity.setBenefitText(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.benefitText(), 255));
+        if (dto.categoryTags() != null) entity.setCategoryTags(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.categoryTags(), 255));
+        if (dto.imageUrl() != null) entity.setImageUrl(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.imageUrl(), 500));
+        if (dto.mapsUrl() != null) entity.setMapsUrl(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.mapsUrl(), 500));
+        if (dto.address() != null) entity.setAddress(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.address(), 255));
+        if (dto.placeId() != null) entity.setPlaceId(com.unbora.api.common.security.InputSanitizer.sanitizePlaceId(dto.placeId(), 100));
+        if (dto.rating() != null) entity.setRating(Math.max(0.0, Math.min(5.0, dto.rating())));
+        if (dto.priceLevel() != null) entity.setPriceLevel(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.priceLevel(), 30));
         if (dto.slotBoost() != null) entity.setSlotBoost(dto.slotBoost());
         if (dto.homeHighlight() != null) entity.setHomeHighlight(dto.homeHighlight());
         if (dto.active() != null) entity.setActive(dto.active());
@@ -636,11 +636,20 @@ public class SponsoredPlaceService {
         // Billing & Monetization fields
         if (dto.billingModel() != null) entity.setBillingModel(dto.billingModel());
         if (dto.planTier() != null) entity.setPlanTier(dto.planTier());
-        if (dto.monthlyPrice() != null) entity.setMonthlyPrice(dto.monthlyPrice());
-        if (dto.creditBalance() != null) entity.setCreditBalance(dto.creditBalance());
-        if (dto.costPerClick() != null) entity.setCostPerClick(dto.costPerClick());
-        if (dto.costPerImpression() != null) entity.setCostPerImpression(dto.costPerImpression());
-        if (dto.dailyBudget() != null) entity.setDailyBudget(dto.dailyBudget());
+        if (dto.monthlyPrice() != null) {
+            BigDecimal price = dto.monthlyPrice().max(BigDecimal.ZERO).min(BigDecimal.valueOf(100000.00));
+            entity.setMonthlyPrice(price);
+        }
+        if (dto.creditBalance() != null) {
+            BigDecimal bal = dto.creditBalance().max(BigDecimal.ZERO).min(BigDecimal.valueOf(100000.00));
+            entity.setCreditBalance(bal);
+        }
+        if (dto.costPerClick() != null) {
+            BigDecimal cpc = dto.costPerClick().max(BigDecimal.valueOf(0.05)).min(BigDecimal.valueOf(100.00));
+            entity.setCostPerClick(cpc);
+        }
+        if (dto.costPerImpression() != null) entity.setCostPerImpression(dto.costPerImpression().max(BigDecimal.ZERO));
+        if (dto.dailyBudget() != null) entity.setDailyBudget(dto.dailyBudget().max(BigDecimal.ZERO));
         if (dto.paymentStatus() != null) entity.setPaymentStatus(dto.paymentStatus());
         if (dto.currentCycleStart() != null && !dto.currentCycleStart().isBlank()) {
             entity.setCurrentCycleStart(LocalDate.parse(dto.currentCycleStart()));
@@ -648,15 +657,15 @@ public class SponsoredPlaceService {
         if (dto.nextBillingDate() != null && !dto.nextBillingDate().isBlank()) {
             entity.setNextBillingDate(LocalDate.parse(dto.nextBillingDate()));
         }
-        if (dto.contactName() != null) entity.setContactName(dto.contactName().trim());
-        if (dto.contactPhone() != null) entity.setContactPhone(dto.contactPhone().trim());
-        if (dto.contactEmail() != null) entity.setContactEmail(dto.contactEmail().trim());
-        if (dto.cnpjCpf() != null) entity.setCnpjCpf(dto.cnpjCpf().trim());
-        if (dto.billingNotes() != null) entity.setBillingNotes(dto.billingNotes().trim());
+        if (dto.contactName() != null) entity.setContactName(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.contactName(), 100));
+        if (dto.contactPhone() != null) entity.setContactPhone(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.contactPhone(), 30));
+        if (dto.contactEmail() != null) entity.setContactEmail(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.contactEmail(), 120));
+        if (dto.cnpjCpf() != null) entity.setCnpjCpf(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.cnpjCpf(), 30));
+        if (dto.billingNotes() != null) entity.setBillingNotes(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.billingNotes(), 500));
         if (dto.autoRenew() != null) entity.setAutoRenew(dto.autoRenew());
-        if (dto.merchantId() != null) entity.setMerchantId(dto.merchantId().trim());
-        if (dto.merchantName() != null) entity.setMerchantName(dto.merchantName().trim());
-        if (dto.merchantEmail() != null) entity.setMerchantEmail(dto.merchantEmail().trim());
+        if (dto.merchantId() != null) entity.setMerchantId(com.unbora.api.common.security.InputSanitizer.sanitizeUuid(dto.merchantId()));
+        if (dto.merchantName() != null) entity.setMerchantName(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.merchantName(), 120));
+        if (dto.merchantEmail() != null) entity.setMerchantEmail(com.unbora.api.common.security.InputSanitizer.sanitizeText(dto.merchantEmail(), 120));
     }
 
     private SponsoredPlaceDto toDto(SponsoredPlace p) {
