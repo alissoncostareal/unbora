@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 import { PlaceCard } from '../components/PlaceCard';
 import { fetchDismissed, recommend, searchPlaces, sendFeedback, type Place, type Recommendation } from '../lib/api';
+import { saveRole } from '../lib/savedRoles';
 import { useAuth } from '../lib/auth';
 import { company, durations, interests, JOURNEY_KEY, moods, type JourneyChoice } from '../lib/catalog';
 import { loadGuide } from '../lib/guide';
@@ -177,6 +178,20 @@ export function ResultPage() {
   const hasQuery = Boolean(params.get('city') || params.get('q') || params.get('mood'));
   const [loading, setLoading] = useState<boolean>(!isCacheValid && hasQuery);
   const [notice, setNotice] = useState('');
+  const [savedRoleSuccess, setSavedRoleSuccess] = useState(false);
+
+  function handleSaveRole() {
+    if (!result || !places || places.length === 0) return;
+    const title = journey?.moodLine || result.title || `Rolê em ${journey?.city || 'sua cidade'}`;
+    saveRole({
+      title,
+      city: journey?.city || result.subtitle || 'Fortaleza',
+      moodLabel: journey?.moodLabel,
+      places,
+    });
+    setSavedRoleSuccess(true);
+    setTimeout(() => setSavedRoleSuccess(false), 3500);
+  }
 
   useEffect(() => {
     const p = parseInt(params.get('page') || '1', 10);
@@ -356,11 +371,26 @@ export function ResultPage() {
       <h1 className="mt-3 max-w-[14ch] text-4xl leading-[1.08] font-light tracking-tight sm:text-5xl">{headline}</h1>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-base text-muted">Encontramos {countLabel}.</p>
-        {totalPages > 1 && (
-          <span className="inline-flex items-center rounded-full bg-sand px-3 py-1 text-xs font-medium text-muted">
-            Página {currentPage} de {totalPages}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {places.length > 0 && (
+            <button
+              type="button"
+              onClick={handleSaveRole}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer shadow-xs ${
+                savedRoleSuccess
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-stone-100 hover:bg-[#1c1917] hover:text-white text-stone-800 border border-stone-200'
+              }`}
+            >
+              <span>{savedRoleSuccess ? '✓ Rolê Salvo no Perfil!' : '✨ Salvar este Rolê'}</span>
+            </button>
+          )}
+          {totalPages > 1 && (
+            <span className="inline-flex items-center rounded-full bg-sand px-3 py-1 text-xs font-medium text-muted">
+              Página {currentPage} de {totalPages}
+            </span>
+          )}
+        </div>
       </div>
 
       {places.length === 0 ? (

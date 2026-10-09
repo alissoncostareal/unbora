@@ -2,10 +2,30 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchRevisits, type RevisitGroup } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { getFavorites, type FavoriteItem } from '../lib/favorites';
+import { getSavedRoles, type SavedRole } from '../lib/savedRoles';
 
 export function ProfilePage() {
   const { user, logout } = useAuth();
   const [revisitData, setRevisitData] = useState<RevisitGroup | null>(null);
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [savedRoles, setSavedRoles] = useState<SavedRole[]>([]);
+
+  useEffect(() => {
+    setFavorites(getFavorites());
+    setSavedRoles(getSavedRoles());
+
+    const onFav = () => setFavorites(getFavorites());
+    const onRole = () => setSavedRoles(getSavedRoles());
+
+    window.addEventListener('unbora:favorites_changed', onFav);
+    window.addEventListener('unbora:roles_changed', onRole);
+
+    return () => {
+      window.removeEventListener('unbora:favorites_changed', onFav);
+      window.removeEventListener('unbora:roles_changed', onRole);
+    };
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -24,7 +44,7 @@ export function ProfilePage() {
           </div>
           <h1 className="text-3xl font-extrabold text-[#1e1b19]">Sua Conta</h1>
           <p className="text-sm text-[#73685e]">
-            Entre para salvar seus lugares favoritos, acessar benefícios exclusivos e gerenciar anúncios.
+            Entre para salvar seus lugares favoritos, acessar benefícios exclusivos e recomendações com IA.
           </p>
         </div>
 
@@ -51,7 +71,7 @@ export function ProfilePage() {
   const suggestionsCount = revisitData?.revisitSuggestions?.length || 0;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 py-10 px-4 sm:px-6">
+    <div className="mx-auto max-w-3xl space-y-8 py-10 px-4 sm:px-6">
       {/* Card Principal de Perfil */}
       <div className="bg-white rounded-3xl border border-[#eadfd4] p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
@@ -85,28 +105,26 @@ export function ProfilePage() {
         </button>
       </div>
 
-      {/* Destaque do Passaporte & Check-ins do Usuário */}
+      {/* Destaque IA & Passaporte Urbano */}
       <div className="bg-gradient-to-br from-[#faf2ee] via-amber-50/40 to-[#faf8f5] rounded-3xl border border-amber-200/80 p-6 sm:p-8 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-[#7c2f1d] flex items-center gap-1.5">
-            <span>🗺️</span> Passaporte Urbano Unbora
+            <span>✨</span> Diário de Lugares & Descobertas com IA
           </span>
           <span className="rounded-full bg-white border border-[#eadfd4] px-3 py-1 text-xs font-bold text-[#1e1b19]">
-            {totalCheckins} {totalCheckins === 1 ? 'visita' : 'visitas'}
+            {totalCheckins} {totalCheckins === 1 ? 'check-in' : 'check-ins'}
           </span>
         </div>
 
-        <h2 className="text-xl sm:text-2xl font-black text-[#1e1b19]">
-          Seu Diário de Experiências & Reencontros
+        <h2 className="text-xl sm:text-2xl font-black text-[#1c1917]">
+          Novas Recomendações Baseadas nas Suas Visitas
         </h2>
         
         <p className="text-xs sm:text-sm text-[#73685e] leading-relaxed">
-          Acompanhe todos os locais que você visitou esta semana, semana passada ou mês passado.
+          Nossa inteligência artificial analisa o estilo dos lugares onde você fez check-in para sugerir novidades incríveis na cidade que você ainda não visitou.
           {suggestionsCount > 0 ? (
-            <span className="text-[#7c2f1d] font-semibold"> Você tem {suggestionsCount} lugares chamando para matar a saudade!</span>
-          ) : (
-            ' Faça check-ins nos resultados de busca para registrar suas memórias.'
-          )}
+            <span className="text-[#7c2f1d] font-semibold"> Além disso, você tem {suggestionsCount} lugares antigos chamando para matar a saudade!</span>
+          ) : null}
         </p>
 
         <div className="pt-2 flex flex-wrap gap-3">
@@ -114,15 +132,82 @@ export function ProfilePage() {
             to="/favorites"
             className="inline-flex items-center gap-2 rounded-xl bg-[#7c2f1d] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition"
           >
-            Abrir Diário & Passaporte →
+            Ver Recomendações por IA & Diário →
           </Link>
           <Link
             to="/home"
             className="inline-flex items-center gap-2 rounded-xl border border-[#eadfd4] bg-white px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#1e1b19] hover:bg-stone-50 transition"
           >
-            Explorar Locais
+            Explorar Cidade
           </Link>
         </div>
+      </div>
+
+      {/* Grid de 4 Seções do Histórico & Diário */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Link
+          to="/favorites"
+          className="p-5 bg-white rounded-2xl border border-[#eadfd4] hover:border-[#7c2f1d] transition flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🧠</span>
+            <div>
+              <h3 className="font-bold text-sm text-[#1e1b19] group-hover:text-[#7c2f1d] transition">
+                Descobertas com IA
+              </h3>
+              <p className="text-[11px] text-[#8a8178]">Lugares novos pelo seu gosto</p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-[#7c2f1d]">✦</span>
+        </Link>
+
+        <Link
+          to="/favorites"
+          className="p-5 bg-white rounded-2xl border border-[#eadfd4] hover:border-[#7c2f1d] transition flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📍</span>
+            <div>
+              <h3 className="font-bold text-sm text-[#1e1b19] group-hover:text-[#7c2f1d] transition">
+                Visitas & Check-ins
+              </h3>
+              <p className="text-[11px] text-[#8a8178]">{totalCheckins} lugares visitados</p>
+            </div>
+          </div>
+          <span className="text-xs text-[#8a8178]">→</span>
+        </Link>
+
+        <Link
+          to="/favorites"
+          className="p-5 bg-white rounded-2xl border border-[#eadfd4] hover:border-[#7c2f1d] transition flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">❤️</span>
+            <div>
+              <h3 className="font-bold text-sm text-[#1e1b19] group-hover:text-[#7c2f1d] transition">
+                Lugares Favoritos
+              </h3>
+              <p className="text-[11px] text-[#8a8178]">{favorites.length} lugares salvos</p>
+            </div>
+          </div>
+          <span className="text-xs text-[#8a8178]">→</span>
+        </Link>
+
+        <Link
+          to="/favorites"
+          className="p-5 bg-white rounded-2xl border border-[#eadfd4] hover:border-[#7c2f1d] transition flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">✨</span>
+            <div>
+              <h3 className="font-bold text-sm text-[#1e1b19] group-hover:text-[#7c2f1d] transition">
+                Rolês Salvos
+              </h3>
+              <p className="text-[11px] text-[#8a8178]">{savedRoles.length} roteiros guardados</p>
+            </div>
+          </div>
+          <span className="text-xs text-[#8a8178]">→</span>
+        </Link>
       </div>
 
       {/* Card para Lojista ou Banner de Upgrade para Usuário */}
@@ -168,37 +253,6 @@ export function ProfilePage() {
           </div>
         </div>
       )}
-
-      {/* Atalhos Rápidos da Conta */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Link
-          to="/favorites"
-          className="p-5 bg-white rounded-2xl border border-[#eadfd4] hover:border-[#7c2f1d] transition flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🗺️</span>
-            <div>
-              <h3 className="font-bold text-sm text-[#1e1b19]">Passaporte & Visitas</h3>
-              <p className="text-[11px] text-[#8a8178]">Histórico de lugares e check-ins</p>
-            </div>
-          </div>
-          <span className="text-xs text-[#8a8178]">→</span>
-        </Link>
-
-        <Link
-          to="/create"
-          className="p-5 bg-white rounded-2xl border border-[#eadfd4] hover:border-[#7c2f1d] transition flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🎉</span>
-            <div>
-              <h3 className="font-bold text-sm text-[#1e1b19]">Sugerir um Evento</h3>
-              <p className="text-[11px] text-[#8a8178]">Envie um show ou atração</p>
-            </div>
-          </div>
-          <span className="text-xs text-[#8a8178]">→</span>
-        </Link>
-      </div>
     </div>
   );
 }

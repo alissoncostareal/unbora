@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 import com.unbora.api.domain.location.LocationSettingsService;
 import com.unbora.api.domain.sponsored.SponsoredPlace;
 import com.unbora.api.domain.sponsored.SponsoredPlaceService;
+import com.unbora.api.domain.checkin.Checkin;
+import com.unbora.api.domain.checkin.CheckinRepository;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -50,6 +52,7 @@ public class RecommendationsService {
     private final PlaceBanService placeBanService;
     private final LocationSettingsService locationSettingsService;
     private final SponsoredPlaceService sponsoredPlaceService;
+    private final CheckinRepository checkinRepository;
     private final ExecutorService discoveryExecutor = Executors.newFixedThreadPool(8, r -> {
         Thread thread = new Thread(r, "places-discovery-pool");
         thread.setDaemon(true);
@@ -75,7 +78,8 @@ public class RecommendationsService {
             DismissedPlaceRepository dismissedPlaceRepository,
             PlaceBanService placeBanService,
             LocationSettingsService locationSettingsService,
-            SponsoredPlaceService sponsoredPlaceService
+            SponsoredPlaceService sponsoredPlaceService,
+            CheckinRepository checkinRepository
     ) {
         this.groqClient = groqClient;
         this.imageEnrichmentService = imageEnrichmentService;
@@ -91,6 +95,7 @@ public class RecommendationsService {
         this.placeBanService = placeBanService;
         this.locationSettingsService = locationSettingsService;
         this.sponsoredPlaceService = sponsoredPlaceService;
+        this.checkinRepository = checkinRepository;
     }
 
     public RecommendationResult recommend(RecommendDto dto) {
@@ -463,6 +468,213 @@ public class RecommendationsService {
                 city,
                 enriched.getEventos() != null ? enriched.getEventos().size() : 0,
                 topEvent,
+                Instant.now()
+        ));
+
+        return enriched;
+    }
+
+    public RecommendationResult recommendFromHistory(PersonalizedRecommendDto dto) {
+        String rawCity = InputSanitizer.sanitizeCityOrCountry(dto.city(), 100);
+        final String city = (rawCity == null || rawCity.isBlank()) ? "Fortaleza" : rawCity;
+
+        String rawCountry = InputSanitizer.sanitizeCityOrCountry(dto.country(), 100);
+        final String country = (rawCountry == null || rawCountry.isBlank()) ? "Brasil" : rawCountry;
+
+        String region = InputSanitizer.sanitizeCityOrCountry(dto.region(), 100);
+        String userId = InputSanitizer.sanitizePlaceId(dto.userId(), 100);
+
+        int maxResults = locationSettingsService != null ? locationSettingsService.getEffectiveMaxResults(city) : 18;
+
+        final Double radiusKm = dto.radiusKm() != null ? Math.min(Math.max(dto.radiusKm(), 1.0), 100.0) : 15.0;
+        CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
+        final Double lat = center != null ? center.latitude() : dto.latitude();
+        final Double lng = center != null ? center.longitude() : dto.longitude();
+        Set<String> dismissed = loadDismissed(userId);
+
+        List<Checkin> checkins = (userId != null && !userId.isBlank())
+                ? checkinRepository.findByUserIdOrderByVisitedAtDesc(userId)
+                : Collections.emptyList();
+
+        Set<String> visitedNames = new HashSet<>();
+        StringBuilder historySummary = new StringBuilder();
+        List<String> searchKeywords = new ArrayList<>();
+
+        if (!checkins.isEmpty()) {
+            for (Checkin c : checkins) {
+                if (c.getPlaceName() != null && !c.getPlaceName().isBlank()) {
+                    visitedNames.add(c.getPlaceName().trim().toLowerCase(Locale.ROOT));
+                }
+                historySummary.append("- ").append(c.getPlaceName());
+                if (c.getPlaceType() != null && !c.getPlaceType().isBlank()) {
+                    historySummary.append(" (Tipo: ").append(c.getPlaceType()).append(")");
+                    if (!searchKeywords.contains(c.getPlaceType())) {
+                        searchKeywords.add(c.getPlaceType());
+                    }
+                }
+                if (c.getRating() != null && c.getRating() > 0) {
+                    historySummary.append(" | Avaliação: ").append(c.getRating()).append("/5");
+                }
+                if (c.getNotes() != null && !c.getNotes().isBlank()) {
+                    historySummary.append(" | Anotação: \"").append(c.getNotes()).append("\"");
+                }
+                historySummary.append("\n");
+            }
+        }
+
+        Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
+
+        if (googlePlacesDiscoveryService.isConfigured()) {
+            List<String> queries = new ArrayList<>();
+            if (!searchKeywords.isEmpty()) {
+                for (String kw : searchKeywords.stream().limit(4).toList()) {
+                    queries.add("melhores " + kw + " em " + city);
+                }
+            } else {
+                queries.add("melhores cafeterias especiais em " + city);
+                queries.add("melhores restaurantes e bistros autorais em " + city);
+                queries.add("melhores bares de coquetelaria em " + city);
+            }
+
+            List<CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>>> futures = queries.stream()
+                    .map(q -> CompletableFuture.supplyAsync(
+                            () -> googlePlacesDiscoveryService.searchPlaces(q, lat, lng, radiusKm, city, country, 15),
+                            discoveryExecutor
+                    ))
+                    .toList();
+
+            for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
+                try {
+                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.get(3, TimeUnit.SECONDS);
+                    if (found != null) {
+                        for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
+                            String normName = p.displayName().trim().toLowerCase(Locale.ROOT);
+                            if (visitedNames.contains(normName)) {
+                                continue;
+                            }
+                            String key = p.placeId() != null && !p.placeId().isBlank()
+                                    ? p.placeId()
+                                    : imageEnrichmentService.normalizeText(p.displayName());
+                            placeMap.putIfAbsent(key, p);
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+
+        keepInCity(placeMap, center, radiusKm, city, dismissed, null, null);
+        List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces = new ArrayList<>(placeMap.values());
+
+        StringBuilder groundingContext = new StringBuilder();
+        if (!livePlaces.isEmpty()) {
+            groundingContext.append("\n=== CANDIDATOS DO GOOGLE MAPS NÃO VISITADOS ===\n");
+            int count = 0;
+            for (GooglePlacesDiscoveryService.DiscoveredPlace p : livePlaces) {
+                if (count++ >= maxResults) break;
+                groundingContext.append("- Nome: ").append(p.displayName())
+                        .append(" | Endereço: ").append(p.formattedAddress())
+                        .append(" | Nota: ").append(p.rating() != null ? p.rating() : 4.7)
+                        .append(" | Tipo: ").append(p.primaryType())
+                        .append("\n");
+            }
+            groundingContext.append("=== FIM DOS CANDIDATOS ===\n");
+        }
+
+        String topVisited = checkins.stream()
+                .map(Checkin::getPlaceName)
+                .filter(Objects::nonNull)
+                .limit(2)
+                .reduce((a, b) -> a + " e " + b)
+                .orElse("suas preferências");
+
+        String systemPrompt = promptTemplateService.getTemplate("system-prompt");
+        String promptInstruction;
+        if (!checkins.isEmpty()) {
+            promptInstruction = """
+                Cidade: %s, %s
+                HISTÓRICO REAL DE VISITAS E CHECK-INS DO USUÁRIO:
+                %s
+
+                CANDIDATOS REAIS DO GOOGLE MAPS:
+                %s
+
+                INSTRUÇÃO:
+                Com base nos lugares que o usuário já visitou e gostou, recomende até %d NOVOS lugares INÉDITOS em %s que combinem com a vibe e os gostos dele.
+                É EXPRESSAMENTE PROIBIDO sugerir qualquer lugar que o usuário já visitou (%s).
+                No campo 'titulo', use algo charmoso como 'Descobertas sob medida para você'.
+                No campo 'subtitulo', mencione 'Inspirado nas suas visitas a %s'.
+                No campo 'descricao' de cada lugar, explique em 1 ou 2 frases a conexão sensorial com as preferências dele.
+                Retorne estritamente o JSON com 'titulo', 'subtitulo' e lista de 'lugares'.
+                """.formatted(city, country, historySummary.toString(), groundingContext.toString(), maxResults, city, String.join(", ", visitedNames), topVisited);
+        } else {
+            promptInstruction = """
+                Cidade: %s, %s
+                CANDIDATOS REAIS DO GOOGLE MAPS:
+                %s
+
+                INSTRUÇÃO:
+                O usuário está iniciando o seu diário e passaporte de experiências no Unbora.
+                Recomende até %d experiências icônicas, charmosas e bem avaliadas em %s (cafés especiais, gastronomia acolhedora, cultura e bares elegantes).
+                No campo 'titulo', use 'Novas Descobertas na Cidade'.
+                No campo 'subtitulo', use 'Curadoria especial para começar o seu diário'.
+                Retorne estritamente o JSON com 'titulo', 'subtitulo' e lista de 'lugares'.
+                """.formatted(city, country, groundingContext.toString(), maxResults, city);
+        }
+
+        RecommendationResult result;
+        try {
+            boolean hasLive = !livePlaces.isEmpty();
+            int maxTokens = Math.max(3500, Math.min(8192, maxResults * 160));
+            result = groqClient.callGroqJson(
+                    systemPrompt,
+                    promptInstruction,
+                    RecommendationResult.class,
+                    0.3,
+                    maxTokens,
+                    hasLive ? Duration.ofSeconds(16) : Duration.ofSeconds(40),
+                    hasLive ? 1 : Integer.MAX_VALUE
+            );
+        } catch (Exception e) {
+            log.warn("[PersonalizedRecommend] Groq falhou — lista via Google Places: {}", e.getMessage());
+            result = recommendationFromLivePlaces(
+                    "Descobertas para Você",
+                    "Com base no seu perfil em " + city,
+                    livePlaces,
+                    maxResults
+            );
+        }
+
+        if (result == null || result.getLugares() == null || result.getLugares().isEmpty()) {
+            result = recommendationFromLivePlaces(
+                    "Descobertas para Você",
+                    "Com base no seu perfil em " + city,
+                    livePlaces,
+                    maxResults
+            );
+        }
+
+        RecommendationResult enriched = enrichPlaces(result, city, country, lat, lng, livePlaces);
+        enriched = appendMissingLivePlaces(enriched, livePlaces, city, maxResults);
+        retainInCity(enriched, center, radiusKm, city, dismissed, null, null);
+        fillMissingMapsPhotos(enriched, city, lat, lng);
+        ensurePhotographedPlaces(enriched, livePlaces, maxResults);
+        injectSponsoredPlaces(enriched, city, null, List.of(), "personalizado", maxResults);
+
+        String topPlace = enriched.getLugares() != null && !enriched.getLugares().isEmpty()
+                ? enriched.getLugares().get(0).getNome()
+                : "none";
+
+        resolveOutgoingPhotos(enriched);
+
+        kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
+                "PERSONALIZED_RECOMMENDATION_GENERATED",
+                userId,
+                null,
+                searchKeywords,
+                null,
+                city,
+                enriched.getLugares() != null ? enriched.getLugares().size() : 0,
+                topPlace,
                 Instant.now()
         ));
 

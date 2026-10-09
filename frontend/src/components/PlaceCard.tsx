@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createCheckin, recordSponsoredClick, type Place } from '../lib/api';
+import { isPlaceFavorite, togglePlaceFavorite } from '../lib/favorites';
 import { useAuth } from '../lib/auth';
 
 const DEFAULT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80';
@@ -24,11 +25,24 @@ export function PlaceCard({
   const [imgSrc, setImgSrc] = useState<string>(place.imageUrl || DEFAULT_FALLBACK_IMAGE);
   const [dismissing, setDismissing] = useState(false);
   const [checkedIn, setCheckedIn] = useState(false);
+  const [isFav, setIsFav] = useState(false);
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [rating, setRating] = useState<number>(5);
   const [notes, setNotes] = useState('');
   const [submittingCheckin, setSubmittingCheckin] = useState(false);
+
+  useEffect(() => {
+    setIsFav(isPlaceFavorite(place));
+    const onFavChange = () => setIsFav(isPlaceFavorite(place));
+    window.addEventListener('unbora:favorites_changed', onFavChange);
+    return () => window.removeEventListener('unbora:favorites_changed', onFavChange);
+  }, [place]);
+
+  function handleFavoriteClick() {
+    const updated = togglePlaceFavorite(place);
+    setIsFav(updated);
+  }
 
   function handleDismiss() {
     if (dismissing) return;
@@ -102,6 +116,22 @@ export function PlaceCard({
           </div>
         ) : null}
 
+        {/* Botão Flutuante de Favorito */}
+        <button
+          type="button"
+          onClick={handleFavoriteClick}
+          aria-label={isFav ? 'Remover dos favoritos' : 'Salvar nos favoritos'}
+          className={`absolute ${checkedIn ? 'top-12' : 'top-3'} right-3 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-md transition-all shadow-md cursor-pointer ${
+            isFav
+              ? 'bg-rose-600 text-white scale-105'
+              : 'bg-white/80 text-stone-700 hover:bg-white hover:text-rose-600'
+          }`}
+        >
+          <svg className="size-4.5" viewBox="0 0 24 24" fill={isFav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+          </svg>
+        </button>
+
         {/* Badge de Check-in no Card quando já visitado */}
         {checkedIn && (
           <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-emerald-700/90 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white shadow-lg animate-in fade-in zoom-in-90 duration-300">
@@ -117,26 +147,41 @@ export function PlaceCard({
         <div className="flex flex-wrap items-center justify-between gap-2">
           {score != null ? <p className="text-sm font-semibold text-coral">{score}% combina com você</p> : <div />}
           
-          {/* Botão de Check-in "Estive aqui" */}
-          {checkedIn ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-300/80 px-3 py-1 text-xs font-semibold text-emerald-800">
-              <svg className="size-3.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
-              <span>Visitado</span>
-            </span>
-          ) : (
+          <div className="flex items-center gap-2">
+            {/* Botão de Favorito Compacto */}
             <button
               type="button"
-              onClick={handleCheckinTrigger}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#1c1917]/20 bg-stone-50 hover:bg-[#1c1917] hover:text-white px-3.5 py-1 text-xs font-semibold text-[#1c1917] transition-all shadow-xs cursor-pointer"
+              onClick={handleFavoriteClick}
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                isFav
+                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:text-rose-600'
+              }`}
             >
-              <svg className="size-3.5 text-coral group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
-              <span>Fazer Check-in</span>
+              <span>{isFav ? '❤️ Salvo' : '🤍 Salvar'}</span>
             </button>
-          )}
+
+            {/* Botão de Check-in "Estive aqui" */}
+            {checkedIn ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-300/80 px-3 py-1 text-xs font-semibold text-emerald-800">
+                <svg className="size-3.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <span>Visitado</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCheckinTrigger}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#1c1917]/20 bg-stone-50 hover:bg-[#1c1917] hover:text-white px-3.5 py-1 text-xs font-semibold text-[#1c1917] transition-all shadow-xs cursor-pointer"
+              >
+                <svg className="size-3.5 text-coral group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <span>Fazer Check-in</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex items-baseline justify-between gap-2">

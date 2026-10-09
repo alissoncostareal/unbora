@@ -269,6 +269,27 @@ export async function recommend(input: {
   return mapRecommendation(data);
 }
 
+export async function fetchPersonalizedRecommendations(input: {
+  userId?: string;
+  city: string;
+  region?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
+}): Promise<Recommendation> {
+  const data = await post<RecommendationDto>('/api/recommendations/personalized', {
+    userId: input.userId,
+    city: input.city,
+    region: input.region || '',
+    country: input.country || 'Brasil',
+    latitude: input.latitude,
+    longitude: input.longitude,
+    radiusKm: input.radiusKm || 15.0,
+  });
+  return mapRecommendation(data);
+}
+
 export interface CityNotification {
   id: string;
   title: string;

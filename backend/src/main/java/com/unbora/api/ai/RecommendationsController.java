@@ -35,6 +35,28 @@ public class RecommendationsController {
         return recommendationsService.recommend(dto);
     }
 
+    @PostMapping({"/recommendations/personalized", "/recommend/personalized"})
+    @Operation(summary = "Generate personalized AI recommendations based on user visit history and check-ins")
+    public RecommendationResult recommendPersonalized(@Valid @RequestBody PersonalizedRecommendDto dto) {
+        return recommendationsService.recommendFromHistory(dto);
+    }
+
+    @GetMapping({"/recommendations/personalized", "/recommend/personalized"})
+    @Operation(summary = "Get personalized AI recommendations for user by query params")
+    public RecommendationResult getPersonalized(
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false, defaultValue = "Fortaleza") String city,
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false, defaultValue = "Brasil") String country,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude,
+            @RequestParam(required = false) Double radiusKm
+    ) {
+        return recommendationsService.recommendFromHistory(
+                new PersonalizedRecommendDto(userId, city, region, country, latitude, longitude, radiusKm)
+        );
+    }
+
     @PostMapping({"/search", "/buscar"})
     @Operation(summary = "Smart AI search for places and venues")
     public RecommendationResult search(@Valid @RequestBody SearchDto dto) {
