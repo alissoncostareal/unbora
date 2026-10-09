@@ -100,12 +100,19 @@ export function SiteMenu() {
 
           <NavLink
             to="/"
-            title="Trocar de cidade"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-none border border-[#e7dfd8] bg-[#faf2ee] px-2.5 py-1 text-[11px] font-semibold tracking-[0.08em] text-[#55433e] uppercase hover:border-[#dbc1bb] hover:bg-[#f5e8e2] transition-colors"
+            title="Trocar de localização"
+            className="hidden sm:inline-flex items-center gap-2 rounded-none border border-[#e7dfd8] bg-[#faf2ee] px-2.5 py-1 text-left hover:border-[#dbc1bb] hover:bg-[#f5e8e2] transition-colors group shrink-0"
           >
-            <span className="h-1.5 w-1.5 rounded-none bg-[#7c2f1d]" aria-hidden />
-            <span className="truncate max-w-[170px]">{place}</span>
-            <svg className="h-3 w-3 text-[#88726d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-none bg-[#7c2f1d]" aria-hidden />
+            <div className="flex flex-col min-w-0 max-w-[120px] md:max-w-[140px] lg:max-w-[160px] leading-tight">
+              <span className="truncate text-[11px] font-bold tracking-[0.02em] text-[#1e1b19] group-hover:text-[#7c2f1d] transition-colors">
+                {city.trim() || 'Fortaleza'}
+              </span>
+              <span className="truncate text-[9px] font-semibold tracking-[0.06em] text-[#88726d] uppercase leading-none">
+                {modelCity ? 'Cidade modelo' : (region || country || 'Brasil')}
+              </span>
+            </div>
+            <svg className="h-3 w-3 shrink-0 text-[#88726d] group-hover:text-[#7c2f1d] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </NavLink>
@@ -249,15 +256,20 @@ export function SiteMenu() {
         <div className="xl:hidden fixed inset-x-0 top-20 bottom-0 z-40 bg-black/40 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white border-b border-[#e7dfd8] shadow-2xl max-h-[calc(100vh-80px)] overflow-y-auto px-6 py-6 flex flex-col gap-6">
             {/* Localização Atual */}
-            <div className="flex items-center justify-between rounded-none bg-[#faf2ee] p-3 border border-[#e7dfd8]">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-none bg-[#7c2f1d]" />
-                <span className="text-xs font-bold text-[#1e1b19] uppercase tracking-wider">{place}</span>
+            <div className="flex items-center justify-between gap-3 rounded-none bg-[#faf2ee] p-3 border border-[#e7dfd8]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="h-2 w-2 shrink-0 rounded-none bg-[#7c2f1d]" />
+                <div className="flex flex-col min-w-0 max-w-[200px] leading-tight">
+                  <span className="text-xs font-bold text-[#1e1b19] truncate">{city.trim() || 'Fortaleza'}</span>
+                  <span className="text-[10px] font-semibold text-[#88726d] uppercase tracking-wider truncate">
+                    {modelCity ? 'Cidade modelo' : (region || country || 'Brasil')}
+                  </span>
+                </div>
               </div>
               <NavLink
                 to="/"
                 onClick={() => setMobileOpen(false)}
-                className="text-[10px] text-[#7c2f1d] font-bold uppercase tracking-widest bg-white px-2 py-0.5 rounded-none border border-[#dbc1bb]/60 hover:bg-[#faf2ee]"
+                className="shrink-0 text-[10px] text-[#7c2f1d] font-bold uppercase tracking-widest bg-white px-2.5 py-1 rounded-none border border-[#dbc1bb]/60 hover:bg-[#faf2ee]"
               >
                 Trocar Cidade
               </NavLink>
