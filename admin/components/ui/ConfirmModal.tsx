@@ -51,9 +51,9 @@ export function ConfirmModal({
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
     >
-      <div className="w-full max-w-md rounded-2xl border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="w-full max-w-md rounded-none border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex items-start gap-4">
-          <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-rose-50 text-rose-600 border border-rose-100">
+          <div className="grid size-12 shrink-0 place-items-center rounded-none bg-rose-50 text-rose-600 border border-rose-100">
             <svg
               className="size-6"
               viewBox="0 0 24 24"

@@ -88,9 +88,9 @@ export function ConfirmModal({
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
     >
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="w-full max-w-md rounded-none border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex items-start gap-4">
-          <div className={`grid size-12 shrink-0 place-items-center rounded-2xl border ${variantStyles.iconBg}`}>
+          <div className={`grid size-12 shrink-0 place-items-center rounded-none border ${variantStyles.iconBg}`}>
             {variantStyles.icon}
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
@@ -108,7 +108,7 @@ export function ConfirmModal({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-200 transition disabled:opacity-50"
+            className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-700 hover:bg-slate-100 rounded-none border border-slate-200 transition disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -116,10 +116,10 @@ export function ConfirmModal({
             type="button"
             onClick={() => void onConfirm()}
             disabled={isLoading}
-            className={`px-4 py-2 text-xs font-bold rounded-xl shadow-md transition disabled:opacity-50 flex items-center gap-1.5 ${variantStyles.btn}`}
+            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none shadow-sm transition disabled:opacity-50 flex items-center gap-1.5 ${variantStyles.btn}`}
           >
             {isLoading && (
-              <span className="inline-block size-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <span className="inline-block size-3.5 animate-spin rounded-none border-2 border-white border-t-transparent" />
             )}
             <span>{isLoading ? 'Processando…' : confirmLabel}</span>
           </button>

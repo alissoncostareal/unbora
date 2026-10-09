@@ -130,7 +130,7 @@ export function CitySearchInput({
             }
           }}
           onKeyDown={handleKeyDown}
-          className={`w-full rounded-xl border border-[#e8e0d7] bg-white px-3.5 py-2.5 text-xs text-[#1c1917] placeholder:text-[#a89f91] outline-none transition-all focus:border-[#9a4632] focus:ring-2 focus:ring-[#9a4632]/10 pr-9 ${className}`}
+          className={`w-full rounded-none border border-[#e8e0d7] bg-white px-3.5 py-2.5 text-xs text-[#1c1917] placeholder:text-[#a89f91] outline-none transition-all focus:border-[#9a4632] focus:ring-1 focus:ring-[#9a4632] pr-9 ${className}`}
         />
 
         {/* Loading / Map Pin icon indicator */}
@@ -163,7 +163,7 @@ export function CitySearchInput({
 
       {/* Floating Suggestions Dropdown */}
       {open && suggestions.length > 0 ? (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-[#e8e0d7] bg-white p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-none border border-[#e8e0d7] bg-white p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-150">
           <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#8a8178] border-b border-[#f0eae1] mb-1">
             Sugestões do Google Maps
           </div>
@@ -174,7 +174,7 @@ export function CitySearchInput({
                 <li key={`${item.city}-${item.region}-${item.country}-${index}`}>
                   <button
                     type="button"
-                    className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs transition-colors cursor-pointer ${
+                    className={`flex w-full items-center gap-2.5 rounded-none px-2.5 py-2 text-left text-xs transition-colors cursor-pointer ${
                       isHighlighted
                         ? 'bg-[#faf2ee] text-[#7c2f1d]'
                         : 'text-[#1c1917] hover:bg-[#faf8f5] hover:text-[#9a4632]'
@@ -185,7 +185,7 @@ export function CitySearchInput({
                     }}
                     onMouseEnter={() => setHighlightedIndex(index)}
                   >
-                    <div className="grid size-6 shrink-0 place-items-center rounded-md bg-[#faf2ee] text-[#9a4632]">
+                    <div className="grid size-6 shrink-0 place-items-center rounded-none bg-[#faf2ee] text-[#9a4632]">
                       <svg className="size-3.5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z" />
                       </svg>

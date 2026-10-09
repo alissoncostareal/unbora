@@ -10,7 +10,7 @@ export function PeriodToggle({
   onChange: (v: Period) => void;
 }) {
   return (
-    <div className="flex items-center gap-1 rounded-full bg-canvas p-1">
+    <div className="flex items-center gap-1 rounded-none bg-canvas p-1">
       <button
         type="button"
         onClick={() => onChange('weekly')}

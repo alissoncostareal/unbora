@@ -198,7 +198,7 @@ export default function BanListPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Filtrar por nome, cidade..."
-                className="rounded-xl border border-[#e8e0d7] bg-white px-3 py-1.5 text-xs text-[#1c1917] placeholder:text-[#a89f91] outline-none focus:border-[#9a4632] focus:ring-2 focus:ring-[#9a4632]/10"
+                className="rounded-none border border-[#e8e0d7] bg-white px-3 py-1.5 text-xs text-[#1c1917] placeholder:text-[#a89f91] outline-none focus:border-[#9a4632] focus:ring-1 focus:ring-[#9a4632]"
               />
             }
           >

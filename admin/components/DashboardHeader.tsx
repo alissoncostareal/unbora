@@ -22,9 +22,9 @@ export function DashboardHeader({ pathname }: { pathname: string }) {
         </h1>
       </div>
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 rounded-full border border-[#e8e0d7] bg-white px-3 py-1 shadow-2xs">
-          <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-          <p className="text-[12px] font-medium text-[#55433e] capitalize">
+        <div className="flex items-center gap-2 rounded-none border border-[#e8e0d7] bg-white px-3 py-1 shadow-2xs">
+          <span className="size-2 rounded-none bg-emerald-500 animate-pulse" />
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#55433e]">
             {formatDate()}
           </p>
         </div>

@@ -57,7 +57,7 @@ export default function OverviewPage() {
         actionButton={
           <Link
             href="/places"
-            className="px-3.5 sm:px-4 py-2 bg-[#7c2f1d] hover:bg-[#602416] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 shrink-0"
+            className="px-3.5 sm:px-4 py-2 bg-[#7c2f1d] hover:bg-[#602416] text-white text-xs font-bold uppercase tracking-wider rounded-none shadow-xs transition flex items-center gap-1.5 shrink-0"
           >
             <span>+</span> <span>Novo Local</span>
           </Link>
@@ -67,39 +67,39 @@ export default function OverviewPage() {
       <div className="px-4 sm:px-8 space-y-6 sm:space-y-8">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="business-card p-4 sm:p-5">
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          <div className="business-card p-4 sm:p-5 rounded-none">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
               Visualizações nas Buscas
             </span>
-            <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-1 tracking-tight">
               {totalImpressions.toLocaleString('pt-BR')}
             </div>
             <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Exibições no Slot de Ouro e Home</p>
           </div>
 
-          <div className="business-card p-4 sm:p-5">
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          <div className="business-card p-4 sm:p-5 rounded-none">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
               Cliques em 'Ver no Mapa'
             </span>
-            <div className="text-2xl sm:text-3xl font-black text-[#7c2f1d] mt-1">
+            <div className="text-2xl sm:text-3xl font-black text-[#7c2f1d] mt-1 tracking-tight">
               {totalClicks.toLocaleString('pt-BR')}
             </div>
             <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Clientes direcionados ao estabelecimento</p>
           </div>
 
-          <div className="business-card p-4 sm:p-5">
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          <div className="business-card p-4 sm:p-5 rounded-none">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
               Taxa de Conversão (CTR)
             </span>
-            <div className="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">{avgCtr}%</div>
+            <div className="text-2xl sm:text-3xl font-black text-emerald-600 mt-1 tracking-tight">{avgCtr}%</div>
             <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Engajamento real dos anúncios</p>
           </div>
 
-          <div className="business-card p-4 sm:p-5">
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          <div className="business-card p-4 sm:p-5 rounded-none">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
               Saldo em Créditos (CPC)
             </span>
-            <div className="text-2xl sm:text-3xl font-black text-blue-600 mt-1">
+            <div className="text-2xl sm:text-3xl font-black text-blue-600 mt-1 tracking-tight">
               R$ {totalWallet.toFixed(2)}
             </div>
             <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1">Disponível para cliques de desempenho</p>
@@ -107,50 +107,50 @@ export default function OverviewPage() {
         </div>
 
         {/* Funil Visual de Conversão */}
-        <div className="business-card p-5 sm:p-8 space-y-4 sm:space-y-6">
+        <div className="business-card p-5 sm:p-8 space-y-4 sm:space-y-6 rounded-none">
           <div>
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#7c2f1d]">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.14em] text-[#7c2f1d]">
               Funil de Aquisição de Clientes
             </span>
-            <h3 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">
+            <h3 className="text-base sm:text-lg font-black text-slate-900 mt-0.5 tracking-tight">
               Como o Unbora transforma busca em visitas presenciais
             </h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+            <div className="p-4 bg-slate-50 rounded-none border border-slate-200/80 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-600">1. Busca & Slot de Ouro</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-600">1. Busca & Slot de Ouro</span>
                 <span className="text-xs font-black text-slate-900">{totalImpressions}</span>
               </div>
-              <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                <div className="bg-slate-800 h-full w-full rounded-full" />
+              <div className="w-full bg-slate-200 h-1.5 rounded-none overflow-hidden">
+                <div className="bg-slate-800 h-full w-full rounded-none" />
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">
                 Pessoas na cidade procurando restaurantes, bares e eventos no momento exato de sair.
               </p>
             </div>
 
-            <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-200/80 space-y-2">
+            <div className="p-4 bg-amber-50/70 rounded-none border border-amber-200/80 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-900">2. Benefício Unbora Perks</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-900">2. Benefício Unbora Perks</span>
                 <span className="text-xs font-black text-amber-900">100% dos locais</span>
               </div>
-              <div className="w-full bg-amber-200 h-2 rounded-full overflow-hidden">
-                <div className="bg-amber-600 h-full w-[85%] rounded-full" />
+              <div className="w-full bg-amber-200 h-1.5 rounded-none overflow-hidden">
+                <div className="bg-amber-600 h-full w-[85%] rounded-none" />
               </div>
               <p className="text-[11px] text-amber-800/80 leading-relaxed">
                 O selo de benefício exclusivo incentiva o usuário a escolher o seu estabelecimento.
               </p>
             </div>
 
-            <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200/80 space-y-2">
+            <div className="p-4 bg-emerald-50/70 rounded-none border border-emerald-200/80 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-900">3. Rota no Google Maps</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-900">3. Rota no Google Maps</span>
                 <span className="text-xs font-black text-emerald-900">{totalClicks} cliques</span>
               </div>
-              <div className="w-full bg-emerald-200 h-2 rounded-full overflow-hidden">
-                <div className="bg-emerald-600 h-full w-[45%] rounded-full" />
+              <div className="w-full bg-emerald-200 h-1.5 rounded-none overflow-hidden">
+                <div className="bg-emerald-600 h-full w-[45%] rounded-none" />
               </div>
               <p className="text-[11px] text-emerald-800/80 leading-relaxed">
                 Usuários que abriram a rota direta para chegar ao seu local físico.
@@ -167,17 +167,17 @@ export default function OverviewPage() {
               <h3 className="font-bold text-sm sm:text-base text-slate-900">
                 Meus Estabelecimentos ({places.length})
               </h3>
-              <Link href="/places" className="text-xs font-bold text-[#7c2f1d] hover:underline">
+              <Link href="/places" className="text-xs font-bold uppercase tracking-wider text-[#7c2f1d] hover:underline">
                 Gerenciar Todos →
               </Link>
             </div>
 
             {places.length === 0 ? (
-              <div className="business-card p-6 sm:p-8 text-center space-y-3">
+              <div className="business-card p-6 sm:p-8 text-center space-y-3 rounded-none">
                 <p className="text-xs text-slate-500">Nenhum estabelecimento cadastrado ainda.</p>
                 <Link
                   href="/places"
-                  className="inline-block px-4 py-2 bg-[#7c2f1d] text-white text-xs font-bold rounded-xl"
+                  className="inline-block px-4 py-2 bg-[#7c2f1d] text-white text-xs font-bold uppercase tracking-wider rounded-none"
                 >
                   Cadastrar Estabelecimento
                 </Link>
@@ -187,10 +187,10 @@ export default function OverviewPage() {
                 {places.slice(0, 3).map((place) => (
                   <div
                     key={place.id}
-                    className="business-card p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4"
+                    className="business-card p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-none"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-xl bg-slate-200 overflow-hidden shrink-0">
+                      <div className="w-12 h-12 rounded-none bg-slate-200 overflow-hidden shrink-0">
                         {place.imageUrl ? (
                           <img
                             src={place.imageUrl}
@@ -207,7 +207,7 @@ export default function OverviewPage() {
                         <div className="flex items-center gap-2">
                           <h4 className="font-bold text-sm text-slate-900 truncate">{place.name}</h4>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase ${
+                            className={`px-2 py-0.5 rounded-none text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${
                               place.active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
                             }`}
                           >
@@ -229,7 +229,7 @@ export default function OverviewPage() {
                       </div>
                       <button
                         onClick={() => handleToggle(place.id)}
-                        className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition active:scale-95"
+                        className="px-3 py-1.5 border border-slate-200 rounded-none text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-50 transition active:scale-95"
                       >
                         {place.active ? 'Pausar' : 'Ativar'}
                       </button>
@@ -244,13 +244,13 @@ export default function OverviewPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-sm sm:text-base text-slate-900">Faturas & Pagamentos</h3>
-              <Link href="/invoices" className="text-xs font-bold text-[#7c2f1d] hover:underline">
+              <Link href="/invoices" className="text-xs font-bold uppercase tracking-wider text-[#7c2f1d] hover:underline">
                 Ver Todas →
               </Link>
             </div>
 
             {invoices.length === 0 ? (
-              <div className="business-card p-6 sm:p-8 text-center text-xs text-slate-500">
+              <div className="business-card p-6 sm:p-8 text-center text-xs text-slate-500 rounded-none">
                 Nenhuma fatura em aberto.
               </div>
             ) : (
@@ -258,7 +258,7 @@ export default function OverviewPage() {
                 {invoices.slice(0, 3).map((inv) => (
                   <div
                     key={inv.id}
-                    className="business-card p-3.5 sm:p-4 flex items-center justify-between gap-3"
+                    className="business-card p-3.5 sm:p-4 flex items-center justify-between gap-3 rounded-none"
                   >
                     <div>
                       <h4 className="font-bold text-xs text-slate-900">{inv.placeName}</h4>
@@ -272,12 +272,12 @@ export default function OverviewPage() {
                       {inv.status === 'PENDING' ? (
                         <button
                           onClick={() => setSelectedInvoice(inv)}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-xs font-bold shadow-xs transition"
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-none text-xs font-bold uppercase tracking-wider shadow-xs transition"
                         >
                           Pagar PIX
                         </button>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">
+                        <span className="px-2.5 py-1 rounded-none bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider">
                           ✓ Pago
                         </span>
                       )}

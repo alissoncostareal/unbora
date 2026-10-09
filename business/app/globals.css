@@ -49,7 +49,7 @@
 }
 
 .business-card {
-  @apply rounded-2xl border border-slate-200/80 bg-white transition-all duration-200;
+  @apply rounded-none border border-slate-200/80 bg-white transition-all duration-200;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
@@ -58,5 +58,5 @@
 }
 
 .metric-badge {
-  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider;
+  @apply inline-flex items-center gap-1 rounded-none px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider;
 }

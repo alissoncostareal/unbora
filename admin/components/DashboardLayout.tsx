@@ -18,7 +18,7 @@ function BrandLogo() {
       <span className="text-[22px] font-normal leading-none tracking-tight text-[#fff8f5]">
         Unbora
       </span>
-      <span className="rounded-md bg-[#9a4632]/25 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-[#ffdad2] uppercase border border-[#9a4632]/40">
+      <span className="rounded-none bg-[#9a4632]/25 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-[#ffdad2] uppercase border border-[#9a4632]/40">
         Admin
       </span>
     </Link>
@@ -51,7 +51,7 @@ function NavLink({
       {badge && badge > 0 ? (
         <span
           className={cn(
-            'grid size-5 place-items-center rounded-full text-[10px] font-bold',
+            'grid size-5 place-items-center rounded-none text-[10px] font-bold',
             isActive ? 'bg-white text-[#9a4632]' : 'bg-white/20 text-white',
           )}
         >
@@ -133,8 +133,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         {/* Sidebar Footer / User Profile on Dark Theme */}
         <div className="shrink-0 border-t border-[#26221f] p-4 bg-[#0d0c0a]">
           {session ? (
-            <div className="mb-3 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-2.5">
-              <div className="grid size-8 shrink-0 place-items-center rounded-full bg-[#9a4632] text-xs font-semibold text-white shadow-xs">
+            <div className="mb-3 flex items-center gap-3 rounded-none border border-white/10 bg-white/5 p-2.5">
+              <div className="grid size-8 shrink-0 place-items-center rounded-none bg-[#9a4632] text-xs font-semibold text-white shadow-xs">
                 {session.name.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
@@ -147,7 +147,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={logout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-[#c9bfb5] transition-all hover:bg-white/10 hover:text-white"
+            className="flex w-full items-center justify-center gap-2 rounded-none border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-[#c9bfb5] transition-all hover:bg-white/10 hover:text-white cursor-pointer"
           >
             <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -173,15 +173,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                  isActive ? 'bg-[#9a4632] text-white font-semibold' : 'text-[#c9bfb5] hover:bg-white/10 hover:text-white',
+                  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-1.5 text-xs font-medium transition-colors border border-transparent',
+                  isActive ? 'bg-[#9a4632] text-white font-semibold border-[#9a4632]' : 'text-[#c9bfb5] hover:bg-white/10 hover:text-white',
                 )}
               >
                 {item.label}
                 {badge && badge > 0 ? (
                   <span
                     className={cn(
-                      'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
+                      'rounded-none px-1.5 py-0.2 text-[10px] font-bold',
                       isActive ? 'bg-white text-[#9a4632]' : 'bg-white/20 text-white',
                     )}
                   >

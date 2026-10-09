@@ -28,9 +28,9 @@ export function BottomNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-2xl text-[10px] font-bold transition-all min-w-[58px] active:scale-90 ${
+            className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-none text-[10px] font-semibold uppercase tracking-wider transition-all min-w-[58px] active:scale-95 ${
               isActive
-                ? 'text-amber-400 bg-white/10 shadow-xs ring-1 ring-amber-400/20'
+                ? 'text-amber-400 bg-white/10 shadow-xs ring-1 ring-amber-400/30'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >

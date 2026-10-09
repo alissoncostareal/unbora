@@ -72,7 +72,7 @@ export default function PlacesPage() {
               setEditingPlace(null);
               setModalOpen(true);
             }}
-            className="px-3.5 sm:px-4 py-2 bg-[#7c2f1d] hover:bg-[#602416] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 shrink-0"
+            className="px-3.5 sm:px-4 py-2 bg-[#7c2f1d] hover:bg-[#602416] text-white text-xs font-bold uppercase tracking-wider rounded-none shadow-xs transition flex items-center gap-1.5 shrink-0"
           >
             <span>+</span> <span>Novo Local</span>
           </button>
@@ -81,7 +81,7 @@ export default function PlacesPage() {
 
       <div className="px-4 sm:px-8 space-y-6">
         {places.length === 0 ? (
-          <div className="business-card p-8 sm:p-12 text-center space-y-4">
+          <div className="business-card p-8 sm:p-12 text-center space-y-4 rounded-none">
             <div className="text-4xl">📍</div>
             <h3 className="text-lg sm:text-xl font-bold text-slate-900">Nenhum estabelecimento cadastrado</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
@@ -92,7 +92,7 @@ export default function PlacesPage() {
                 setEditingPlace(null);
                 setModalOpen(true);
               }}
-              className="px-6 py-2.5 bg-[#7c2f1d] text-white text-xs font-bold rounded-xl shadow-md hover:bg-[#602416] transition"
+              className="px-6 py-2.5 bg-[#7c2f1d] text-white text-xs font-bold uppercase tracking-wider rounded-none shadow-md hover:bg-[#602416] transition"
             >
               Cadastrar Primeiro Estabelecimento
             </button>
@@ -102,7 +102,7 @@ export default function PlacesPage() {
             {places.map((place) => (
               <div
                 key={place.id}
-                className="business-card overflow-hidden flex flex-col justify-between"
+                className="business-card overflow-hidden flex flex-col justify-between rounded-none"
               >
                 <div>
                   {/* Foto de Capa com Tags */}
@@ -114,16 +114,16 @@ export default function PlacesPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold">
+                      <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold uppercase tracking-wider">
                         Sem Foto Cadastrada
                       </div>
                     )}
                     <div className="absolute top-3 left-3 flex items-center gap-2">
-                      <span className="px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold text-[11px] sm:text-xs shadow-md">
+                      <span className="px-2.5 py-1 rounded-none bg-amber-500 text-slate-950 font-bold uppercase tracking-wider text-[10px] sm:text-[11px] shadow-sm">
                         Patrocinado ✦
                       </span>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase ${
+                        className={`px-2 py-0.5 rounded-none text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${
                           place.active ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-white'
                         }`}
                       >
@@ -131,7 +131,7 @@ export default function PlacesPage() {
                       </span>
                     </div>
                     <div className="absolute top-3 right-3">
-                      <span className="px-2 py-1 rounded-full bg-black/70 text-white font-bold text-[11px] sm:text-xs backdrop-blur-xs">
+                      <span className="px-2 py-1 rounded-none bg-black/70 text-white font-bold text-[10px] sm:text-[11px] backdrop-blur-xs">
                         ★ {place.rating?.toFixed(1) || '4.8'}
                       </span>
                     </div>
@@ -141,14 +141,14 @@ export default function PlacesPage() {
                   <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                     <div>
                       <div className="flex items-center justify-between">
-                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 truncate">{place.name}</h3>
-                        <span className="text-[11px] sm:text-xs font-bold text-[#7c2f1d] uppercase shrink-0">{place.type}</span>
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 truncate tracking-tight">{place.name}</h3>
+                        <span className="text-[10px] sm:text-[11px] font-bold text-[#7c2f1d] uppercase tracking-wider shrink-0">{place.type}</span>
                       </div>
                       <p className="text-xs text-slate-500 truncate">{place.address || place.city}</p>
                     </div>
 
                     {place.benefitText && (
-                      <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2">
+                      <div className="p-3 bg-amber-50 rounded-none border border-amber-200 flex items-start gap-2">
                         <span className="text-base shrink-0">🎁</span>
                         <div className="text-[11px] sm:text-xs text-amber-900 font-medium leading-relaxed">
                           <strong>Unbora Perks:</strong> {place.benefitText}
@@ -159,7 +159,7 @@ export default function PlacesPage() {
                     {/* Métricas e Dados Financeiros */}
                     <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-2 text-xs border-t border-slate-100">
                       <div>
-                        <span className="text-slate-400 block text-[10px] sm:text-xs">Plano Atual:</span>
+                        <span className="text-slate-400 block text-[10px] sm:text-xs uppercase tracking-wider font-semibold">Plano Atual:</span>
                         <strong className="text-slate-900 text-[11px] sm:text-xs truncate block">
                           {place.billingModel === 'SUBSCRIPTION'
                             ? `Plano ${place.planTier}`
@@ -167,7 +167,7 @@ export default function PlacesPage() {
                         </strong>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[10px] sm:text-xs">Status Financeiro:</span>
+                        <span className="text-slate-400 block text-[10px] sm:text-xs uppercase tracking-wider font-semibold">Status Financeiro:</span>
                         <span
                           className={`font-bold text-[11px] sm:text-xs ${
                             place.paymentStatus === 'PAID' ? 'text-emerald-600' : 'text-amber-600'
@@ -177,11 +177,11 @@ export default function PlacesPage() {
                         </span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[10px] sm:text-xs">Visualizações:</span>
+                        <span className="text-slate-400 block text-[10px] sm:text-xs uppercase tracking-wider font-semibold">Visualizações:</span>
                         <strong className="text-slate-900">{place.impressionsCount}</strong>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[10px] sm:text-xs">Cliques no Maps:</span>
+                        <span className="text-slate-400 block text-[10px] sm:text-xs uppercase tracking-wider font-semibold">Cliques no Maps:</span>
                         <strong className="text-[#7c2f1d]">{place.clicksCount}</strong>
                       </div>
                     </div>
@@ -193,7 +193,7 @@ export default function PlacesPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleToggle(place.id)}
-                      className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-200 transition"
+                      className="px-2.5 sm:px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider border border-slate-200 text-slate-700 hover:bg-slate-200 transition"
                     >
                       {place.active ? 'Pausar' : 'Ativar'}
                     </button>
@@ -202,7 +202,7 @@ export default function PlacesPage() {
                         setEditingPlace(place);
                         setModalOpen(true);
                       }}
-                      className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-200 transition"
+                      className="px-2.5 sm:px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider border border-slate-200 text-slate-700 hover:bg-slate-200 transition"
                     >
                       Editar
                     </button>
@@ -213,7 +213,7 @@ export default function PlacesPage() {
                       href={place.mapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs font-bold text-[#7c2f1d] hover:underline shrink-0"
+                      className="text-xs font-bold uppercase tracking-wider text-[#7c2f1d] hover:underline shrink-0"
                     >
                       Ver no Maps ↗
                     </a>

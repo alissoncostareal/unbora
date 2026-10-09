@@ -23,11 +23,11 @@ export function HighlightsBarChart({
             {view === 'city' ? 'Destaques por localidade' : 'Destaques por categoria'}
           </p>
         </div>
-        <div className="inline-flex rounded-xl bg-[#f6f2ec] p-1 text-xs">
+        <div className="inline-flex rounded-none bg-[#f6f2ec] p-0.5 text-xs border border-[#e8e0d7]">
           <button
             type="button"
             onClick={() => setView('city')}
-            className={`rounded-lg px-2.5 py-1 font-medium transition-all ${
+            className={`rounded-none px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider transition-all ${
               view === 'city' ? 'bg-white text-[#1c1917] shadow-2xs' : 'text-[#8a8178] hover:text-[#1c1917]'
             }`}
           >
@@ -36,7 +36,7 @@ export function HighlightsBarChart({
           <button
             type="button"
             onClick={() => setView('tag')}
-            className={`rounded-lg px-2.5 py-1 font-medium transition-all ${
+            className={`rounded-none px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider transition-all ${
               view === 'tag' ? 'bg-white text-[#1c1917] shadow-2xs' : 'text-[#8a8178] hover:text-[#1c1917]'
             }`}
           >

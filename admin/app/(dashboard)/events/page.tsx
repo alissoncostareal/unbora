@@ -144,7 +144,7 @@ export default function EventsAdminPage() {
                 key={t.id}
                 type="button"
                 onClick={() => setTab(t.id)}
-                className={`rounded-xl px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all ${
+                className={`rounded-none px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all ${
                   isActive
                     ? 'bg-[#1c1917] text-[#fff8f5] shadow-xs'
                     : 'border border-[#e8e0d7] bg-white text-[#55433e] hover:border-[#1c1917] hover:text-[#1c1917]'
@@ -214,7 +214,7 @@ export default function EventsAdminPage() {
                       {item.status === 'APPROVED' ? 'Aprovado' : item.status === 'PENDING' ? 'Pendente' : 'Recusado'}
                     </Badge>
                     {item.rejectionReason ? (
-                      <p className="mt-1 max-w-[180px] text-[11px] text-rose-700 bg-rose-50 p-1.5 rounded-md border border-rose-200">
+                      <p className="mt-1 max-w-[180px] text-[11px] text-rose-700 bg-rose-50 p-1.5 rounded-none border border-rose-200">
                         {item.rejectionReason}
                       </p>
                     ) : null}
@@ -256,7 +256,7 @@ export default function EventsAdminPage() {
       {/* Reject Event Modal */}
       {rejectTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="w-full max-w-md rounded-none border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
             <h3 className="text-base font-bold text-[#1c1917]">
               Recusar Evento: {rejectTarget.title}
             </h3>

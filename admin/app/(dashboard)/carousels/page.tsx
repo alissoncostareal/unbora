@@ -318,7 +318,7 @@ export default function CarouselsPage() {
                   <DataTableCell>
                     <div className="flex items-center gap-3.5">
                       <div
-                        className="size-12 shrink-0 rounded-xl bg-cover bg-center border border-[#e8e0d7]"
+                        className="size-12 shrink-0 rounded-none bg-cover bg-center border border-[#e8e0d7]"
                         style={{
                           backgroundImage: `url(${item.imageUrl})`,
                           backgroundColor: '#f6f2ec',

@@ -100,7 +100,7 @@ export default function InvoicesPage() {
                         <p className="text-[10px] text-slate-500">{inv.referencePeriod || inv.notes || 'Mensalidade'}</p>
                       </div>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                        className={`px-2 py-0.5 rounded-none text-[9px] font-bold uppercase tracking-wider ${
                           inv.status === 'PAID'
                             ? 'bg-emerald-100 text-emerald-800'
                             : inv.status === 'PENDING'
@@ -114,7 +114,7 @@ export default function InvoicesPage() {
 
                     <div className="flex items-center justify-between pt-1">
                       <div>
-                        <span className="text-[10px] text-slate-400 block">Valor</span>
+                        <span className="text-[10px] uppercase tracking-wider text-slate-400 block">Valor</span>
                         <span className="font-black text-base text-slate-900">
                           R$ {inv.amount.toFixed(2)}
                         </span>
@@ -124,14 +124,14 @@ export default function InvoicesPage() {
                         {inv.status === 'PENDING' ? (
                           <button
                             onClick={() => setSelectedInvoice(inv)}
-                            className="px-4 py-2 bg-emerald-600 active:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-xs transition"
+                            className="px-4 py-2 bg-emerald-600 active:bg-emerald-700 text-white rounded-none font-bold uppercase tracking-wider text-xs shadow-xs transition"
                           >
                             Pagar PIX ❖
                           </button>
                         ) : (
                           <button
                             onClick={() => setSelectedInvoice(inv)}
-                            className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs"
+                            className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-none font-bold uppercase tracking-wider text-xs"
                           >
                             Ver Recibo
                           </button>
@@ -169,7 +169,7 @@ export default function InvoicesPage() {
                         <td className="p-4 text-slate-600">{inv.dueDate || 'À vista'}</td>
                         <td className="p-4">
                           <span
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            className={`px-2.5 py-1 rounded-none text-[10px] font-bold uppercase tracking-wider ${
                               inv.status === 'PAID'
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : inv.status === 'PENDING'
@@ -188,14 +188,14 @@ export default function InvoicesPage() {
                           {inv.status === 'PENDING' ? (
                             <button
                               onClick={() => setSelectedInvoice(inv)}
-                              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow-xs transition"
+                              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-none font-bold uppercase tracking-wider text-xs shadow-xs transition"
                             >
                               Pagar via PIX
                             </button>
                           ) : (
                             <button
                               onClick={() => setSelectedInvoice(inv)}
-                              className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:text-slate-900 rounded-lg font-bold text-xs"
+                              className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:text-slate-900 rounded-none font-bold uppercase tracking-wider text-xs"
                             >
                               Ver Comprovante
                             </button>

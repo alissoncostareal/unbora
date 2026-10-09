@@ -45,13 +45,13 @@ export function Sidebar() {
           {/* Brand Header */}
           <div className="h-16 lg:h-20 flex items-center justify-between px-6 border-b border-slate-800/80">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#7c2f1d] text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">
+              <div className="w-10 h-10 rounded-none bg-[#7c2f1d] text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">
                 U
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-black text-lg text-white tracking-tight">Unbora</span>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#7c2f1d]/40 text-amber-300 border border-amber-400/30">
+                  <span className="font-light text-lg text-white tracking-tight">Unbora</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-none bg-[#7c2f1d]/40 text-amber-300 border border-amber-400/30">
                     Business
                   </span>
                 </div>
@@ -65,7 +65,7 @@ export function Sidebar() {
             <button
               onClick={closeMobile}
               aria-label="Fechar Menu"
-              className="lg:hidden w-8 h-8 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm"
+              className="lg:hidden w-8 h-8 rounded-none bg-slate-800/80 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm cursor-pointer"
             >
               ✕
             </button>
@@ -83,7 +83,7 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   onClick={closeMobile}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-none text-xs font-semibold transition-all ${
                     isActive
                       ? 'bg-[#7c2f1d] text-white shadow-sm font-bold'
                       : 'text-slate-400 hover:bg-white/5 hover:text-slate-100'
@@ -100,7 +100,7 @@ export function Sidebar() {
         {/* User Footer */}
         <div className="p-4 border-t border-slate-800/80 space-y-3">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-lg bg-slate-800 text-amber-400 flex items-center justify-center font-bold text-xs border border-slate-700 shrink-0">
+            <div className="w-8 h-8 rounded-none bg-slate-800 text-amber-400 flex items-center justify-center font-bold text-xs border border-slate-700 shrink-0">
               {user?.name?.charAt(0).toUpperCase() || 'P'}
             </div>
             <div className="min-w-0 flex-1">
@@ -114,7 +114,7 @@ export function Sidebar() {
               closeMobile();
               logout();
             }}
-            className="w-full py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-red-400 hover:bg-red-950/20 border border-slate-800 transition flex items-center justify-center gap-2 active:scale-98"
+            className="w-full py-2 px-3 rounded-none text-xs font-bold text-slate-400 hover:text-red-400 hover:bg-red-950/20 border border-slate-800 transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>🚪</span> Sair da Conta
           </button>

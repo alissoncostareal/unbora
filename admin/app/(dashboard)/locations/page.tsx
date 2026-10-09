@@ -177,7 +177,7 @@ export default function LocationsPage() {
                       key={preset}
                       type="button"
                       onClick={() => setGlobalMax(preset)}
-                      className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all ${
+                      className={`rounded-none border px-2.5 py-1 text-xs font-semibold uppercase tracking-wider transition-all ${
                         globalMax === preset
                           ? 'border-[#9a4632] bg-[#9a4632] text-white shadow-xs'
                           : 'border-[#e8e0d7] bg-white text-[#55433e] hover:border-[#1c1917]'
@@ -189,7 +189,7 @@ export default function LocationsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-[#e8e0d7] bg-[#faf8f5] p-3 text-xs leading-relaxed text-[#73685e]">
+              <div className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-3 text-xs leading-relaxed text-[#73685e]">
                 💡 <strong>Dica:</strong> Se uma busca for feita em uma cidade sem regra personalizada abaixo, o sistema trará até <strong>{globalMax}</strong> experiências verificadas no Google Maps.
               </div>
             </div>
@@ -218,7 +218,7 @@ export default function LocationsPage() {
             className="h-full"
           >
             {settings?.cityLimits && settings.cityLimits.length > 0 ? (
-              <div className="divide-y divide-[#f0eae1] overflow-hidden rounded-xl border border-[#e8e0d7] bg-white">
+              <div className="divide-y divide-[#f0eae1] overflow-hidden rounded-none border border-[#e8e0d7] bg-white">
                 {settings.cityLimits.map((item) => (
                   <div
                     key={item.id}
@@ -239,7 +239,7 @@ export default function LocationsPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className="rounded-lg bg-[#faf2ee] px-2.5 py-1 text-xs font-bold text-[#7c2f1d] border border-[#f0ded6]">
+                      <span className="rounded-none bg-[#faf2ee] px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[#7c2f1d] border border-[#f0ded6]">
                         {item.maxResults} resultados
                       </span>
 
@@ -264,7 +264,7 @@ export default function LocationsPage() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-[#d9cebe] p-8 text-center bg-[#faf8f5]">
+              <div className="rounded-none border border-dashed border-[#d9cebe] p-8 text-center bg-[#faf8f5]">
                 <p className="text-sm font-semibold text-[#55433e]">Nenhuma cidade com limite customizado</p>
                 <p className="mt-1 text-xs text-[#8a8178]">
                   Todas as buscas atualmente usam o padrão global de {globalMax} resultados.
@@ -289,7 +289,7 @@ export default function LocationsPage() {
       {/* City Modal / Drawer */}
       {showCityModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95">
+          <div className="w-full max-w-md rounded-none border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95">
             <h3 className="text-lg font-bold text-[#1c1917]">
               {cityName ? `Configurar Limite para ${cityName}` : 'Nova Cidade com Limite Customizado'}
             </h3>
@@ -329,7 +329,7 @@ export default function LocationsPage() {
                     key={num}
                     type="button"
                     onClick={() => setCityMaxResults(num)}
-                    className={`rounded-md border px-2 py-0.5 text-xs font-semibold transition-colors ${
+                    className={`rounded-none border px-2 py-0.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
                       cityMaxResults === num
                         ? 'border-[#9a4632] bg-[#9a4632] text-white'
                         : 'border-[#e8e0d7] bg-[#faf8f5] text-[#55433e]'
@@ -372,25 +372,25 @@ export default function LocationsPage() {
       {/* App Locality Overview */}
       <Panel title="Padrão do Aplicativo (Fallback)" subtitle="Valores utilizados quando a geolocalização não é fornecida" className="mb-6">
         <div className="grid gap-4 sm:grid-cols-4">
-          <div className="rounded-xl border border-[#e8e0d7] bg-[#faf8f5] p-4">
+          <div className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-4">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8a8178]">Cidade Padrão</p>
             <p className="mt-1.5 text-xl font-semibold text-[#1c1917]">
               {locations?.defaultCity ?? 'Fortaleza'}
             </p>
           </div>
-          <div className="rounded-xl border border-[#e8e0d7] bg-[#faf8f5] p-4">
+          <div className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-4">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8a8178]">Região Padrão</p>
             <p className="mt-1.5 text-xl font-semibold text-[#1c1917]">
               {locations?.defaultRegion ?? 'Grande Fortaleza'}
             </p>
           </div>
-          <div className="rounded-xl border border-[#e8e0d7] bg-[#faf8f5] p-4">
+          <div className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-4">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8a8178]">Cidades Customizadas</p>
             <p className="mt-1.5 text-xl font-semibold text-[#9a4632]">
               {configuredCityCount} configuradas
             </p>
           </div>
-          <div className="rounded-xl border border-[#e8e0d7] bg-[#faf8f5] p-4">
+          <div className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-4">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8a8178]">Total de Municípios CE</p>
             <p className="mt-1.5 text-xl font-semibold text-[#1c1917]">
               {totalCities} mapeados
@@ -414,7 +414,7 @@ export default function LocationsPage() {
                 {region.cities.map((city) => (
                   <li
                     key={`${region.id}-${city}`}
-                    className="rounded-lg border border-[#e8e0d7] bg-[#faf8f5] px-3 py-1.5 text-xs font-medium text-[#1c1917] hover:border-[#9a4632] hover:bg-white transition-colors"
+                    className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] px-3 py-1.5 text-xs font-medium text-[#1c1917] hover:border-[#9a4632] hover:bg-white transition-colors"
                   >
                     {city}
                   </li>

@@ -121,7 +121,7 @@ export default async function UsersPage() {
                     <DataTableRow key={user.id}>
                       <DataTableCell>
                         <div className="flex items-center gap-3">
-                          <div className="grid size-8 shrink-0 place-items-center rounded-full bg-[#faf2ee] text-xs font-semibold text-[#9a4632] border border-[#ebd8d0]">
+                          <div className="grid size-8 shrink-0 place-items-center rounded-none bg-[#faf2ee] text-xs font-semibold text-[#9a4632] border border-[#ebd8d0]">
                             {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                           </div>
                           <div>

@@ -74,14 +74,14 @@ export default function PlansPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-600 shrink-0">Trocar Local:</span>
+              <span className="text-xs text-slate-600 shrink-0 uppercase tracking-wider font-semibold">Trocar Local:</span>
               <select
                 value={selectedPlace?.id || ''}
                 onChange={(e) => {
                   const p = places.find((x) => x.id === e.target.value);
                   if (p) setSelectedPlace(p);
                 }}
-                className="w-full sm:w-auto px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
+                className="w-full sm:w-auto px-3 py-1.5 bg-white border border-slate-200 rounded-none text-xs font-bold text-slate-800 outline-none"
               >
                 {places.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -98,24 +98,24 @@ export default function PlansPage() {
           {plans.map((p) => (
             <div
               key={p.tier}
-              className={`business-card p-5 sm:p-8 flex flex-col justify-between relative ${
-                p.tier === 'SILVER' ? 'border-[#7c2f1d] ring-2 ring-[#7c2f1d]/20' : ''
+              className={`business-card p-5 sm:p-8 flex flex-col justify-between relative rounded-none ${
+                p.tier === 'SILVER' ? 'border-[#7c2f1d] ring-1 ring-[#7c2f1d]' : ''
               }`}
             >
               {p.tier === 'SILVER' && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-1 rounded-full bg-[#7c2f1d] text-white text-[9px] sm:text-[10px] font-black uppercase tracking-wider shadow-sm">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-1 rounded-none bg-[#7c2f1d] text-white text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.14em] shadow-xs">
                   Mais Popular 🔥
                 </div>
               )}
 
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg sm:text-xl font-black text-slate-900">{p.name}</h3>
+                  <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">{p.name}</h3>
                   <p className="text-xs text-slate-500 mt-1">{p.description}</p>
                 </div>
 
                 <div>
-                  <span className="text-2xl sm:text-3xl font-black text-slate-900">
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                     R$ {p.monthlyPrice.toFixed(2)}
                   </span>
                   <span className="text-xs text-slate-400"> / mês</span>
@@ -134,7 +134,7 @@ export default function PlansPage() {
               <div className="pt-6">
                 <button
                   onClick={() => handleChange(p.tier)}
-                  className={`w-full py-3 rounded-xl text-xs font-bold transition shadow-xs active:scale-98 ${
+                  className={`w-full py-3 rounded-none text-xs font-bold uppercase tracking-wider transition shadow-xs active:scale-98 ${
                     selectedPlace?.planTier === p.tier
                       ? 'bg-slate-200 text-slate-700 cursor-default'
                       : 'bg-[#7c2f1d] hover:bg-[#602416] text-white'
@@ -148,13 +148,13 @@ export default function PlansPage() {
         </div>
 
         {/* Modelo por Desempenho CPC */}
-        <div className="business-card p-5 sm:p-8 border-blue-200 space-y-6">
+        <div className="business-card p-5 sm:p-8 border-blue-200 space-y-6 rounded-none">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.14em] text-blue-700">
                 Modelo Alternativo Sem Mensalidade
               </span>
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 tracking-tight">
                 Créditos de Desempenho (CPC)
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1 leading-relaxed">
@@ -162,20 +162,20 @@ export default function PlansPage() {
               </p>
             </div>
             <div className="sm:text-right">
-              <span className="text-2xl sm:text-3xl font-black text-blue-700 block">R$ 0,75</span>
+              <span className="text-2xl sm:text-3xl font-black text-blue-700 block tracking-tight">R$ 0,75</span>
               <span className="text-xs text-slate-400">por clique no Google Maps</span>
             </div>
           </div>
 
           <div className="pt-4 border-t border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-800 block">Recarga Imediata via PIX:</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-800 block">Recarga Imediata via PIX:</span>
               <div className="flex flex-wrap gap-2">
                 {[50, 100, 200, 500].map((val) => (
                   <button
                     key={val}
                     onClick={() => setRechargeVal(val)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border ${
+                    className={`px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition border ${
                       rechargeVal === val
                         ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                         : 'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100'
@@ -189,7 +189,7 @@ export default function PlansPage() {
 
             <button
               onClick={handleRecharge}
-              className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition active:scale-98"
+              className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-none shadow-sm transition active:scale-98"
             >
               Gerar PIX de R$ {rechargeVal},00
             </button>

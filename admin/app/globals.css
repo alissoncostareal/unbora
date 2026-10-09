@@ -66,8 +66,7 @@
 
 @layer components {
   .tabela-card {
-    @apply rounded-2xl border border-border bg-surface transition-shadow;
-    box-shadow: 0 1px 3px rgba(28, 25, 23, 0.03);
+    @apply border border-border bg-surface transition-shadow shadow-xs;
   }
 
   .tabela-card:hover {
@@ -75,7 +74,7 @@
   }
 
   .tabela-nav-item {
-    @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium transition-all duration-150;
+    @apply flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium transition-all duration-150;
   }
 
   .tabela-nav-item--active {
@@ -87,14 +86,14 @@
   }
 
   .tabela-pill {
-    @apply rounded-full px-3 py-1 text-xs font-semibold transition-all;
+    @apply px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-all border border-[#e8e0d7];
   }
 
   .tabela-pill--active {
-    @apply bg-[#1c1917] text-white;
+    @apply bg-[#1c1917] text-white border-[#1c1917];
   }
 
   .tabela-pill--idle {
-    @apply text-muted hover:text-heading;
+    @apply text-muted hover:text-heading bg-white;
   }
 }

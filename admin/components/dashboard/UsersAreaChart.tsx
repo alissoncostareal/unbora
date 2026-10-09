@@ -43,11 +43,11 @@ export function UsersAreaChart({
           </h2>
           <p className="text-xs text-[#8a8178]">Últimos 7 dias (tempo real)</p>
         </div>
-        <div className="inline-flex rounded-xl bg-[#f6f2ec] p-1 text-xs">
+        <div className="inline-flex rounded-none bg-[#f6f2ec] p-0.5 text-xs border border-[#e8e0d7]">
           <button
             type="button"
             onClick={() => setMetric('active')}
-            className={`rounded-lg px-2.5 py-1 font-medium transition-all ${
+            className={`rounded-none px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider transition-all ${
               metric === 'active' ? 'bg-white text-[#1c1917] shadow-2xs' : 'text-[#8a8178] hover:text-[#1c1917]'
             }`}
           >
@@ -56,7 +56,7 @@ export function UsersAreaChart({
           <button
             type="button"
             onClick={() => setMetric('registered')}
-            className={`rounded-lg px-2.5 py-1 font-medium transition-all ${
+            className={`rounded-none px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider transition-all ${
               metric === 'registered' ? 'bg-white text-[#1c1917] shadow-2xs' : 'text-[#8a8178] hover:text-[#1c1917]'
             }`}
           >

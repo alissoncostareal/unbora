@@ -41,9 +41,9 @@ export default function PerksValidatorPage() {
       />
 
       <div className="px-6 sm:px-8 max-w-2xl space-y-6">
-        <div className="business-card p-6 sm:p-8 space-y-6">
+        <div className="business-card p-6 sm:p-8 space-y-6 rounded-none">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center text-xl font-bold">
+            <div className="w-12 h-12 rounded-none bg-amber-100 text-amber-900 flex items-center justify-center text-xl font-bold">
               🎁
             </div>
             <div>
@@ -54,7 +54,7 @@ export default function PerksValidatorPage() {
 
           <form onSubmit={handleValidate} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+              <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 mb-2">
                 Código do Cupom / Voucher
               </label>
               <input
@@ -62,13 +62,13 @@ export default function PerksValidatorPage() {
                 value={voucherCode}
                 onChange={(e) => setVoucherCode(e.target.value)}
                 placeholder="Ex: UNBORA-7749"
-                className="w-full h-14 px-4 text-center text-xl font-mono uppercase font-black rounded-2xl border border-slate-200 outline-none focus:border-[#7c2f1d] tracking-widest"
+                className="w-full h-14 px-4 text-center text-xl font-mono uppercase font-black rounded-none border border-slate-200 outline-none focus:border-[#7c2f1d] tracking-widest"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full h-12 bg-[#7c2f1d] hover:bg-[#602416] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition"
+              className="w-full h-12 bg-[#7c2f1d] hover:bg-[#602416] text-white font-bold uppercase tracking-wider rounded-none text-xs sm:text-sm shadow-sm transition"
             >
               Verificar Cupom
             </button>
@@ -76,7 +76,7 @@ export default function PerksValidatorPage() {
 
           {validationResult && (
             <div
-              className={`p-6 rounded-2xl border transition-all animate-in fade-in ${
+              className={`p-6 rounded-none border transition-all animate-in fade-in ${
                 validationResult.valid
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
                   : 'bg-red-50 border-red-200 text-red-950'

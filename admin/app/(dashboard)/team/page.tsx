@@ -83,10 +83,10 @@ export default function TeamAdminPage() {
           title="Equipe do Portal"
           description="Gerenciamento de administradores e consultores com acesso ao painel."
         />
-        <div className="rounded-2xl border border-[#e8e0d7] bg-white p-12 text-center shadow-xs">
-          <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-[#faf2ee] text-[#9a4632]">
+        <div className="rounded-none border border-[#e8e0d7] bg-white p-12 text-center shadow-xs">
+          <div className="mx-auto mb-3 grid size-12 place-items-center rounded-none bg-[#faf2ee] text-[#9a4632]">
             <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <rect x="3" y="11" width="18" height="11" rx="0" ry="0" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </div>
@@ -196,7 +196,7 @@ export default function TeamAdminPage() {
                     <DataTableRow key={item.id}>
                       <DataTableCell>
                         <div className="flex items-center gap-3">
-                          <div className="grid size-8 shrink-0 place-items-center rounded-full bg-[#1c1917] text-xs font-semibold text-white">
+                          <div className="grid size-8 shrink-0 place-items-center rounded-none bg-[#1c1917] text-xs font-semibold text-white">
                             {item.name ? item.name.charAt(0).toUpperCase() : 'A'}
                           </div>
                           <div>

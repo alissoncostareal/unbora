@@ -21,7 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <div className="min-h-screen bg-[#0f1115] flex items-center justify-center text-white">
         <div className="text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#7c2f1d] text-white flex items-center justify-center font-black text-xl mx-auto animate-pulse">
+          <div className="w-12 h-12 rounded-none bg-[#7c2f1d] text-white flex items-center justify-center font-black text-xl mx-auto animate-pulse">
             U
           </div>
           <p className="text-xs text-slate-400 font-medium">Carregando Portal do Parceiro...</p>

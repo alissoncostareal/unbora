@@ -198,7 +198,7 @@ function OptionSection({
   return (
     <Panel title={title} subtitle={hint}>
       <div className="space-y-4">
-        <ul className="divide-y divide-[#f0e9e1] rounded-xl border border-[#e8e0d7] bg-[#faf8f5]/60 overflow-hidden">
+        <ul className="divide-y divide-[#f0e9e1] rounded-none border border-[#e8e0d7] bg-[#faf8f5]/60 overflow-hidden">
           {items.length === 0 ? (
             <li className="p-4 text-center text-xs text-[#8a8178]">Nenhuma opção cadastrada nesta etapa.</li>
           ) : (
@@ -241,7 +241,7 @@ function OptionSection({
         </ul>
 
         {/* Add option form */}
-        <form className="rounded-xl border border-[#e8e0d7] bg-[#faf8f5] p-4.5" onSubmit={add}>
+        <form className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-4.5" onSubmit={add}>
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[#1c1917]">
             + Adicionar nova opção em {title.split('(')[0]}
           </p>

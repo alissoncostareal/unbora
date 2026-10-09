@@ -90,9 +90,9 @@ export default async function DashboardPage() {
         <>
           {/* Attention Banner if events need moderation */}
           {pendingEvents > 0 ? (
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/90 p-4.5 shadow-2xs">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-none border border-amber-200 bg-amber-50/90 p-4.5 shadow-2xs">
               <div className="flex items-center gap-3">
-                <div className="grid size-9 place-items-center rounded-xl bg-amber-500 text-white shadow-xs">
+                <div className="grid size-9 place-items-center rounded-none bg-amber-500 text-white shadow-xs">
                   <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
@@ -172,9 +172,9 @@ export default async function DashboardPage() {
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Link
               href="/guide"
-              className="flex items-center gap-3 rounded-2xl border border-[#e8e0d7] bg-white p-3.5 transition-all hover:border-[#9a4632] hover:bg-[#faf8f5] shadow-2xs group"
+              className="flex items-center gap-3 rounded-none border border-[#e8e0d7] bg-white p-3.5 transition-all hover:border-[#9a4632] hover:bg-[#faf8f5] shadow-2xs group"
             >
-              <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-[#faf2ee] text-[#9a4632]">
+              <div className="grid size-8 shrink-0 place-items-center rounded-none bg-[#faf2ee] text-[#9a4632]">
                 <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
@@ -190,9 +190,9 @@ export default async function DashboardPage() {
 
             <Link
               href="/ban-list"
-              className="flex items-center gap-3 rounded-2xl border border-[#e8e0d7] bg-white p-3.5 transition-all hover:border-[#9a4632] hover:bg-[#faf8f5] shadow-2xs group"
+              className="flex items-center gap-3 rounded-none border border-[#e8e0d7] bg-white p-3.5 transition-all hover:border-[#9a4632] hover:bg-[#faf8f5] shadow-2xs group"
             >
-              <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-[#fee2e2] text-[#991b1b]">
+              <div className="grid size-8 shrink-0 place-items-center rounded-none bg-[#fee2e2] text-[#991b1b]">
                 <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
@@ -206,9 +206,9 @@ export default async function DashboardPage() {
 
             <Link
               href="/notifications"
-              className="flex items-center gap-3 rounded-2xl border border-[#e8e0d7] bg-white p-3.5 transition-all hover:border-[#9a4632] hover:bg-[#faf8f5] shadow-2xs group"
+              className="flex items-center gap-3 rounded-none border border-[#e8e0d7] bg-white p-3.5 transition-all hover:border-[#9a4632] hover:bg-[#faf8f5] shadow-2xs group"
             >
-              <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-[#eef2ff] text-[#3730a3]">
+              <div className="grid size-8 shrink-0 place-items-center rounded-none bg-[#eef2ff] text-[#3730a3]">
                 <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -222,9 +222,9 @@ export default async function DashboardPage() {
 
             <Link
               href="/users"
-              className="flex items-center gap-3 rounded-2xl border border-[#e8e0d7] bg-white p-3.5 transition-all hover:border-[#9a4632] hover:bg-[#faf8f5] shadow-2xs group"
+              className="flex items-center gap-3 rounded-none border border-[#e8e0d7] bg-white p-3.5 transition-all hover:border-[#9a4632] hover:bg-[#faf8f5] shadow-2xs group"
             >
-              <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-[#f0fdf4] text-[#166534]">
+              <div className="grid size-8 shrink-0 place-items-center rounded-none bg-[#f0fdf4] text-[#166534]">
                 <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
@@ -271,7 +271,7 @@ export default async function DashboardPage() {
                       <Badge variant="pending">Pendente</Badge>
                       <Link
                         href="/events"
-                        className="rounded-lg border border-[#e8e0d7] bg-white px-2.5 py-1 text-xs font-semibold text-[#1c1917] hover:border-[#1c1917]"
+                        className="rounded-none border border-[#e8e0d7] bg-white px-2.5 py-1 text-xs font-semibold text-[#1c1917] hover:border-[#1c1917]"
                       >
                         Revisar
                       </Link>
@@ -325,7 +325,7 @@ export default async function DashboardPage() {
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div
-                          className="size-10 shrink-0 rounded-xl bg-cover bg-center border border-[#e8e0d7]"
+                          className="size-10 shrink-0 rounded-none bg-cover bg-center border border-[#e8e0d7]"
                           style={{
                             backgroundImage: `url(${item.imageUrl})`,
                             backgroundColor: '#f6f2ec',

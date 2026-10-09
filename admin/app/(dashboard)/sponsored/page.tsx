@@ -666,7 +666,7 @@ export default function SponsoredPlacesPage() {
             </div>
 
             {/* SEÇÃO 2: Modelo de Cobrança (Monetização) */}
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/30 p-5">
+            <div className="rounded-none border border-emerald-200 bg-emerald-50/30 p-5">
               <div className="flex items-center gap-2 text-emerald-950 font-bold text-sm">
                 <span>💰</span>
                 <span>2. Modelo de Cobrança & Monetização</span>
@@ -824,7 +824,7 @@ export default function SponsoredPlacesPage() {
             </div>
 
             {/* SEÇÃO 3: Vantagem Exclusiva & Curadoria */}
-            <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4">
+            <div className="rounded-none border border-amber-300 bg-amber-50/70 p-4">
               <div className="flex items-center gap-2 text-amber-900 font-semibold text-sm">
                 <span>🎁</span>
                 <span>3. Selo de Benefício Exclusivo (Unbora Perks)</span>
@@ -901,7 +901,7 @@ export default function SponsoredPlacesPage() {
             </div>
 
             {/* Placement Toggles */}
-            <div className="rounded-xl border border-[#e8e0d7] bg-white p-4">
+            <div className="rounded-none border border-[#e8e0d7] bg-white p-4">
               <h3 className="text-sm font-semibold text-ink">Canais de Exibição & Veiculação</h3>
               <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <CheckboxField
@@ -944,7 +944,7 @@ export default function SponsoredPlacesPage() {
                 placeholder="Buscar por nome, tipo, benefício ou contato..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full max-w-xs rounded-lg border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink placeholder:text-muted focus:border-ink focus:outline-none"
+                className="w-full max-w-xs rounded-none border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink placeholder:text-muted focus:border-ink focus:outline-none"
               />
 
               <input
@@ -952,13 +952,13 @@ export default function SponsoredPlacesPage() {
                 placeholder="Filtrar por cidade..."
                 value={filterCity}
                 onChange={(e) => setFilterCity(e.target.value)}
-                className="w-36 rounded-lg border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink placeholder:text-muted focus:border-ink focus:outline-none"
+                className="w-36 rounded-none border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink placeholder:text-muted focus:border-ink focus:outline-none"
               />
 
               <select
                 value={filterPayment}
                 onChange={(e) => setFilterPayment(e.target.value)}
-                className="rounded-lg border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink focus:border-ink focus:outline-none"
+                className="rounded-none border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink focus:border-ink focus:outline-none"
               >
                 <option value="ALL">Todos os status financeiros</option>
                 <option value="PAID">🟢 Em Dia</option>
@@ -970,7 +970,7 @@ export default function SponsoredPlacesPage() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
-                className="rounded-lg border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink focus:border-ink focus:outline-none"
+                className="rounded-none border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink focus:border-ink focus:outline-none"
               >
                 <option value="ALL">Todos os status</option>
                 <option value="ACTIVE">Apenas veiculando</option>
@@ -1015,7 +1015,7 @@ export default function SponsoredPlacesPage() {
                     {/* Local */}
                     <DataTableCell>
                       <div className="flex items-center gap-3">
-                        <div className="size-12 shrink-0 overflow-hidden rounded-lg bg-[#e7e0d8]">
+                        <div className="size-12 shrink-0 overflow-hidden rounded-none bg-[#e7e0d8]">
                           {item.imageUrl ? (
                             <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" loading="lazy" />
                           ) : (
@@ -1026,7 +1026,7 @@ export default function SponsoredPlacesPage() {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <p className="font-semibold text-ink">{item.name}</p>
                             {item.merchantName && (
-                              <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold">
+                              <span className="px-1.5 py-0.5 rounded-none bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold">
                                 🏢 {item.merchantName}
                               </span>
                             )}
@@ -1261,9 +1261,9 @@ export default function SponsoredPlacesPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Plano Bronze */}
-            <Panel className="p-5 border-[#e8e0d7] flex flex-col justify-between">
+            <Panel className="p-5 border-[#e8e0d7] flex flex-col justify-between rounded-none">
               <div>
-                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-amber-800">
+                <span className="rounded-none bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">
                   Entrada
                 </span>
                 <h3 className="mt-2 text-xl font-bold text-ink">Plano Bronze</h3>
@@ -1281,9 +1281,9 @@ export default function SponsoredPlacesPage() {
             </Panel>
 
             {/* Plano Prata */}
-            <Panel className="p-5 border-blue-200 bg-blue-50/20 flex flex-col justify-between">
+            <Panel className="p-5 border-blue-200 bg-blue-50/20 flex flex-col justify-between rounded-none">
               <div>
-                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-blue-800">
+                <span className="rounded-none bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-800">
                   Mais Popular
                 </span>
                 <h3 className="mt-2 text-xl font-bold text-ink">Plano Prata</h3>
@@ -1304,9 +1304,9 @@ export default function SponsoredPlacesPage() {
             </Panel>
 
             {/* Plano Ouro */}
-            <Panel className="p-5 border-amber-300 bg-gradient-to-br from-amber-50/40 to-white flex flex-col justify-between shadow-xs">
+            <Panel className="p-5 border-amber-300 bg-gradient-to-br from-amber-50/40 to-white flex flex-col justify-between shadow-xs rounded-none">
               <div>
-                <span className="rounded-full bg-amber-500 text-white px-2.5 py-0.5 text-[10px] font-bold uppercase">
+                <span className="rounded-none bg-amber-500 text-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
                   VIP / Completo
                 </span>
                 <h3 className="mt-2 text-xl font-bold text-ink">Plano Ouro VIP</h3>
@@ -1360,7 +1360,7 @@ export default function SponsoredPlacesPage() {
                   href="https://unbora.com.br/merchant"
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-[#e8e0d7] text-ink hover:bg-[#faf8f5] transition flex items-center gap-1.5"
+                  className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-none border border-[#e8e0d7] text-ink hover:bg-[#faf8f5] transition flex items-center gap-1.5"
                 >
                   <span>🔗</span> Ver no Portal Público
                 </a>
@@ -1369,7 +1369,7 @@ export default function SponsoredPlacesPage() {
 
             <form onSubmit={handleSavePartnerSettings} className="mt-6 space-y-6">
               {/* 1. Cabeçalho / Hero */}
-              <div className="rounded-2xl border border-[#e8e0d7] bg-[#faf8f5] p-5 space-y-4">
+              <div className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-5 space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-2">
                   <span>✨</span> Destaque Principal (Hero & Badge)
                 </h3>
@@ -1413,9 +1413,9 @@ export default function SponsoredPlacesPage() {
               {/* 2. Três Recursos / Destaques */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Feature 1 */}
-                <div className="rounded-2xl border border-[#e8e0d7] bg-white p-5 space-y-3">
+                <div className="rounded-none border border-[#e8e0d7] bg-white p-5 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink">
-                    <span className="w-6 h-6 rounded-lg bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d] text-xs">1</span>
+                    <span className="w-6 h-6 rounded-none bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d] text-xs font-bold">1</span>
                     Destaque 1 (Slot de Ouro)
                   </div>
                   <Field label="Título">
@@ -1439,9 +1439,9 @@ export default function SponsoredPlacesPage() {
                 </div>
 
                 {/* Feature 2 */}
-                <div className="rounded-2xl border border-[#e8e0d7] bg-white p-5 space-y-3">
+                <div className="rounded-none border border-[#e8e0d7] bg-white p-5 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink">
-                    <span className="w-6 h-6 rounded-lg bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d] text-xs">2</span>
+                    <span className="w-6 h-6 rounded-none bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d] text-xs font-bold">2</span>
                     Destaque 2 (Benefício/Perks)
                   </div>
                   <Field label="Título">
@@ -1465,9 +1465,9 @@ export default function SponsoredPlacesPage() {
                 </div>
 
                 {/* Feature 3 */}
-                <div className="rounded-2xl border border-[#e8e0d7] bg-white p-5 space-y-3">
+                <div className="rounded-none border border-[#e8e0d7] bg-white p-5 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink">
-                    <span className="w-6 h-6 rounded-lg bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d] text-xs">3</span>
+                    <span className="w-6 h-6 rounded-none bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d] text-xs font-bold">3</span>
                     Destaque 3 (Pagamentos/PIX)
                   </div>
                   <Field label="Título">
@@ -1492,7 +1492,7 @@ export default function SponsoredPlacesPage() {
               </div>
 
               {/* 3. Botões de Ação (CTA) */}
-              <div className="rounded-2xl border border-[#e8e0d7] bg-[#faf8f5] p-5 space-y-4">
+              <div className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-5 space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-2">
                   <span>🎯</span> Botões de Ação (Chamadas para Ação)
                 </h3>
@@ -1523,7 +1523,7 @@ export default function SponsoredPlacesPage() {
               </div>
 
               {/* Live Preview Box */}
-              <div className="rounded-2xl border border-[#eadfd4] bg-white p-6 shadow-xs space-y-4">
+              <div className="rounded-none border border-[#eadfd4] bg-white p-6 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
                     <span>👁️</span> Pré-visualização em Tempo Real
@@ -1531,8 +1531,8 @@ export default function SponsoredPlacesPage() {
                   <span className="text-[10px] text-muted">Como os futuros parceiros verão no portal</span>
                 </div>
 
-                <div className="bg-[#faf8f5] p-6 rounded-xl border border-[#eadfd4] text-center space-y-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#7c2f1d]/10 text-[#7c2f1d] text-xs font-semibold uppercase tracking-wider">
+                <div className="bg-[#faf8f5] p-6 rounded-none border border-[#eadfd4] text-center space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-none bg-[#7c2f1d]/10 text-[#7c2f1d] text-xs font-semibold uppercase tracking-wider">
                     {partnerSettingsForm.badgeText || 'Badge'}
                   </div>
                   <h4 className="text-xl sm:text-2xl font-black text-[#1e1b19]">
@@ -1542,10 +1542,10 @@ export default function SponsoredPlacesPage() {
                     {partnerSettingsForm.subheadline || 'Subheadline descritiva...'}
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                    <span className="px-4 py-2 bg-[#7c2f1d] text-white font-bold text-xs rounded-xl shadow-xs">
+                    <span className="px-4 py-2 bg-[#7c2f1d] text-white font-bold text-xs uppercase tracking-wider rounded-none shadow-xs">
                       {partnerSettingsForm.ctaPrimaryText || 'Botão Primário'}
                     </span>
-                    <span className="px-4 py-2 bg-white border border-[#eadfd4] text-[#1e1b19] font-bold text-xs rounded-xl">
+                    <span className="px-4 py-2 bg-white border border-[#eadfd4] text-[#1e1b19] font-bold text-xs uppercase tracking-wider rounded-none">
                       {partnerSettingsForm.ctaSecondaryText || 'Botão Secundário'}
                     </span>
                   </div>
@@ -1573,7 +1573,7 @@ export default function SponsoredPlacesPage() {
       {/* Modal: Recarga de Créditos CPC */}
       {rechargeTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
+          <div className="w-full max-w-md rounded-none border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
             <h3 className="text-lg font-bold text-ink">⚡ Recarregar Créditos (CPC)</h3>
             <p className="text-xs text-muted mt-1">
               Adicione saldo de desempenho para <strong>{rechargeTarget.name}</strong>.
@@ -1586,7 +1586,7 @@ export default function SponsoredPlacesPage() {
                     key={amt}
                     type="button"
                     onClick={() => setRechargeAmount(amt)}
-                    className={`flex-1 rounded-xl border py-2 text-xs font-bold transition-all ${
+                    className={`flex-1 rounded-none border py-2 text-xs font-bold transition-all ${
                       rechargeAmount === amt
                         ? 'border-ink bg-ink text-white shadow-xs'
                         : 'border-[#e8e0d7] bg-white text-ink hover:bg-[#faf8f5]'
@@ -1636,7 +1636,7 @@ export default function SponsoredPlacesPage() {
       {/* Modal: Emitir Nova Fatura */}
       {newInvoiceTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
+          <div className="w-full max-w-md rounded-none border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
             <h3 className="text-lg font-bold text-ink">📄 Emitir Fatura de Mensalidade</h3>
             <p className="text-xs text-muted mt-1">
               Gerar cobrança para <strong>{newInvoiceTarget.name}</strong>.
@@ -1679,7 +1679,7 @@ export default function SponsoredPlacesPage() {
       {/* Modal: Visualizador de PIX Copia e Cola */}
       {pixModalData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
+          <div className="w-full max-w-md rounded-none border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
             <div className="flex items-center gap-2 text-emerald-700 font-bold">
               <span>🔑</span>
               <h3 className="text-base font-bold">Cobrança PIX Gerada</h3>
@@ -1689,7 +1689,7 @@ export default function SponsoredPlacesPage() {
               <strong>{pixModalData.name}</strong>.
             </p>
 
-            <div className="mt-4 rounded-xl border border-[#e8e0d7] bg-[#faf8f5] p-3">
+            <div className="mt-4 rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-3">
               <p className="text-[11px] font-bold uppercase text-muted">Código PIX Copia e Cola:</p>
               <p className="mt-1 break-all font-mono text-[11px] text-ink select-all">{pixModalData.pixCode}</p>
             </div>
