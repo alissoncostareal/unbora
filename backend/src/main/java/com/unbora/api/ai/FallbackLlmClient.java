@@ -78,7 +78,7 @@ public class FallbackLlmClient {
                     .uri(URI.create(baseUrl + "/chat/completions"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
-                    .timeout(Duration.ofSeconds(120));
+                    .timeout(Duration.ofSeconds(15));
             if (!apiKey.isBlank()) {
                 builder.header("Authorization", "Bearer " + apiKey);
             }

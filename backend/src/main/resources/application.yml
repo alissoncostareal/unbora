@@ -65,7 +65,7 @@ unbora:
     name: ${SUPERADMIN_NAME:Super Admin}
   groq:
     api-key: ${GROQ_API_KEY:}
-    model: ${GROQ_MODEL:llama-3.1-8b-instant}
+    model: ${GROQ_MODEL:openai/gpt-oss-20b}
   llm-fallback:
     api-key: ${LLM_FALLBACK_API_KEY:}
     base-url: ${LLM_FALLBACK_BASE_URL:}

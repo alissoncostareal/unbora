@@ -39,27 +39,27 @@ public class GroqClient {
 
     /**
      * Modelos de ultra-baixa latência e alta velocidade suportados oficialmente pela Groq.
-     * llama-3.1-8b-instant processa >800 tokens/s e responde em ~300ms.
+     * openai/gpt-oss-20b e qwen/qwen3.8-27b processam em ~120ms - 280ms no LPU.
      */
     private static final List<String> FAST_GROQ_MODELS = List.of(
-            "llama-3.1-8b-instant",
-            "llama-3.3-70b-versatile",
-            "mixtral-8x7b-32768",
-            "gemma2-9b-it"
+            "openai/gpt-oss-20b",
+            "qwen/qwen3.8-27b",
+            "openai/gpt-oss-120b",
+            "allam-2-7b"
     );
 
     public GroqClient(
             @Value("${unbora.groq.api-key:}") String groqApiKey,
-            @Value("${unbora.groq.model:llama-3.1-8b-instant}") String configuredModel,
+            @Value("${unbora.groq.model:openai/gpt-oss-20b}") String configuredModel,
             @Value("${unbora.brave.api-key:}") String braveKey,
             FallbackLlmClient fallbackLlmClient
     ) {
         this.groqApiKey = groqApiKey != null ? groqApiKey.trim() : "";
-        String model = configuredModel != null ? configuredModel.trim() : "llama-3.1-8b-instant";
+        String model = configuredModel != null ? configuredModel.trim() : "openai/gpt-oss-20b";
         
-        // Corrige modelos legados/inválidos para o modelo ultra-rápido instantâneo
-        if (model.isBlank() || model.contains("qwen") || model.contains("compound") || model.contains("gpt-oss")) {
-            model = "llama-3.1-8b-instant";
+        // Corrige modelos legados/inexistentes para o modelo ultra-rápido suportado
+        if (model.isBlank() || model.contains("llama-3.1") || model.contains("mixtral") || model.contains("compound")) {
+            model = "openai/gpt-oss-20b";
         }
         this.configuredModel = model;
         this.braveKey = braveKey != null ? braveKey.trim() : "";
