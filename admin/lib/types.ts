@@ -189,6 +189,9 @@ export interface SponsoredPlaceItem {
   cnpjCpf?: string;
   billingNotes?: string;
   autoRenew?: boolean;
+  merchantId?: string;
+  merchantName?: string;
+  merchantEmail?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -228,12 +231,16 @@ export interface SaveSponsoredPlaceInput {
   cnpjCpf?: string;
   billingNotes?: string;
   autoRenew?: boolean;
+  merchantId?: string;
+  merchantName?: string;
+  merchantEmail?: string;
 }
 
 export interface SponsoredInvoiceItem {
   id: string;
   sponsoredPlaceId: string;
   placeName: string;
+  merchantId?: string;
   amount: number;
   dueDate: string;
   paidAt?: string;

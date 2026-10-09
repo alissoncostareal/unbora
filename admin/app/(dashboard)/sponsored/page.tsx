@@ -718,8 +718,18 @@ export default function SponsoredPlacesPage() {
                 </div>
               </div>
 
-              {/* Dados de Contato Comercial */}
-              <div className="mt-4 pt-4 border-t border-emerald-200/80 grid grid-cols-1 gap-3 sm:grid-cols-4">
+              {/* Dados de Contato Comercial & Lojista */}
+              <div className="mt-4 pt-4 border-t border-emerald-200/80 grid grid-cols-1 gap-3 sm:grid-cols-5">
+                <Field label="Empresa / Lojista">
+                  <input
+                    type="text"
+                    placeholder="Ex: Brava Wine Brasil"
+                    value={form.merchantName || ''}
+                    onChange={(e) => setForm({ ...form, merchantName: e.target.value })}
+                    className={`${inputClassName} bg-white`}
+                  />
+                </Field>
+
                 <Field label="Contato / Dono">
                   <input
                     type="text"
@@ -962,10 +972,17 @@ export default function SponsoredPlacesPage() {
                           )}
                         </div>
                         <div>
-                          <p className="font-semibold text-ink">{item.name}</p>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-semibold text-ink">{item.name}</p>
+                            {item.merchantName && (
+                              <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold">
+                                🏢 {item.merchantName}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-muted">{item.type || 'Estabelecimento'}</p>
                           {item.contactName ? (
-                            <p className="text-[11px] text-muted/80">👤 {item.contactName}</p>
+                            <p className="text-[11px] text-muted/80">👤 {item.contactName} {item.contactPhone ? `· ${item.contactPhone}` : ''}</p>
                           ) : null}
                         </div>
                       </div>

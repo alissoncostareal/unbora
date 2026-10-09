@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(dashboard)/layout,_N_T_/(dashboard)/perks/layout,_N_T_/(dashboard)/perks/page,_N_T_/perks"
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/19a99617cc292342dd5ae29b2ec785881fc4dc4b5bd2e6ba618c3d544abe816d/$/perks",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/(dashboard)/perks/page"
+    },
+    "isFallback": false
+  }
+}
