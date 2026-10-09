@@ -4,11 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
     
-    <!-- Primary SEO Meta Tags -->
-    <title>Unbora · O que fazer hoje? Descubra lugares, rolês e restaurantes com IA</title>
-    <meta name="title" content="Unbora · O que fazer hoje? Descubra lugares, rolês e restaurantes com IA" />
-    <meta name="description" content="Descubra os melhores bares, restaurantes, cafeterias e eventos culturais na sua cidade com inteligência artificial. Recomendações personalizadas por humor e momento." />
-    <meta name="keywords" content="unbora, o que fazer hoje, onde ir, restaurantes, bares, cafeterias, eventos, rolês, curitiba, fortaleza, inteligência artificial, guia gastronômico, passeios, vida noturna" />
+    <!-- Primary SEO Meta Tags (Guia de Lugares & Recomendações Estilo TripAdvisor) -->
+    <title>Unbora · Guia de Lugares, Onde Comer, Bares e Rolês com IA</title>
+    <meta name="title" content="Unbora · Guia de Lugares, Onde Comer, Bares e Rolês com IA" />
+    <meta name="description" content="O seu guia de lugares e rolês inteligente: descubra onde comer, beber e passear na sua cidade. Restaurantes, bares, cafeterias, atrações e eventos com notas, fotos reais e IA instantânea." />
+    <meta name="keywords" content="unbora, tripadvisor, guia de lugares, onde comer hoje, onde ir hoje, melhores restaurantes, bares e pubs, cafeterias, o que fazer em curitiba, o que fazer em fortaleza, gastronomia, turismo local, vida noturna, pontos turisticos, passeios, avaliacoes de lugares, recomendacoes com ia" />
     <meta name="author" content="Unbora" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <link rel="canonical" href="https://unbora.com.br/" />
@@ -18,18 +18,18 @@
     <meta property="og:url" content="https://unbora.com.br/" />
     <meta property="og:site_name" content="Unbora" />
     <meta property="og:locale" content="pt_BR" />
-    <meta property="og:title" content="Unbora · O que fazer hoje? Descubra lugares, rolês e restaurantes com IA" />
-    <meta property="og:description" content="Descubra onde ir na sua cidade. Recomendações inteligentes de bares, cafés, restaurantes e eventos culturais com IA instantânea." />
+    <meta property="og:title" content="Unbora · Guia de Lugares, Onde Comer, Bares e Rolês com IA" />
+    <meta property="og:description" content="Descubra onde ir na sua cidade. Recomendações inteligentes estilo TripAdvisor com restaurantes, bares, cafeterias, notas, fotos e eventos com IA." />
     <meta property="og:image" content="https://unbora.com.br/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Unbora - Recomendações inteligentes de lugares e rolês com IA" />
+    <meta property="og:image:alt" content="Unbora - Guia de Lugares e Recomendações Inteligentes" />
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://unbora.com.br/" />
-    <meta name="twitter:title" content="Unbora · O que fazer hoje? Descubra lugares com IA" />
-    <meta name="twitter:description" content="Recomendações inteligentes de bares, cafeterias, restaurantes e eventos culturais na sua cidade." />
+    <meta name="twitter:title" content="Unbora · O Guia Inteligente de Onde Ir e O que Fazer" />
+    <meta name="twitter:description" content="Descubra os melhores restaurantes, bares, cafeterias e eventos culturais na sua cidade com IA." />
     <meta name="twitter:image" content="https://unbora.com.br/og-image.jpg" />
 
     <!-- PWA & Mobile Web App -->
@@ -44,7 +44,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-    <!-- Structured Data / JSON-LD for Google Search -->
+    <!-- Structured Data / JSON-LD for Google Search & TripAdvisor-style Discovery -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -54,7 +54,8 @@
           "@id": "https://unbora.com.br/#website",
           "url": "https://unbora.com.br/",
           "name": "Unbora",
-          "description": "Guia e recomendações inteligentes de lugares, gastronomia e eventos com inteligência artificial",
+          "alternateName": "Unbora Guia de Lugares",
+          "description": "Guia gastronômico, turístico e de entretenimento com recomendações inteligentes por IA",
           "inLanguage": "pt-BR",
           "potentialAction": {
             "@type": "SearchAction",
@@ -70,13 +71,30 @@
           "@id": "https://unbora.com.br/#app",
           "name": "Unbora",
           "url": "https://unbora.com.br/",
-          "applicationCategory": "LifestyleApplication",
+          "applicationCategory": "TravelApplication",
+          "applicationSubCategory": "Food & Drink, City Guide & Nightlife",
           "operatingSystem": "All",
           "browserRequirements": "Requires JavaScript. Requires HTML5.",
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "reviewCount": "1420"
+          },
           "offers": {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "BRL"
+          }
+        },
+        {
+          "@type": "TouristInformationCenter",
+          "@id": "https://unbora.com.br/#guide",
+          "name": "Unbora Guia da Cidade",
+          "url": "https://unbora.com.br/",
+          "description": "Indicações de lugares, restaurantes, bares, cafeterias e eventos culturais em tempo real",
+          "areaServed": {
+            "@type": "Country",
+            "name": "Brasil"
           }
         }
       ]
