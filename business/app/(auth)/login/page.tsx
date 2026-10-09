@@ -75,10 +75,10 @@ export default function LoginPage() {
         {/* Lado Direito - Formulário de Acesso */}
         <section className="flex flex-col justify-center bg-white p-8 sm:p-12 lg:col-span-7 lg:p-20">
           <div className="mx-auto flex w-full max-w-md flex-col gap-8">
-            {/* Header com Ícone e Título */}
+            {/* Header com Identidade Visual Business */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#121212] shadow-sm ring-1 ring-black/5">
+                <div className="flex h-10 w-10 items-center justify-center bg-[#121212] shadow-sm">
                   <svg viewBox="0 0 512 512" className="h-5 w-5" fill="none">
                     <path
                       d="M 148,112 C 148,103.16 155.16,96 164,96 L 204,96 C 212.84,96 220,103.16 220,112 L 220,264 C 220,283.88 236.12,300 256,300 C 275.88,300 292,283.88 292,264 L 292,112 C 292,103.16 299.16,96 308,96 L 348,96 C 356.84,96 364,103.16 364,112 L 364,264 C 364,323.65 315.65,372 256,372 C 196.35,372 148,323.65 148,264 Z"
@@ -88,8 +88,8 @@ export default function LoginPage() {
                   </svg>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-[24px] font-semibold tracking-tight text-[#1e1b19]">Unbora</span>
-                  <span className="ml-2 rounded border border-[#dbc1bb]/80 bg-[#faf2ee] px-2 py-0.5 text-[11px] font-bold tracking-[0.14em] text-[#7c2f1d] uppercase">
+                  <span className="text-[26px] font-light tracking-tight text-[#1e1b19]">Unbora</span>
+                  <span className="ml-2.5 border border-[#dbc1bb] bg-[#faf2ee] px-2.5 py-0.5 text-[11px] font-bold tracking-[0.14em] text-[#7c2f1d] uppercase">
                     Business
                   </span>
                 </div>
@@ -97,15 +97,15 @@ export default function LoginPage() {
 
               <p className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.12em] text-[#55433e] uppercase">
                 <span className="h-2 w-2 bg-[#7c2f1d]" aria-hidden />
-                Portal do Parceiro
+                Portal do Parceiro & Lojista
               </p>
 
               <h1 className="text-[2.25rem] sm:text-[2.5rem] leading-tight font-light tracking-tight text-[#1e1b19]">
-                Acesse sua conta.
+                Acesse o painel do seu negócio.
               </h1>
 
               <p className="text-[15px] leading-6 text-[#55433e]">
-                Acesse sua conta para gerenciar estabelecimentos, métricas e faturas PIX
+                Gerencie seus estabelecimentos parceiros, acompanhe métricas de conversão e recargas de anúncios PIX.
               </p>
             </div>
 
@@ -128,7 +128,7 @@ export default function LoginPage() {
 
             {/* Mensagem de Erro */}
             {error && (
-              <div className="p-3 bg-[#fdf2f0] border border-[#f5c6cb] text-[#9a4632] text-xs rounded-lg font-medium">
+              <div className="p-3 bg-[#fdf2f0] border border-[#dbc1bb] text-[#9a4632] text-xs font-medium">
                 {error}
               </div>
             )}
