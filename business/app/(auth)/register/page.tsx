@@ -4,10 +4,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import { GoogleAuthButton } from '@/components/GoogleAuthButton';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, loginGoogle } = useAuth();
   const [name, setName] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [email, setEmail] = useState('');
@@ -24,6 +25,19 @@ export default function RegisterPage() {
       router.replace('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao cadastrar');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleSuccess(credential: string) {
+    setError('');
+    setLoading(true);
+    try {
+      await loginGoogle(credential);
+      router.replace('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha no cadastro com Google');
     } finally {
       setLoading(false);
     }
@@ -50,6 +64,22 @@ export default function RegisterPage() {
               {error}
             </div>
           )}
+
+          <div className="space-y-4">
+            <GoogleAuthButton
+              label="Cadastrar com Google"
+              onCredential={handleGoogleSuccess}
+              onError={setError}
+            />
+
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-slate-800" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                ou preencha os dados
+              </span>
+              <div className="flex-1 h-px bg-slate-800" />
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

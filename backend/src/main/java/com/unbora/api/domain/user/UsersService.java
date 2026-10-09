@@ -237,6 +237,9 @@ public class UsersService {
                 user.setName(name);
             }
             if (platform != null) user.setPlatform(platform);
+            if ("business_web".equalsIgnoreCase(platform) && !"merchant".equalsIgnoreCase(user.getRole())) {
+                user.setRole("merchant");
+            }
             PublicUserDto saved = toPublic(userRepository.save(user));
 
             kafkaEventPublisher.publishUserActivity(new UserActivityEvent(
@@ -258,7 +261,7 @@ public class UsersService {
         newUser.setEmail(email);
         newUser.setGuest(false);
         newUser.setPlatform(platform);
-        newUser.setRole("user");
+        newUser.setRole("business_web".equalsIgnoreCase(platform) ? "merchant" : "user");
         newUser.setCreatedAt(Instant.now());
         newUser.setLastSeenAt(Instant.now());
 

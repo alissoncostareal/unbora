@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { loginMerchant, registerMerchant } from './api';
+import { loginMerchant, loginWithGoogle, registerMerchant } from './api';
 import type { MerchantUser } from './types';
 
 const STORAGE_KEY = 'unbora-business-session';
@@ -10,6 +10,7 @@ interface AuthContextValue {
   user: MerchantUser | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<void>;
+  loginGoogle: (idToken: string) => Promise<void>;
   register: (name: string, email: string, pass: string, business: string) => Promise<void>;
   logout: () => void;
 }
@@ -39,6 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       async login(email, password) {
         const u = await loginMerchant(email, password);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+        setUser(u);
+      },
+      async loginGoogle(idToken) {
+        const u = await loginWithGoogle(idToken);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
         setUser(u);
       },

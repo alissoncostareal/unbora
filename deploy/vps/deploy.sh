@@ -135,7 +135,6 @@ docker build \
   -f frontend/Dockerfile \
   frontend
 docker save unbora-web:latest | k3s ctr images import -
-unset VITE_GOOGLE_CLIENT_ID VITE_GOOGLE_MAPS_API_KEY
 
 docker build \
   --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.unbora.com.br \
@@ -148,10 +147,12 @@ docker save unbora-admin:latest | k3s ctr images import -
 docker build \
   --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.unbora.com.br \
   --build-arg NEXT_PUBLIC_API_URL=https://api.unbora.com.br \
+  --build-arg NEXT_PUBLIC_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID:-133234893176-j1u7phtjse1usa5i38vm9tnk0lifqigc.apps.googleusercontent.com}" \
   -t unbora-business:latest \
   -f business/Dockerfile \
   business
 docker save unbora-business:latest | k3s ctr images import -
+unset VITE_GOOGLE_CLIENT_ID VITE_GOOGLE_MAPS_API_KEY
 
 kubectl apply -f k8s/vps/ollama.yaml
 kubectl apply -f k8s/vps/configmap.yaml

@@ -60,6 +60,13 @@ export async function loginMerchant(email: string, password: string): Promise<Me
   });
 }
 
+export async function loginWithGoogle(idToken: string): Promise<MerchantUser> {
+  return request<MerchantUser>('/users/google-login', {
+    method: 'POST',
+    body: JSON.stringify({ idToken, platform: 'business_web' }),
+  });
+}
+
 export async function registerMerchant(
   name: string,
   email: string,
