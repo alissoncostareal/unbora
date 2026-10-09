@@ -12,24 +12,37 @@ import {
   DataTableCell,
   DataTableHead,
   DataTableHeaderCell,
-  DataTableLoading,
   DataTableRow,
 } from '@/components/ui/DataTable';
-import { CheckboxField, Field, inputClassName } from '@/components/ui/Field';
+import { CheckboxField, Field, inputClassName, textareaClassName } from '@/components/ui/Field';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Panel } from '@/components/ui/Panel';
 import {
+  createSponsoredInvoice,
   createSponsoredPlace,
   deleteSponsoredPlace,
+  getSponsoredFinancialOverview,
+  getSponsoredInvoices,
   getSponsoredPlaces,
+  paySponsoredInvoice,
+  rechargeSponsoredCredits,
   toggleSponsoredPlaceActive,
   updateSponsoredPlace,
-  type SaveSponsoredPlaceInput,
-  type SponsoredPlaceItem,
+  type BillingModel,
   type CitySuggestion,
+  type InvoiceStatus,
+  type PaymentMethod,
+  type PaymentStatus,
+  type PlanTier,
+  type SaveSponsoredPlaceInput,
+  type SponsoredFinancialOverview,
+  type SponsoredInvoiceItem,
+  type SponsoredPlaceItem,
 } from '@/lib/api';
 import { getClientSession } from '@/lib/auth';
 import { can } from '@/lib/permissions';
+
+type TabType = 'places' | 'invoices' | 'financial';
 
 const emptyForm: SaveSponsoredPlaceInput = {
   name: '',
@@ -50,41 +63,84 @@ const emptyForm: SaveSponsoredPlaceInput = {
   homeHighlight: true,
   active: true,
   sortOrder: 0,
+  billingModel: 'SUBSCRIPTION',
+  planTier: 'GOLD',
+  monthlyPrice: 299.0,
+  creditBalance: 0.0,
+  costPerClick: 0.75,
+  costPerImpression: 0.015,
+  dailyBudget: 0.0,
+  paymentStatus: 'PAID',
+  currentCycleStart: new Date().toISOString().slice(0, 10),
+  nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+  contactName: '',
+  contactPhone: '',
+  contactEmail: '',
+  cnpjCpf: '',
+  billingNotes: '',
+  autoRenew: true,
 };
 
 export default function SponsoredPlacesPage() {
+  const [activeTab, setActiveTab] = useState<TabType>('places');
   const [items, setItems] = useState<SponsoredPlaceItem[]>([]);
+  const [invoices, setInvoices] = useState<SponsoredInvoiceItem[]>([]);
+  const [financial, setFinancial] = useState<SponsoredFinancialOverview | null>(null);
+
   const [form, setForm] = useState<SaveSponsoredPlaceInput>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  // Filtros
   const [filterCity, setFilterCity] = useState('');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [filterPayment, setFilterPayment] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Estados de feedback & loading
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Modais de ação rápida
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [rechargeTarget, setRechargeTarget] = useState<SponsoredPlaceItem | null>(null);
+  const [rechargeAmount, setRechargeAmount] = useState<number>(100);
+  const [rechargeMethod, setRechargeMethod] = useState<PaymentMethod>('PIX');
+
+  const [newInvoiceTarget, setNewInvoiceTarget] = useState<SponsoredPlaceItem | null>(null);
+  const [newInvoiceAmount, setNewInvoiceAmount] = useState<number>(199);
+  const [newInvoicePeriod, setNewInvoicePeriod] = useState<string>('');
+
+  const [pixModalData, setPixModalData] = useState<{ name: string; amount: number; pixCode: string } | null>(null);
 
   const session = getClientSession();
   const canManage = can(session?.role, 'manageEvents');
 
-  async function load() {
+  async function loadData() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getSponsoredPlaces();
-      setItems(data);
+      const [placesData, invoicesData, overviewData] = await Promise.all([
+        getSponsoredPlaces(),
+        getSponsoredInvoices(),
+        getSponsoredFinancialOverview().catch(() => null),
+      ]);
+      setItems(placesData);
+      setInvoices(invoicesData);
+      setFinancial(overviewData);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao carregar locais patrocinados');
+      setError(e instanceof Error ? e.message : 'Erro ao carregar dados de monetização e patrocinados');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    load();
+    loadData();
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -94,26 +150,16 @@ export default function SponsoredPlacesPage() {
         filterStatus === 'ALL' ||
         (filterStatus === 'ACTIVE' && item.active) ||
         (filterStatus === 'INACTIVE' && !item.active);
+      const matchesPayment = filterPayment === 'ALL' || item.paymentStatus === filterPayment;
       const matchesSearch =
         !searchTerm ||
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.type && item.type.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (item.benefitText && item.benefitText.toLowerCase().includes(searchTerm.toLowerCase()));
-      return matchesCity && matchesStatus && matchesSearch;
+        (item.benefitText && item.benefitText.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.contactName && item.contactName.toLowerCase().includes(searchTerm.toLowerCase()));
+      return matchesCity && matchesStatus && matchesPayment && matchesSearch;
     });
-  }, [items, filterCity, filterStatus, searchTerm]);
-
-  const metrics = useMemo(() => {
-    const total = items.length;
-    const active = items.filter((i) => i.active).length;
-    const slotBoostCount = items.filter((i) => i.active && i.slotBoost).length;
-    const homeCount = items.filter((i) => i.active && i.homeHighlight).length;
-    const totalImpressions = items.reduce((acc, i) => acc + (i.impressionsCount || 0), 0);
-    const totalClicks = items.reduce((acc, i) => acc + (i.clicksCount || 0), 0);
-    const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(1) : '0.0';
-
-    return { total, active, slotBoostCount, homeCount, totalImpressions, totalClicks, ctr };
-  }, [items]);
+  }, [items, filterCity, filterStatus, filterPayment, searchTerm]);
 
   function handleStartCreate() {
     setEditingId(null);
@@ -121,6 +167,7 @@ export default function SponsoredPlacesPage() {
     setIsFormOpen(true);
     setError(null);
     setSuccess(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function handleStartEdit(item: SponsoredPlaceItem) {
@@ -144,11 +191,57 @@ export default function SponsoredPlacesPage() {
       homeHighlight: item.homeHighlight ?? true,
       active: item.active ?? true,
       sortOrder: item.sortOrder ?? 0,
+      billingModel: item.billingModel ?? 'SUBSCRIPTION',
+      planTier: item.planTier ?? 'GOLD',
+      monthlyPrice: item.monthlyPrice ?? 199.0,
+      creditBalance: item.creditBalance ?? 0.0,
+      costPerClick: item.costPerClick ?? 0.75,
+      costPerImpression: item.costPerImpression ?? 0.015,
+      dailyBudget: item.dailyBudget ?? 0.0,
+      paymentStatus: item.paymentStatus ?? 'PAID',
+      currentCycleStart: item.currentCycleStart ?? '',
+      nextBillingDate: item.nextBillingDate ?? '',
+      contactName: item.contactName ?? '',
+      contactPhone: item.contactPhone ?? '',
+      contactEmail: item.contactEmail ?? '',
+      cnpjCpf: item.cnpjCpf ?? '',
+      billingNotes: item.billingNotes ?? '',
+      autoRenew: item.autoRenew ?? true,
     });
     setIsFormOpen(true);
     setError(null);
     setSuccess(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function handlePlanTierChange(tier: PlanTier) {
+    let price = 199.0;
+    let slot = true;
+    let home = true;
+
+    if (tier === 'BRONZE') {
+      price = 99.0;
+      slot = true;
+      home = false;
+    } else if (tier === 'SILVER') {
+      price = 179.0;
+      slot = true;
+      home = false;
+    } else if (tier === 'GOLD') {
+      price = 299.0;
+      slot = true;
+      home = true;
+    } else if (tier === 'CUSTOM') {
+      price = form.monthlyPrice || 399.0;
+    }
+
+    setForm((curr) => ({
+      ...curr,
+      planTier: tier,
+      monthlyPrice: price,
+      slotBoost: slot,
+      homeHighlight: home,
+    }));
   }
 
   function handleCancelForm() {
@@ -186,7 +279,7 @@ export default function SponsoredPlacesPage() {
     try {
       if (editingId) {
         await updateSponsoredPlace(editingId, form);
-        setSuccess('Local patrocinado atualizado com sucesso!');
+        setSuccess('Local e modelo de cobrança atualizados com sucesso!');
       } else {
         await createSponsoredPlace(form);
         setSuccess('Local patrocinado cadastrado com sucesso!');
@@ -194,9 +287,9 @@ export default function SponsoredPlacesPage() {
       setIsFormOpen(false);
       setEditingId(null);
       setForm(emptyForm);
-      await load();
+      await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao salvar local patrocinado');
+      setError(err instanceof Error ? err.message : 'Erro ao salvar local');
     } finally {
       setSubmitting(false);
     }
@@ -207,7 +300,7 @@ export default function SponsoredPlacesPage() {
     try {
       const updated = await toggleSponsoredPlaceActive(id);
       setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
-      setSuccess(`Status alterado para ${updated.active ? 'Ativo' : 'Pausado'}.`);
+      setSuccess(`Status de veiculação alterado para ${updated.active ? 'Ativo' : 'Pausado'}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao alternar status');
     }
@@ -221,70 +314,225 @@ export default function SponsoredPlacesPage() {
       setItems((prev) => prev.filter((item) => item.id !== deleteTarget.id));
       setSuccess(`"${deleteTarget.name}" removido com sucesso.`);
       setDeleteTarget(null);
+      await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao excluir local patrocinado');
+      setError(err instanceof Error ? err.message : 'Erro ao excluir local');
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleExecuteRecharge() {
+    if (!rechargeTarget || !canManage) return;
+    try {
+      const invoice = await rechargeSponsoredCredits(rechargeTarget.id, {
+        amount: rechargeAmount,
+        paymentMethod: rechargeMethod,
+        notes: `Recarga de R$ ${rechargeAmount.toFixed(2)} via Painel Admin`,
+      });
+      setSuccess(`Recarga de R$ ${rechargeAmount.toFixed(2)} confirmada para "${rechargeTarget.name}"!`);
+      setRechargeTarget(null);
+      await loadData();
+      if (invoice.pixCopyPaste) {
+        setPixModalData({
+          name: rechargeTarget.name,
+          amount: rechargeAmount,
+          pixCode: invoice.pixCopyPaste,
+        });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao realizar recarga de créditos');
+    }
+  }
+
+  async function handleExecuteCreateInvoice() {
+    if (!newInvoiceTarget || !canManage) return;
+    try {
+      const inv = await createSponsoredInvoice(newInvoiceTarget.id, {
+        amount: newInvoiceAmount,
+        referencePeriod: newInvoicePeriod || `${new Date().getMonth() + 1}/${new Date().getFullYear()}`,
+        paymentMethod: 'PIX',
+        notes: `Fatura mensal gerada para ${newInvoiceTarget.name}`,
+      });
+      setSuccess(`Fatura de R$ ${newInvoiceAmount.toFixed(2)} emitida com sucesso!`);
+      setNewInvoiceTarget(null);
+      await loadData();
+      if (inv.pixCopyPaste) {
+        setPixModalData({
+          name: newInvoiceTarget.name,
+          amount: newInvoiceAmount,
+          pixCode: inv.pixCopyPaste,
+        });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao emitir fatura');
+    }
+  }
+
+  async function handleMarkInvoicePaid(invoiceId: string) {
+    if (!canManage) return;
+    try {
+      await paySponsoredInvoice(invoiceId);
+      setSuccess('Pagamento confirmado e assinatura/créditos atualizados!');
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao marcar pagamento');
+    }
+  }
+
+  function getPaymentBadgeVariant(status?: PaymentStatus) {
+    switch (status) {
+      case 'PAID':
+        return 'active';
+      case 'TRIAL':
+        return 'guest';
+      case 'PENDING':
+        return 'pending';
+      case 'OVERDUE':
+        return 'coral';
+      default:
+        return 'inactive';
+    }
+  }
+
+  function getPaymentBadgeLabel(status?: PaymentStatus) {
+    switch (status) {
+      case 'PAID':
+        return 'Em Dia';
+      case 'TRIAL':
+        return 'Degustação (Trial)';
+      case 'PENDING':
+        return 'Pendente';
+      case 'OVERDUE':
+        return 'Atrasado';
+      case 'EXPIRED':
+        return 'Expirado';
+      case 'CANCELED':
+        return 'Cancelado';
+      default:
+        return status || 'N/A';
     }
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Locais Patrocinados"
-        description="Gerencie estabelecimentos parceiros com Slot de Ouro nos resultados (Método A), Selos de Benefício Exclusivo (Método B) e Destaques na Home (Método C)."
+        title="Monetização & Locais Patrocinados"
+        description="Gestão de estabelecimentos parceiros, planos de assinatura fixa (MRR), modelo de desempenho por cliques (CPC) e faturamento."
         action={
           canManage && !isFormOpen ? (
-            <Button variant="primary" onClick={handleStartCreate}>
-              + Novo Local Patrocinado
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="primary" onClick={handleStartCreate}>
+                + Novo Local Patrocinado
+              </Button>
+            </div>
           ) : null
         }
       />
 
-      {/* Metrics Banner */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-        <Panel className="p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted">Total Locais</p>
-          <p className="mt-1 text-2xl font-bold text-ink">{metrics.total}</p>
-        </Panel>
-        <Panel className="p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted">Ativos</p>
-          <p className="mt-1 text-2xl font-bold text-emerald-600">{metrics.active}</p>
-        </Panel>
-        <Panel className="p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted">Slot de Ouro (A)</p>
-          <p className="mt-1 text-2xl font-bold text-amber-600">{metrics.slotBoostCount}</p>
-        </Panel>
-        <Panel className="p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted">Destaque Home (C)</p>
-          <p className="mt-1 text-2xl font-bold text-blue-600">{metrics.homeCount}</p>
-        </Panel>
-        <Panel className="p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted">Impressões</p>
-          <p className="mt-1 text-2xl font-bold text-ink">{metrics.totalImpressions.toLocaleString('pt-BR')}</p>
-        </Panel>
-        <Panel className="p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted">Cliques (CTR)</p>
-          <p className="mt-1 text-2xl font-bold text-coral">
-            {metrics.totalClicks.toLocaleString('pt-BR')} <span className="text-xs font-normal text-muted">({metrics.ctr}%)</span>
+      {/* Financial KPI Banner */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <Panel className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/50 to-white p-4">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">MRR (Recorrente)</p>
+          <p className="mt-1 text-2xl font-bold text-emerald-700">
+            R$ {(financial?.monthlyRecurringRevenue ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </p>
+          <p className="text-[10px] text-muted">Assinaturas fixas ativas</p>
+        </Panel>
+
+        <Panel className="p-4">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Faturamento Total</p>
+          <p className="mt-1 text-2xl font-bold text-ink">
+            R$ {(financial?.totalRevenueAllTime ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </p>
+          <p className="text-[10px] text-muted">Todas as faturas pagas</p>
+        </Panel>
+
+        <Panel className="p-4">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-800">A Receber</p>
+          <p className="mt-1 text-2xl font-bold text-amber-600">
+            R$ {(financial?.totalPendingReceivables ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </p>
+          <p className="text-[10px] text-muted">{financial?.pendingInvoicesCount ?? 0} faturas abertas</p>
+        </Panel>
+
+        <Panel className="p-4">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-blue-800">Saldo em Carteira</p>
+          <p className="mt-1 text-2xl font-bold text-blue-600">
+            R$ {(financial?.totalWalletBalance ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </p>
+          <p className="text-[10px] text-muted">Créditos de CPC pré-pagos</p>
+        </Panel>
+
+        <Panel className="p-4">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Anunciantes Ativos</p>
+          <p className="mt-1 text-2xl font-bold text-ink">
+            {items.filter((i) => i.active).length} <span className="text-xs font-normal text-muted">/ {items.length}</span>
+          </p>
+          <p className="text-[10px] text-muted">Veiculando na busca e home</p>
+        </Panel>
+
+        <Panel className="p-4">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-coral">Cliques Totais</p>
+          <p className="mt-1 text-2xl font-bold text-coral">
+            {items.reduce((acc, i) => acc + (i.clicksCount || 0), 0).toLocaleString('pt-BR')}
+          </p>
+          <p className="text-[10px] text-muted">Conversões geradas</p>
         </Panel>
       </div>
 
       {error && <Alert variant="error">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
+      {/* Tabs Navigation */}
+      <div className="flex border-b border-[#e8e0d7] gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('places')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${
+            activeTab === 'places'
+              ? 'border-ink text-ink bg-[#faf8f5]'
+              : 'border-transparent text-muted hover:text-ink'
+          }`}
+        >
+          📍 Locais & Campanhas ({items.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('invoices')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${
+            activeTab === 'invoices'
+              ? 'border-ink text-ink bg-[#faf8f5]'
+              : 'border-transparent text-muted hover:text-ink'
+          }`}
+        >
+          💳 Faturas & Pagamentos ({invoices.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('financial')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${
+            activeTab === 'financial'
+              ? 'border-ink text-ink bg-[#faf8f5]'
+              : 'border-transparent text-muted hover:text-ink'
+          }`}
+        >
+          📊 Modelos & Planos de Monetização
+        </button>
+      </div>
+
       {/* Form Panel (Create / Edit) */}
       {isFormOpen && canManage && (
-        <Panel className="border-amber-200/60 bg-amber-50/20 p-6 shadow-sm">
+        <Panel className="border-amber-200/60 bg-[#fffdfa] p-6 shadow-md animate-in fade-in-50">
           <div className="flex items-center justify-between border-b border-[#e8e0d7] pb-4">
             <div>
               <h2 className="text-lg font-semibold text-ink">
-                {editingId ? 'Editar Local Patrocinado' : 'Cadastrar Novo Local Patrocinado'}
+                {editingId ? 'Editar Local e Modelo de Cobrança' : 'Cadastrar Novo Parceiro & Monetização'}
               </h2>
               <p className="text-xs text-muted">
-                Preencha os dados de localização, vantagens exclusivas e opções de destaque.
+                Configure os dados do estabelecimento, vantagens exclusivas e as regras comerciais de monetização.
               </p>
             </div>
             <Button variant="ghost" className="px-3 py-1.5 text-xs" onClick={handleCancelForm}>
@@ -293,89 +541,235 @@ export default function SponsoredPlacesPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-6">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Field label="Nome do Estabelecimento *">
-                <input
-                  id="sp-name"
-                  type="text"
-                  required
-                  placeholder="Ex: Brava Wine & Bistro"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className={inputClassName}
-                />
-              </Field>
+            {/* SEÇÃO 1: Dados do Estabelecimento */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-3">1. Dados do Estabelecimento</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Field label="Nome do Estabelecimento *">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Brava Wine & Bistro"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className={inputClassName}
+                  />
+                </Field>
 
-              <Field label="Cidade (com Google Maps) *">
-                <CitySearchInput
-                  id="sp-city"
-                  required
-                  value={form.city}
-                  onChange={(c) => setForm({ ...form, city: c })}
-                  onSelect={handleCitySelect}
-                  placeholder="Digite a cidade para buscar..."
-                />
-              </Field>
+                <Field label="Cidade (com Google Maps) *">
+                  <CitySearchInput
+                    required
+                    value={form.city}
+                    onChange={(c) => setForm({ ...form, city: c })}
+                    onSelect={handleCitySelect}
+                    placeholder="Digite a cidade..."
+                  />
+                </Field>
 
-              <Field label="Bairro / Região">
-                <input
-                  id="sp-region"
-                  type="text"
-                  placeholder="Ex: Aldeota ou Grande Fortaleza"
-                  value={form.region || ''}
-                  onChange={(e) => setForm({ ...form, region: e.target.value })}
-                  className={inputClassName}
-                />
-              </Field>
+                <Field label="Bairro / Região">
+                  <input
+                    type="text"
+                    placeholder="Ex: Aldeota ou Jardins"
+                    value={form.region || ''}
+                    onChange={(e) => setForm({ ...form, region: e.target.value })}
+                    className={inputClassName}
+                  />
+                </Field>
 
-              <Field label="Tipo / Categoria">
-                <input
-                  id="sp-type"
-                  type="text"
-                  placeholder="Ex: Bistrô & Wine Bar, Café Especial"
-                  value={form.type || ''}
-                  onChange={(e) => setForm({ ...form, type: e.target.value })}
-                  className={inputClassName}
-                />
-              </Field>
+                <Field label="Tipo / Categoria">
+                  <input
+                    type="text"
+                    placeholder="Ex: Bistrô, Café Especial, Balada"
+                    value={form.type || ''}
+                    onChange={(e) => setForm({ ...form, type: e.target.value })}
+                    className={inputClassName}
+                  />
+                </Field>
 
-              <Field label="Nível de Preço">
-                <select
-                  id="sp-price"
-                  value={form.priceLevel || 'MODERATE'}
-                  onChange={(e) => setForm({ ...form, priceLevel: e.target.value })}
-                  className={inputClassName}
-                >
-                  <option value="FREE">Gratuito</option>
-                  <option value="INEXPENSIVE">Econômico ($)</option>
-                  <option value="MODERATE">Moderado ($$)</option>
-                  <option value="EXPENSIVE">Sofisticado ($$$)</option>
-                  <option value="VERY_EXPENSIVE">Luxo ($$$$)</option>
-                </select>
-              </Field>
+                <Field label="Nível de Preço">
+                  <select
+                    value={form.priceLevel || 'MODERATE'}
+                    onChange={(e) => setForm({ ...form, priceLevel: e.target.value })}
+                    className={inputClassName}
+                  >
+                    <option value="FREE">Gratuito</option>
+                    <option value="INEXPENSIVE">Econômico ($)</option>
+                    <option value="MODERATE">Moderado ($$)</option>
+                    <option value="EXPENSIVE">Sofisticado ($$$)</option>
+                    <option value="VERY_EXPENSIVE">Luxo ($$$$)</option>
+                  </select>
+                </Field>
 
-              <Field label="Avaliação Média (Nota)">
-                <input
-                  id="sp-rating"
-                  type="number"
-                  step="0.1"
-                  min="1"
-                  max="5"
-                  value={form.rating ?? 4.9}
-                  onChange={(e) => setForm({ ...form, rating: parseFloat(e.target.value) || 4.9 })}
-                  className={inputClassName}
-                />
-              </Field>
+                <Field label="Avaliação Média (Nota)">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="1"
+                    max="5"
+                    value={form.rating ?? 4.9}
+                    onChange={(e) => setForm({ ...form, rating: parseFloat(e.target.value) || 4.9 })}
+                    className={inputClassName}
+                  />
+                </Field>
+              </div>
             </div>
 
-            {/* Método B: Benefício Exclusivo */}
+            {/* SEÇÃO 2: Modelo de Cobrança (Monetização) */}
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/30 p-5">
+              <div className="flex items-center gap-2 text-emerald-950 font-bold text-sm">
+                <span>💰</span>
+                <span>2. Modelo de Cobrança & Monetização</span>
+              </div>
+              <p className="text-xs text-emerald-800/80 mt-1">
+                Escolha como este parceiro remunera a plataforma Unbora (Assinatura Recorrente ou Performance por Clique).
+              </p>
+
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Field label="Modelo de Cobrança">
+                  <select
+                    value={form.billingModel || 'SUBSCRIPTION'}
+                    onChange={(e) => setForm({ ...form, billingModel: e.target.value as BillingModel })}
+                    className={`${inputClassName} bg-white font-medium`}
+                  >
+                    <option value="SUBSCRIPTION">Assinatura Fixa Mensal (MRR)</option>
+                    <option value="CPC_CREDITS">Créditos por Desempenho (CPC)</option>
+                    <option value="HYBRID">Híbrido (Assinatura + Bônus CPC)</option>
+                    <option value="COURTESY">Cortesia / Parceria Institucional</option>
+                  </select>
+                </Field>
+
+                <Field label="Plano / Tier">
+                  <select
+                    value={form.planTier || 'GOLD'}
+                    onChange={(e) => handlePlanTierChange(e.target.value as PlanTier)}
+                    className={`${inputClassName} bg-white font-medium`}
+                  >
+                    <option value="BRONZE">Plano Bronze (R$ 99/mês - Slot Busca)</option>
+                    <option value="SILVER">Plano Prata (R$ 179/mês - Slot + Perks)</option>
+                    <option value="GOLD">Plano Ouro (R$ 299/mês - Slot + Home + Perks)</option>
+                    <option value="CUSTOM">Plano Personalizado</option>
+                  </select>
+                </Field>
+
+                <Field label="Valor Mensal (R$/mês)">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.monthlyPrice ?? 199.0}
+                    onChange={(e) => setForm({ ...form, monthlyPrice: parseFloat(e.target.value) || 0 })}
+                    className={`${inputClassName} bg-white`}
+                  />
+                </Field>
+
+                <Field label="Status Financeiro">
+                  <select
+                    value={form.paymentStatus || 'PAID'}
+                    onChange={(e) => setForm({ ...form, paymentStatus: e.target.value as PaymentStatus })}
+                    className={`${inputClassName} bg-white font-medium`}
+                  >
+                    <option value="PAID">🟢 Em Dia (Pago)</option>
+                    <option value="TRIAL">🟣 Degustação / Teste Grátis (Trial)</option>
+                    <option value="PENDING">🟡 Fatura Pendente</option>
+                    <option value="OVERDUE">🔴 Atrasado (Suspender Veiculação)</option>
+                    <option value="EXPIRED">⚪ Expirado</option>
+                    <option value="CANCELED">❌ Cancelado</option>
+                  </select>
+                </Field>
+
+                {form.billingModel === 'CPC_CREDITS' && (
+                  <>
+                    <Field label="Saldo de Créditos (R$)">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={form.creditBalance ?? 0.0}
+                        onChange={(e) => setForm({ ...form, creditBalance: parseFloat(e.target.value) || 0 })}
+                        className={`${inputClassName} bg-white font-bold text-blue-700`}
+                      />
+                    </Field>
+
+                    <Field label="Custo por Clique (CPC R$)">
+                      <input
+                        type="number"
+                        step="0.05"
+                        value={form.costPerClick ?? 0.75}
+                        onChange={(e) => setForm({ ...form, costPerClick: parseFloat(e.target.value) || 0.75 })}
+                        className={`${inputClassName} bg-white`}
+                      />
+                    </Field>
+                  </>
+                )}
+
+                <Field label="Próxima Renovação">
+                  <input
+                    type="date"
+                    value={form.nextBillingDate || ''}
+                    onChange={(e) => setForm({ ...form, nextBillingDate: e.target.value })}
+                    className={`${inputClassName} bg-white`}
+                  />
+                </Field>
+
+                <div className="flex items-center pt-6">
+                  <CheckboxField
+                    label="Renovação Automática"
+                    checked={Boolean(form.autoRenew)}
+                    onChange={(val) => setForm({ ...form, autoRenew: val })}
+                  />
+                </div>
+              </div>
+
+              {/* Dados de Contato Comercial */}
+              <div className="mt-4 pt-4 border-t border-emerald-200/80 grid grid-cols-1 gap-3 sm:grid-cols-4">
+                <Field label="Contato / Dono">
+                  <input
+                    type="text"
+                    placeholder="Ex: Carlos Oliveira"
+                    value={form.contactName || ''}
+                    onChange={(e) => setForm({ ...form, contactName: e.target.value })}
+                    className={`${inputClassName} bg-white`}
+                  />
+                </Field>
+
+                <Field label="WhatsApp / Telefone">
+                  <input
+                    type="text"
+                    placeholder="(85) 99999-8888"
+                    value={form.contactPhone || ''}
+                    onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
+                    className={`${inputClassName} bg-white`}
+                  />
+                </Field>
+
+                <Field label="E-mail Comercial">
+                  <input
+                    type="email"
+                    placeholder="financeiro@empresa.com"
+                    value={form.contactEmail || ''}
+                    onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
+                    className={`${inputClassName} bg-white`}
+                  />
+                </Field>
+
+                <Field label="CNPJ ou CPF">
+                  <input
+                    type="text"
+                    placeholder="00.000.000/0001-00"
+                    value={form.cnpjCpf || ''}
+                    onChange={(e) => setForm({ ...form, cnpjCpf: e.target.value })}
+                    className={`${inputClassName} bg-white`}
+                  />
+                </Field>
+              </div>
+            </div>
+
+            {/* SEÇÃO 3: Vantagem Exclusiva & Curadoria */}
             <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4">
               <div className="flex items-center gap-2 text-amber-900 font-semibold text-sm">
                 <span>🎁</span>
-                <span>Método B: Selo de Benefício Exclusivo (Unbora Perks)</span>
+                <span>3. Selo de Benefício Exclusivo (Unbora Perks)</span>
               </div>
               <p className="text-xs text-amber-800/90 mt-1">
-                Texto destacado em amarelo no card que atrai o usuário com uma vantagem tangível.
+                Vantagem oferecida pelo estabelecimento para clientes Unbora (ex: desconto, drink de boas-vindas, sobremesa).
               </p>
               <div className="mt-3">
                 <input
@@ -391,12 +785,11 @@ export default function SponsoredPlacesPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Descrição Curatorial">
                 <textarea
-                  id="sp-desc"
                   rows={3}
                   placeholder="Conte um pouco sobre o ambiente, culinária e diferencial..."
                   value={form.description || ''}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className={inputClassName}
+                  className={textareaClassName}
                 />
               </Field>
 
@@ -405,12 +798,11 @@ export default function SponsoredPlacesPage() {
                 hint="Separadas por vírgula. A IA usa estas tags para corresponder ao humor do usuário."
               >
                 <textarea
-                  id="sp-tags"
                   rows={3}
                   placeholder="gastronomia, romance, relaxar, comida, vinho, jantar, cafeteria, música"
                   value={form.categoryTags || ''}
                   onChange={(e) => setForm({ ...form, categoryTags: e.target.value })}
-                  className={inputClassName}
+                  className={textareaClassName}
                 />
               </Field>
             </div>
@@ -418,7 +810,6 @@ export default function SponsoredPlacesPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Field label="URL da Foto / Imagem">
                 <input
-                  id="sp-image"
                   type="url"
                   placeholder="https://images.unsplash.com/..."
                   value={form.imageUrl || ''}
@@ -429,7 +820,6 @@ export default function SponsoredPlacesPage() {
 
               <Field label="Link do Google Maps">
                 <input
-                  id="sp-maps"
                   type="url"
                   placeholder="https://maps.google.com/?q=..."
                   value={form.mapsUrl || ''}
@@ -440,7 +830,6 @@ export default function SponsoredPlacesPage() {
 
               <Field label="Endereço Completo">
                 <input
-                  id="sp-address"
                   type="text"
                   placeholder="Ex: Av. Padre Antônio Tomás, 850 - Aldeota"
                   value={form.address || ''}
@@ -452,7 +841,7 @@ export default function SponsoredPlacesPage() {
 
             {/* Placement Toggles */}
             <div className="rounded-xl border border-[#e8e0d7] bg-white p-4">
-              <h3 className="text-sm font-semibold text-ink">Canais de Exibição & Status</h3>
+              <h3 className="text-sm font-semibold text-ink">Canais de Exibição & Veiculação</h3>
               <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <CheckboxField
                   label="✨ Slot de Ouro nos Resultados (Método A)"
@@ -465,7 +854,7 @@ export default function SponsoredPlacesPage() {
                   onChange={(val) => setForm({ ...form, homeHighlight: val })}
                 />
                 <CheckboxField
-                  label="🟢 Ativo e Visível"
+                  label="🟢 Ativo e Veiculando"
                   checked={Boolean(form.active)}
                   onChange={(val) => setForm({ ...form, active: val })}
                 />
@@ -477,193 +866,559 @@ export default function SponsoredPlacesPage() {
                 Cancelar
               </Button>
               <Button type="submit" variant="primary" disabled={submitting}>
-                {submitting ? 'Salvando...' : editingId ? 'Atualizar Local' : 'Cadastrar Local'}
+                {submitting ? 'Salvando...' : editingId ? 'Atualizar Local e Plano' : 'Cadastrar Local'}
               </Button>
             </div>
           </form>
         </Panel>
       )}
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-wrap items-center gap-3">
-          <input
-            type="text"
-            placeholder="Buscar por nome, tipo ou benefício..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full max-w-xs rounded-lg border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink placeholder:text-muted focus:border-ink focus:outline-none"
-          />
+      {/* TAB 1: Locais & Campanhas */}
+      {activeTab === 'places' && (
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-1 flex-wrap items-center gap-3">
+              <input
+                type="text"
+                placeholder="Buscar por nome, tipo, benefício ou contato..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full max-w-xs rounded-lg border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink placeholder:text-muted focus:border-ink focus:outline-none"
+              />
 
-          <input
-            type="text"
-            placeholder="Filtrar por cidade..."
-            value={filterCity}
-            onChange={(e) => setFilterCity(e.target.value)}
-            className="w-40 rounded-lg border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink placeholder:text-muted focus:border-ink focus:outline-none"
-          />
+              <input
+                type="text"
+                placeholder="Filtrar por cidade..."
+                value={filterCity}
+                onChange={(e) => setFilterCity(e.target.value)}
+                className="w-36 rounded-lg border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink placeholder:text-muted focus:border-ink focus:outline-none"
+              />
 
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
-            className="rounded-lg border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink focus:border-ink focus:outline-none"
-          >
-            <option value="ALL">Todos os status</option>
-            <option value="ACTIVE">Apenas ativos</option>
-            <option value="INACTIVE">Apenas pausados</option>
-          </select>
-        </div>
+              <select
+                value={filterPayment}
+                onChange={(e) => setFilterPayment(e.target.value)}
+                className="rounded-lg border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink focus:border-ink focus:outline-none"
+              >
+                <option value="ALL">Todos os status financeiros</option>
+                <option value="PAID">🟢 Em Dia</option>
+                <option value="TRIAL">🟣 Trial / Degustação</option>
+                <option value="PENDING">🟡 Fatura Aberta</option>
+                <option value="OVERDUE">🔴 Atrasado</option>
+              </select>
 
-        <p className="text-xs text-muted">
-          Exibindo <strong>{filteredItems.length}</strong> de <strong>{items.length}</strong> locais
-        </p>
-      </div>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
+                className="rounded-lg border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink focus:border-ink focus:outline-none"
+              >
+                <option value="ALL">Todos os status</option>
+                <option value="ACTIVE">Apenas veiculando</option>
+                <option value="INACTIVE">Apenas pausados</option>
+              </select>
+            </div>
 
-      {/* DataTable */}
-      <DataTable>
-        <DataTableHead>
-          <DataTableRow>
-            <DataTableHeaderCell>Local / Estabelecimento</DataTableHeaderCell>
-            <DataTableHeaderCell>Cidade / Região</DataTableHeaderCell>
-            <DataTableHeaderCell>Benefício Exclusivo (Método B)</DataTableHeaderCell>
-            <DataTableHeaderCell>Canais de Destaque</DataTableHeaderCell>
-            <DataTableHeaderCell>Métricas</DataTableHeaderCell>
-            <DataTableHeaderCell>Status</DataTableHeaderCell>
-            <DataTableHeaderCell className="text-right">Ações</DataTableHeaderCell>
-          </DataTableRow>
-        </DataTableHead>
+            <p className="text-xs text-muted">
+              Exibindo <strong>{filteredItems.length}</strong> de <strong>{items.length}</strong> locais
+            </p>
+          </div>
 
-        <tbody>
-          {loading ? (
-            <DataTableRow>
-              <DataTableCell colSpan={7} className="py-12 text-center text-muted">
-                Carregando estabelecimentos patrocinados...
-              </DataTableCell>
-            </DataTableRow>
-          ) : filteredItems.length === 0 ? (
-            <DataTableRow>
-              <DataTableCell colSpan={7} className="py-12 text-center text-muted">
-                Nenhum local patrocinado encontrado com os filtros atuais.
-              </DataTableCell>
-            </DataTableRow>
-          ) : (
-            filteredItems.map((item) => (
-              <DataTableRow key={item.id}>
-                {/* Local com Imagem */}
-                <DataTableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="size-12 shrink-0 overflow-hidden rounded-lg bg-[#e7e0d8]">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs text-muted">
-                          Sem foto
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-ink">{item.name}</p>
-                      <p className="text-xs text-muted">{item.type || 'Estabelecimento'}</p>
-                    </div>
-                  </div>
-                </DataTableCell>
-
-                {/* Localização */}
-                <DataTableCell>
-                  <p className="font-medium text-ink">{item.city}</p>
-                  <p className="text-xs text-muted">{item.region || item.country || 'Brasil'}</p>
-                </DataTableCell>
-
-                {/* Benefício Exclusivo */}
-                <DataTableCell className="max-w-xs">
-                  {item.benefitText ? (
-                    <div className="rounded-md border border-amber-200 bg-amber-50/80 px-2.5 py-1.5 text-xs text-amber-950">
-                      <span className="font-semibold text-amber-900">🎁 Perk: </span>
-                      {item.benefitText}
-                    </div>
-                  ) : (
-                    <span className="text-xs italic text-muted">Nenhum benefício cadastrado</span>
-                  )}
-                </DataTableCell>
-
-                {/* Canais de Destaque */}
-                <DataTableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {item.slotBoost ? (
-                      <Badge variant="guest" className="text-[10px]">
-                        ✨ Slot de Ouro (A)
-                      </Badge>
-                    ) : null}
-                    {item.homeHighlight ? (
-                      <Badge variant="registered" className="text-[10px]">
-                        🏠 Home (C)
-                      </Badge>
-                    ) : null}
-                    {!item.slotBoost && !item.homeHighlight ? (
-                      <span className="text-xs text-muted">Apenas catálogo</span>
-                    ) : null}
-                  </div>
-                </DataTableCell>
-
-                {/* Métricas */}
-                <DataTableCell>
-                  <div className="text-xs">
-                    <p className="text-ink">
-                      <strong>{(item.impressionsCount || 0).toLocaleString('pt-BR')}</strong> imp.
-                    </p>
-                    <p className="text-coral">
-                      <strong>{(item.clicksCount || 0).toLocaleString('pt-BR')}</strong> clicks
-                    </p>
-                  </div>
-                </DataTableCell>
-
-                {/* Status Toggle */}
-                <DataTableCell>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleActive(item.id)}
-                    disabled={!canManage}
-                    className="cursor-pointer transition-opacity hover:opacity-80 disabled:cursor-default"
-                    title="Clique para alternar status"
-                  >
-                    {item.active ? (
-                      <Badge variant="active">Ativo</Badge>
-                    ) : (
-                      <Badge variant="inactive">Pausado</Badge>
-                    )}
-                  </button>
-                </DataTableCell>
-
-                {/* Ações */}
-                <DataTableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      className="px-2.5 py-1.5 text-[11px]"
-                      onClick={() => handleStartEdit(item)}
-                      disabled={!canManage}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="danger"
-                      className="px-2.5 py-1.5 text-[11px]"
-                      onClick={() => setDeleteTarget({ id: item.id, name: item.name })}
-                      disabled={!canManage}
-                    >
-                      Excluir
-                    </Button>
-                  </div>
-                </DataTableCell>
+          <DataTable>
+            <DataTableHead>
+              <DataTableRow>
+                <DataTableHeaderCell>Local / Estabelecimento</DataTableHeaderCell>
+                <DataTableHeaderCell>Cidade / Região</DataTableHeaderCell>
+                <DataTableHeaderCell>Plano & Cobrança</DataTableHeaderCell>
+                <DataTableHeaderCell>Status Financeiro</DataTableHeaderCell>
+                <DataTableHeaderCell>Desempenho (CTR)</DataTableHeaderCell>
+                <DataTableHeaderCell>Veiculação</DataTableHeaderCell>
+                <DataTableHeaderCell className="text-right">Ações</DataTableHeaderCell>
               </DataTableRow>
-            )))}
-        </tbody>
-      </DataTable>
+            </DataTableHead>
+
+            <tbody>
+              {loading ? (
+                <DataTableRow>
+                  <DataTableCell colSpan={7} className="py-12 text-center text-muted">
+                    Carregando parceiros e planos...
+                  </DataTableCell>
+                </DataTableRow>
+              ) : filteredItems.length === 0 ? (
+                <DataTableRow>
+                  <DataTableCell colSpan={7} className="py-12 text-center text-muted">
+                    Nenhum parceiro encontrado com os filtros atuais.
+                  </DataTableCell>
+                </DataTableRow>
+              ) : (
+                filteredItems.map((item) => (
+                  <DataTableRow key={item.id}>
+                    {/* Local */}
+                    <DataTableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="size-12 shrink-0 overflow-hidden rounded-lg bg-[#e7e0d8]">
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" loading="lazy" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-xs text-muted">Sem foto</div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-ink">{item.name}</p>
+                          <p className="text-xs text-muted">{item.type || 'Estabelecimento'}</p>
+                          {item.contactName ? (
+                            <p className="text-[11px] text-muted/80">👤 {item.contactName}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </DataTableCell>
+
+                    {/* Cidade */}
+                    <DataTableCell>
+                      <p className="font-medium text-ink">{item.city}</p>
+                      <p className="text-xs text-muted">{item.region || 'Brasil'}</p>
+                    </DataTableCell>
+
+                    {/* Plano & Modelo */}
+                    <DataTableCell>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-ink text-xs">
+                            {item.billingModel === 'CPC_CREDITS' ? '⚡ Desempenho (CPC)' : `Plano ${item.planTier || 'GOLD'}`}
+                          </span>
+                        </div>
+                        {item.billingModel === 'CPC_CREDITS' ? (
+                          <p className="text-xs font-semibold text-blue-700 mt-0.5">
+                            Saldo: R$ {(item.creditBalance ?? 0).toFixed(2)}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted mt-0.5">
+                            R$ {(item.monthlyPrice ?? 0).toFixed(2)}/mês
+                          </p>
+                        )}
+                      </div>
+                    </DataTableCell>
+
+                    {/* Status Financeiro */}
+                    <DataTableCell>
+                      <div>
+                        <Badge variant={getPaymentBadgeVariant(item.paymentStatus)}>
+                          {getPaymentBadgeLabel(item.paymentStatus)}
+                        </Badge>
+                        {item.nextBillingDate && (
+                          <p className="text-[10px] text-muted mt-1">Vence: {item.nextBillingDate}</p>
+                        )}
+                      </div>
+                    </DataTableCell>
+
+                    {/* Desempenho */}
+                    <DataTableCell>
+                      <div className="text-xs">
+                        <p className="text-ink">
+                          <strong>{(item.impressionsCount || 0).toLocaleString('pt-BR')}</strong> imp.
+                        </p>
+                        <p className="text-coral font-medium">
+                          <strong>{(item.clicksCount || 0).toLocaleString('pt-BR')}</strong> clicks
+                        </p>
+                      </div>
+                    </DataTableCell>
+
+                    {/* Veiculação Toggle */}
+                    <DataTableCell>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleActive(item.id)}
+                        disabled={!canManage}
+                        className="cursor-pointer transition-opacity hover:opacity-80 disabled:cursor-default"
+                        title="Clique para alternar veiculação"
+                      >
+                        {item.active ? <Badge variant="active">Ativo</Badge> : <Badge variant="inactive">Pausado</Badge>}
+                      </button>
+                    </DataTableCell>
+
+                    {/* Ações */}
+                    <DataTableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {item.billingModel === 'CPC_CREDITS' ? (
+                          <Button
+                            variant="outline"
+                            className="px-2 py-1 text-[10px]"
+                            onClick={() => setRechargeTarget(item)}
+                            title="Recarregar créditos de cliques"
+                          >
+                            ⚡ Recarregar
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            className="px-2 py-1 text-[10px]"
+                            onClick={() => {
+                              setNewInvoiceTarget(item);
+                              setNewInvoiceAmount(item.monthlyPrice || 199.0);
+                            }}
+                            title="Emitir nova fatura mensal"
+                          >
+                            📄 Fatura
+                          </Button>
+                        )}
+
+                        <Button
+                          variant="ghost"
+                          className="px-2 py-1 text-[11px]"
+                          onClick={() => handleStartEdit(item)}
+                          disabled={!canManage}
+                        >
+                          Editar
+                        </Button>
+
+                        <Button
+                          variant="danger"
+                          className="px-2 py-1 text-[11px]"
+                          onClick={() => setDeleteTarget({ id: item.id, name: item.name })}
+                          disabled={!canManage}
+                        >
+                          Excluir
+                        </Button>
+                      </div>
+                    </DataTableCell>
+                  </DataTableRow>
+                ))
+              )}
+            </tbody>
+          </DataTable>
+        </div>
+      )}
+
+      {/* TAB 2: Faturas & Pagamentos */}
+      {activeTab === 'invoices' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-ink">Histórico de Faturas & Cobranças Emitidas</h3>
+            <p className="text-xs text-muted">
+              Total: <strong>{invoices.length} faturas</strong>
+            </p>
+          </div>
+
+          <DataTable>
+            <DataTableHead>
+              <DataTableRow>
+                <DataTableHeaderCell>Estabelecimento</DataTableHeaderCell>
+                <DataTableHeaderCell>Referência / Descrição</DataTableHeaderCell>
+                <DataTableHeaderCell>Valor</DataTableHeaderCell>
+                <DataTableHeaderCell>Vencimento</DataTableHeaderCell>
+                <DataTableHeaderCell>Método</DataTableHeaderCell>
+                <DataTableHeaderCell>Status</DataTableHeaderCell>
+                <DataTableHeaderCell className="text-right">Ações</DataTableHeaderCell>
+              </DataTableRow>
+            </DataTableHead>
+
+            <tbody>
+              {invoices.length === 0 ? (
+                <DataTableRow>
+                  <DataTableCell colSpan={7} className="py-12 text-center text-muted">
+                    Nenhuma fatura registrada ainda.
+                  </DataTableCell>
+                </DataTableRow>
+              ) : (
+                invoices.map((inv) => (
+                  <DataTableRow key={inv.id}>
+                    <DataTableCell>
+                      <p className="font-semibold text-ink">{inv.placeName}</p>
+                    </DataTableCell>
+                    <DataTableCell>
+                      <p className="text-xs font-medium text-ink">{inv.referencePeriod || 'Mensalidade'}</p>
+                      {inv.notes && <p className="text-[11px] text-muted">{inv.notes}</p>}
+                    </DataTableCell>
+                    <DataTableCell>
+                      <p className="font-bold text-ink">
+                        R$ {Number(inv.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </DataTableCell>
+                    <DataTableCell>
+                      <p className="text-xs text-ink">{inv.dueDate || 'N/A'}</p>
+                    </DataTableCell>
+                    <DataTableCell>
+                      <span className="inline-flex items-center gap-1 rounded bg-[#f6f2ec] px-2 py-0.5 text-[11px] font-semibold text-ink">
+                        {inv.paymentMethod}
+                      </span>
+                    </DataTableCell>
+                    <DataTableCell>
+                      {inv.status === 'PAID' ? (
+                        <Badge variant="active">Pago</Badge>
+                      ) : inv.status === 'PENDING' ? (
+                        <Badge variant="pending">Aguardando</Badge>
+                      ) : inv.status === 'OVERDUE' ? (
+                        <Badge variant="coral">Atrasado</Badge>
+                      ) : (
+                        <Badge variant="inactive">Cancelado</Badge>
+                      )}
+                    </DataTableCell>
+                    <DataTableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {inv.pixCopyPaste && (
+                          <Button
+                            variant="outline"
+                            className="px-2 py-1 text-[10px]"
+                            onClick={() =>
+                              setPixModalData({
+                                name: inv.placeName,
+                                amount: Number(inv.amount),
+                                pixCode: inv.pixCopyPaste!,
+                              })
+                            }
+                          >
+                            🔑 Ver PIX
+                          </Button>
+                        )}
+                        {inv.status !== 'PAID' && (
+                          <Button
+                            variant="primary"
+                            className="px-2 py-1 text-[10px]"
+                            onClick={() => handleMarkInvoicePaid(inv.id)}
+                            disabled={!canManage}
+                          >
+                            ✓ Marcar Pago
+                          </Button>
+                        )}
+                      </div>
+                    </DataTableCell>
+                  </DataTableRow>
+                ))
+              )}
+            </tbody>
+          </DataTable>
+        </div>
+      )}
+
+      {/* TAB 3: Planos & Monetização (Guia Estratégico) */}
+      {activeTab === 'financial' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {/* Plano Bronze */}
+            <Panel className="p-5 border-[#e8e0d7] flex flex-col justify-between">
+              <div>
+                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-amber-800">
+                  Entrada
+                </span>
+                <h3 className="mt-2 text-xl font-bold text-ink">Plano Bronze</h3>
+                <p className="mt-1 text-2xl font-black text-ink">
+                  R$ 99<span className="text-xs font-normal text-muted">/mês</span>
+                </p>
+                <p className="mt-2 text-xs text-muted">Ideal para pequenos cafés e bares locais ganharem visibilidade.</p>
+
+                <ul className="mt-4 space-y-2 text-xs text-ink">
+                  <li className="flex items-center gap-2">✓ Slot de Ouro na busca da cidade</li>
+                  <li className="flex items-center gap-2">✓ Selo Destaque Parceiro</li>
+                  <li className="flex items-center gap-2">✓ Relatório de visualizações e cliques</li>
+                </ul>
+              </div>
+            </Panel>
+
+            {/* Plano Prata */}
+            <Panel className="p-5 border-blue-200 bg-blue-50/20 flex flex-col justify-between">
+              <div>
+                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-blue-800">
+                  Mais Popular
+                </span>
+                <h3 className="mt-2 text-xl font-bold text-ink">Plano Prata</h3>
+                <p className="mt-1 text-2xl font-black text-ink">
+                  R$ 179<span className="text-xs font-normal text-muted">/mês</span>
+                </p>
+                <p className="mt-2 text-xs text-muted">Para restaurantes e bistrôs que querem atrair com benefícios exclusivos.</p>
+
+                <ul className="mt-4 space-y-2 text-xs text-ink">
+                  <li className="flex items-center gap-2">✓ Slot de Ouro com maior prioridade</li>
+                  <li className="flex items-center gap-2 font-semibold text-blue-900">
+                    ✓ Selo de Benefício Exclusivo (Unbora Perks 🎁)
+                  </li>
+                  <li className="flex items-center gap-2">✓ Matching de humor pela IA</li>
+                  <li className="flex items-center gap-2">✓ Telemetria de cliques em tempo real</li>
+                </ul>
+              </div>
+            </Panel>
+
+            {/* Plano Ouro */}
+            <Panel className="p-5 border-amber-300 bg-gradient-to-br from-amber-50/40 to-white flex flex-col justify-between shadow-xs">
+              <div>
+                <span className="rounded-full bg-amber-500 text-white px-2.5 py-0.5 text-[10px] font-bold uppercase">
+                  VIP / Completo
+                </span>
+                <h3 className="mt-2 text-xl font-bold text-ink">Plano Ouro VIP</h3>
+                <p className="mt-1 text-2xl font-black text-ink">
+                  R$ 299<span className="text-xs font-normal text-muted">/mês</span>
+                </p>
+                <p className="mt-2 text-xs text-muted">Máxima exposição na tela inicial do app e nas principais pesquisas.</p>
+
+                <ul className="mt-4 space-y-2 text-xs text-ink">
+                  <li className="flex items-center gap-2">✓ Topo absoluto no Slot de Ouro</li>
+                  <li className="flex items-center gap-2 font-semibold text-amber-900">
+                    ✓ Carrossel de Destaques na Home do App 🏠
+                  </li>
+                  <li className="flex items-center gap-2">✓ Selo de Benefício Exclusivo 🎁</li>
+                  <li className="flex items-center gap-2">✓ Suporte dedicado & relatórios de conversão</li>
+                </ul>
+              </div>
+            </Panel>
+          </div>
+
+          {/* Modelo por Desempenho CPC */}
+          <Panel className="p-6 border-[#e8e0d7]">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⚡</span>
+              <h3 className="text-base font-bold text-ink">Modelo Alternativo: Créditos por Desempenho (CPC / CPM)</h3>
+            </div>
+            <p className="mt-1 text-xs text-muted max-w-3xl">
+              Neste modelo, o estabelecimento faz uma recarga pré-paga (ex: R$ 100 ou R$ 300) e paga apenas quando um
+              usuário real clica no botão &quot;Ver no mapa&quot; ou interage com a recomendação (R$ 0,75 por clique). O
+              sistema debita o saldo automaticamente e pausa a campanha caso os créditos cheguem a zero.
+            </p>
+          </Panel>
+        </div>
+      )}
+
+      {/* Modal: Recarga de Créditos CPC */}
+      {rechargeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
+            <h3 className="text-lg font-bold text-ink">⚡ Recarregar Créditos (CPC)</h3>
+            <p className="text-xs text-muted mt-1">
+              Adicione saldo de desempenho para <strong>{rechargeTarget.name}</strong>.
+            </p>
+
+            <div className="mt-4 space-y-4">
+              <div className="flex gap-2">
+                {[50, 100, 250, 500].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setRechargeAmount(amt)}
+                    className={`flex-1 rounded-xl border py-2 text-xs font-bold transition-all ${
+                      rechargeAmount === amt
+                        ? 'border-ink bg-ink text-white shadow-xs'
+                        : 'border-[#e8e0d7] bg-white text-ink hover:bg-[#faf8f5]'
+                    }`}
+                  >
+                    R$ {amt}
+                  </button>
+                ))}
+              </div>
+
+              <Field label="Valor Personalizado (R$)">
+                <input
+                  type="number"
+                  step="10"
+                  value={rechargeAmount}
+                  onChange={(e) => setRechargeAmount(parseFloat(e.target.value) || 0)}
+                  className={inputClassName}
+                />
+              </Field>
+
+              <Field label="Método de Pagamento">
+                <select
+                  value={rechargeMethod}
+                  onChange={(e) => setRechargeMethod(e.target.value as PaymentMethod)}
+                  className={inputClassName}
+                >
+                  <option value="PIX">PIX Instantâneo</option>
+                  <option value="CREDIT_CARD">Cartão de Crédito</option>
+                  <option value="BOLETO">Boleto Bancário</option>
+                  <option value="MANUAL">Acerto Manual / Transferência</option>
+                </select>
+              </Field>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setRechargeTarget(null)}>
+                Cancelar
+              </Button>
+              <Button variant="primary" onClick={handleExecuteRecharge}>
+                Confirmar Recarga
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Emitir Nova Fatura */}
+      {newInvoiceTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
+            <h3 className="text-lg font-bold text-ink">📄 Emitir Fatura de Mensalidade</h3>
+            <p className="text-xs text-muted mt-1">
+              Gerar cobrança para <strong>{newInvoiceTarget.name}</strong>.
+            </p>
+
+            <div className="mt-4 space-y-4">
+              <Field label="Valor da Fatura (R$)">
+                <input
+                  type="number"
+                  step="0.01"
+                  value={newInvoiceAmount}
+                  onChange={(e) => setNewInvoiceAmount(parseFloat(e.target.value) || 0)}
+                  className={inputClassName}
+                />
+              </Field>
+
+              <Field label="Período de Referência">
+                <input
+                  type="text"
+                  placeholder="Ex: 10/2026 ou Outubro / 2026"
+                  value={newInvoicePeriod}
+                  onChange={(e) => setNewInvoicePeriod(e.target.value)}
+                  className={inputClassName}
+                />
+              </Field>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setNewInvoiceTarget(null)}>
+                Cancelar
+              </Button>
+              <Button variant="primary" onClick={handleExecuteCreateInvoice}>
+                Gerar Fatura & PIX
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Visualizador de PIX Copia e Cola */}
+      {pixModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
+            <div className="flex items-center gap-2 text-emerald-700 font-bold">
+              <span>🔑</span>
+              <h3 className="text-base font-bold">Cobrança PIX Gerada</h3>
+            </div>
+            <p className="text-xs text-muted mt-1">
+              Cobrança de <strong>R$ {pixModalData.amount.toFixed(2)}</strong> para{' '}
+              <strong>{pixModalData.name}</strong>.
+            </p>
+
+            <div className="mt-4 rounded-xl border border-[#e8e0d7] bg-[#faf8f5] p-3">
+              <p className="text-[11px] font-bold uppercase text-muted">Código PIX Copia e Cola:</p>
+              <p className="mt-1 break-all font-mono text-[11px] text-ink select-all">{pixModalData.pixCode}</p>
+            </div>
+
+            <div className="mt-4 flex gap-2">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  navigator.clipboard.writeText(pixModalData.pixCode);
+                  setSuccess('Código PIX copiado para a área de transferência!');
+                }}
+              >
+                📋 Copiar Código PIX
+              </Button>
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <Button variant="primary" onClick={() => setPixModalData(null)}>
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirm Delete Modal */}
       <ConfirmModal
@@ -673,8 +1428,7 @@ export default function SponsoredPlacesPage() {
         title="Excluir Local Patrocinado"
         description={
           <span>
-            Tem certeza de que deseja remover permanentemente o estabelecimento{' '}
-            <strong>{deleteTarget?.name}</strong>? Esta ação não pode ser desfeita.
+            Tem certeza de que deseja remover o estabelecimento <strong>{deleteTarget?.name}</strong>?
           </span>
         }
         confirmLabel="Excluir Definitivamente"

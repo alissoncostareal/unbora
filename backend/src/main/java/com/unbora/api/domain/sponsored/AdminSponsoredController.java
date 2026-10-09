@@ -1,7 +1,6 @@
 package com.unbora.api.domain.sponsored;
 
-import com.unbora.api.domain.sponsored.dto.SaveSponsoredPlaceDto;
-import com.unbora.api.domain.sponsored.dto.SponsoredPlaceDto;
+import com.unbora.api.domain.sponsored.dto.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -55,5 +54,50 @@ public class AdminSponsoredController {
     public ResponseEntity<Map<String, Object>> delete(@PathVariable String id) {
         service.delete(id);
         return ResponseEntity.ok(Map.of("deleted", true, "id", id));
+    }
+
+    // --- 2. Endpoints de Cobrança e Monetização ---
+
+    @GetMapping("/billing/overview")
+    public ResponseEntity<SponsoredFinancialOverviewDto> getFinancialOverview() {
+        return ResponseEntity.ok(service.getFinancialOverview());
+    }
+
+    @GetMapping("/invoices")
+    public ResponseEntity<List<SponsoredInvoiceDto>> listInvoices(
+            @RequestParam(required = false) String placeId,
+            @RequestParam(required = false) InvoiceStatus status
+    ) {
+        return ResponseEntity.ok(service.listInvoices(placeId, status));
+    }
+
+    @PostMapping("/{id}/invoices")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<SponsoredInvoiceDto> createInvoice(
+            @PathVariable String id,
+            @RequestBody CreateInvoiceDto dto
+    ) {
+        return ResponseEntity.ok(service.createInvoice(id, dto));
+    }
+
+    @PostMapping("/{id}/recharge")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<SponsoredInvoiceDto> rechargeCredits(
+            @PathVariable String id,
+            @RequestBody RechargeCreditsDto dto
+    ) {
+        return ResponseEntity.ok(service.rechargeCredits(id, dto));
+    }
+
+    @PostMapping("/invoices/{invoiceId}/pay")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<SponsoredInvoiceDto> markInvoicePaid(@PathVariable String invoiceId) {
+        return ResponseEntity.ok(service.markInvoicePaid(invoiceId));
+    }
+
+    @PostMapping("/invoices/{invoiceId}/cancel")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<SponsoredInvoiceDto> cancelInvoice(@PathVariable String invoiceId) {
+        return ResponseEntity.ok(service.cancelInvoice(invoiceId));
     }
 }

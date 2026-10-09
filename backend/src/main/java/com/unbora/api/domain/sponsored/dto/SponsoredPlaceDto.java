@@ -1,5 +1,11 @@
 package com.unbora.api.domain.sponsored.dto;
 
+import com.unbora.api.domain.sponsored.BillingModel;
+import com.unbora.api.domain.sponsored.PaymentStatus;
+import com.unbora.api.domain.sponsored.PlanTier;
+
+import java.math.BigDecimal;
+
 public record SponsoredPlaceDto(
         String id,
         String name,
@@ -22,6 +28,24 @@ public record SponsoredPlaceDto(
         Integer sortOrder,
         Long impressionsCount,
         Long clicksCount,
+        BillingModel billingModel,
+        PlanTier planTier,
+        BigDecimal monthlyPrice,
+        BigDecimal creditBalance,
+        BigDecimal costPerClick,
+        BigDecimal costPerImpression,
+        BigDecimal dailyBudget,
+        BigDecimal spentToday,
+        BigDecimal totalSpent,
+        PaymentStatus paymentStatus,
+        String currentCycleStart,
+        String nextBillingDate,
+        String contactName,
+        String contactPhone,
+        String contactEmail,
+        String cnpjCpf,
+        String billingNotes,
+        Boolean autoRenew,
         String createdAt,
         String updatedAt
 ) {}

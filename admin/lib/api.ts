@@ -15,6 +15,15 @@ import type {
   CitySuggestion,
   SponsoredPlaceItem,
   SaveSponsoredPlaceInput,
+  BillingModel,
+  PlanTier,
+  PaymentStatus,
+  InvoiceStatus,
+  PaymentMethod,
+  SponsoredInvoiceItem,
+  CreateInvoiceInput,
+  RechargeCreditsInput,
+  SponsoredFinancialOverview,
 } from '@/lib/types';
 
 export type {
@@ -36,6 +45,15 @@ export type {
   CitySuggestion,
   SponsoredPlaceItem,
   SaveSponsoredPlaceInput,
+  BillingModel,
+  PlanTier,
+  PaymentStatus,
+  InvoiceStatus,
+  PaymentMethod,
+  SponsoredInvoiceItem,
+  CreateInvoiceInput,
+  RechargeCreditsInput,
+  SponsoredFinancialOverview,
 } from '@/lib/types';
 
 const API_BASE_URL =
@@ -330,6 +348,34 @@ export function toggleSponsoredPlaceActive(id: string, token?: string) {
 
 export function deleteSponsoredPlace(id: string, token?: string) {
   return fetchJson<{ deleted: true; id: string }>(`/admin/sponsored/${id}`, { method: 'DELETE' }, token);
+}
+
+export function getSponsoredFinancialOverview(token?: string) {
+  return fetchJson<SponsoredFinancialOverview>('/admin/sponsored/billing/overview', undefined, token);
+}
+
+export function getSponsoredInvoices(params?: { placeId?: string; status?: InvoiceStatus }, token?: string) {
+  const query = new URLSearchParams();
+  if (params?.placeId) query.set('placeId', params.placeId);
+  if (params?.status) query.set('status', params.status);
+  const qs = query.toString();
+  return fetchJson<SponsoredInvoiceItem[]>(`/admin/sponsored/invoices${qs ? `?${qs}` : ''}`, undefined, token);
+}
+
+export function createSponsoredInvoice(placeId: string, body: CreateInvoiceInput, token?: string) {
+  return fetchJson<SponsoredInvoiceItem>(`/admin/sponsored/${placeId}/invoices`, { method: 'POST', body: JSON.stringify(body) }, token);
+}
+
+export function rechargeSponsoredCredits(placeId: string, body: RechargeCreditsInput, token?: string) {
+  return fetchJson<SponsoredInvoiceItem>(`/admin/sponsored/${placeId}/recharge`, { method: 'POST', body: JSON.stringify(body) }, token);
+}
+
+export function paySponsoredInvoice(invoiceId: string, token?: string) {
+  return fetchJson<SponsoredInvoiceItem>(`/admin/sponsored/invoices/${invoiceId}/pay`, { method: 'POST', body: '{}' }, token);
+}
+
+export function cancelSponsoredInvoice(invoiceId: string, token?: string) {
+  return fetchJson<SponsoredInvoiceItem>(`/admin/sponsored/invoices/${invoiceId}/cancel`, { method: 'POST', body: '{}' }, token);
 }
 
 export { API_BASE_URL };

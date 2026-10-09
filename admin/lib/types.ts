@@ -143,6 +143,12 @@ export interface CitySuggestion {
   longitude?: number | null;
 }
 
+export type BillingModel = 'SUBSCRIPTION' | 'CPC_CREDITS' | 'HYBRID' | 'COURTESY';
+export type PlanTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'CUSTOM';
+export type PaymentStatus = 'PAID' | 'PENDING' | 'OVERDUE' | 'TRIAL' | 'EXPIRED' | 'CANCELED';
+export type InvoiceStatus = 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELED';
+export type PaymentMethod = 'PIX' | 'CREDIT_CARD' | 'BOLETO' | 'BANK_TRANSFER' | 'MANUAL';
+
 export interface SponsoredPlaceItem {
   id: string;
   name: string;
@@ -165,6 +171,24 @@ export interface SponsoredPlaceItem {
   sortOrder?: number;
   impressionsCount?: number;
   clicksCount?: number;
+  billingModel?: BillingModel;
+  planTier?: PlanTier;
+  monthlyPrice?: number;
+  creditBalance?: number;
+  costPerClick?: number;
+  costPerImpression?: number;
+  dailyBudget?: number;
+  spentToday?: number;
+  totalSpent?: number;
+  paymentStatus?: PaymentStatus;
+  currentCycleStart?: string;
+  nextBillingDate?: string;
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  cnpjCpf?: string;
+  billingNotes?: string;
+  autoRenew?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -188,6 +212,67 @@ export interface SaveSponsoredPlaceInput {
   homeHighlight?: boolean;
   active?: boolean;
   sortOrder?: number;
+  billingModel?: BillingModel;
+  planTier?: PlanTier;
+  monthlyPrice?: number;
+  creditBalance?: number;
+  costPerClick?: number;
+  costPerImpression?: number;
+  dailyBudget?: number;
+  paymentStatus?: PaymentStatus;
+  currentCycleStart?: string;
+  nextBillingDate?: string;
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  cnpjCpf?: string;
+  billingNotes?: string;
+  autoRenew?: boolean;
+}
+
+export interface SponsoredInvoiceItem {
+  id: string;
+  sponsoredPlaceId: string;
+  placeName: string;
+  amount: number;
+  dueDate: string;
+  paidAt?: string;
+  status: InvoiceStatus;
+  paymentMethod: PaymentMethod;
+  referencePeriod?: string;
+  pixCopyPaste?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateInvoiceInput {
+  amount: number;
+  dueDate?: string;
+  paymentMethod?: PaymentMethod;
+  referencePeriod?: string;
+  notes?: string;
+}
+
+export interface RechargeCreditsInput {
+  amount: number;
+  paymentMethod?: PaymentMethod;
+  notes?: string;
+}
+
+export interface SponsoredFinancialOverview {
+  monthlyRecurringRevenue: number;
+  totalRevenueAllTime: number;
+  totalPendingReceivables: number;
+  totalOverdueReceivables: number;
+  totalWalletBalance: number;
+  activeSubscriptionsCount: number;
+  activeCpcCampaignsCount: number;
+  totalInvoicesCount: number;
+  pendingInvoicesCount: number;
+  overdueInvoicesCount: number;
+  placesByPlanTier: Record<string, number>;
+  placesByBillingModel: Record<string, number>;
 }
 
 

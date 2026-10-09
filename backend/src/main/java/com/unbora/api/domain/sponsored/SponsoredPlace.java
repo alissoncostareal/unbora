@@ -1,7 +1,9 @@
 package com.unbora.api.domain.sponsored;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -73,6 +75,65 @@ public class SponsoredPlace {
     @Column(name = "clicks_count", nullable = false)
     private Long clicksCount = 0L;
 
+    // --- 2. Modelos de Cobrança (Monetização) ---
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "billing_model", nullable = false)
+    private BillingModel billingModel = BillingModel.SUBSCRIPTION;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan_tier", nullable = false)
+    private PlanTier planTier = PlanTier.GOLD;
+
+    @Column(name = "monthly_price", nullable = false, precision = 12, scale = 2)
+    private BigDecimal monthlyPrice = BigDecimal.valueOf(199.00);
+
+    @Column(name = "credit_balance", nullable = false, precision = 12, scale = 2)
+    private BigDecimal creditBalance = BigDecimal.ZERO;
+
+    @Column(name = "cost_per_click", nullable = false, precision = 8, scale = 2)
+    private BigDecimal costPerClick = BigDecimal.valueOf(0.75);
+
+    @Column(name = "cost_per_impression", nullable = false, precision = 8, scale = 3)
+    private BigDecimal costPerImpression = BigDecimal.valueOf(0.015);
+
+    @Column(name = "daily_budget", nullable = false, precision = 12, scale = 2)
+    private BigDecimal dailyBudget = BigDecimal.ZERO;
+
+    @Column(name = "spent_today", nullable = false, precision = 12, scale = 2)
+    private BigDecimal spentToday = BigDecimal.ZERO;
+
+    @Column(name = "total_spent", nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalSpent = BigDecimal.ZERO;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false)
+    private PaymentStatus paymentStatus = PaymentStatus.PAID;
+
+    @Column(name = "current_cycle_start")
+    private LocalDate currentCycleStart;
+
+    @Column(name = "next_billing_date")
+    private LocalDate nextBillingDate;
+
+    @Column(name = "contact_name")
+    private String contactName;
+
+    @Column(name = "contact_phone")
+    private String contactPhone;
+
+    @Column(name = "contact_email")
+    private String contactEmail;
+
+    @Column(name = "cnpj_cpf")
+    private String cnpjCpf;
+
+    @Column(name = "billing_notes", length = 1000)
+    private String billingNotes;
+
+    @Column(name = "auto_renew", nullable = false)
+    private Boolean autoRenew = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -89,6 +150,19 @@ public class SponsoredPlace {
         }
         if (this.impressionsCount == null) this.impressionsCount = 0L;
         if (this.clicksCount == null) this.clicksCount = 0L;
+        if (this.billingModel == null) this.billingModel = BillingModel.SUBSCRIPTION;
+        if (this.planTier == null) this.planTier = PlanTier.GOLD;
+        if (this.monthlyPrice == null) this.monthlyPrice = BigDecimal.valueOf(199.00);
+        if (this.creditBalance == null) this.creditBalance = BigDecimal.ZERO;
+        if (this.costPerClick == null) this.costPerClick = BigDecimal.valueOf(0.75);
+        if (this.costPerImpression == null) this.costPerImpression = BigDecimal.valueOf(0.015);
+        if (this.dailyBudget == null) this.dailyBudget = BigDecimal.ZERO;
+        if (this.spentToday == null) this.spentToday = BigDecimal.ZERO;
+        if (this.totalSpent == null) this.totalSpent = BigDecimal.ZERO;
+        if (this.paymentStatus == null) this.paymentStatus = PaymentStatus.PAID;
+        if (this.autoRenew == null) this.autoRenew = true;
+        if (this.currentCycleStart == null) this.currentCycleStart = LocalDate.now();
+        if (this.nextBillingDate == null) this.nextBillingDate = LocalDate.now().plusMonths(1);
         if (this.createdAt == null) this.createdAt = Instant.now();
         if (this.updatedAt == null) this.updatedAt = Instant.now();
     }
@@ -266,6 +340,150 @@ public class SponsoredPlace {
 
     public void setClicksCount(Long clicksCount) {
         this.clicksCount = clicksCount;
+    }
+
+    public BillingModel getBillingModel() {
+        return billingModel;
+    }
+
+    public void setBillingModel(BillingModel billingModel) {
+        this.billingModel = billingModel;
+    }
+
+    public PlanTier getPlanTier() {
+        return planTier;
+    }
+
+    public void setPlanTier(PlanTier planTier) {
+        this.planTier = planTier;
+    }
+
+    public BigDecimal getMonthlyPrice() {
+        return monthlyPrice;
+    }
+
+    public void setMonthlyPrice(BigDecimal monthlyPrice) {
+        this.monthlyPrice = monthlyPrice;
+    }
+
+    public BigDecimal getCreditBalance() {
+        return creditBalance;
+    }
+
+    public void setCreditBalance(BigDecimal creditBalance) {
+        this.creditBalance = creditBalance;
+    }
+
+    public BigDecimal getCostPerClick() {
+        return costPerClick;
+    }
+
+    public void setCostPerClick(BigDecimal costPerClick) {
+        this.costPerClick = costPerClick;
+    }
+
+    public BigDecimal getCostPerImpression() {
+        return costPerImpression;
+    }
+
+    public void setCostPerImpression(BigDecimal costPerImpression) {
+        this.costPerImpression = costPerImpression;
+    }
+
+    public BigDecimal getDailyBudget() {
+        return dailyBudget;
+    }
+
+    public void setDailyBudget(BigDecimal dailyBudget) {
+        this.dailyBudget = dailyBudget;
+    }
+
+    public BigDecimal getSpentToday() {
+        return spentToday;
+    }
+
+    public void setSpentToday(BigDecimal spentToday) {
+        this.spentToday = spentToday;
+    }
+
+    public BigDecimal getTotalSpent() {
+        return totalSpent;
+    }
+
+    public void setTotalSpent(BigDecimal totalSpent) {
+        this.totalSpent = totalSpent;
+    }
+
+    public PaymentStatus getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(PaymentStatus paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public LocalDate getCurrentCycleStart() {
+        return currentCycleStart;
+    }
+
+    public void setCurrentCycleStart(LocalDate currentCycleStart) {
+        this.currentCycleStart = currentCycleStart;
+    }
+
+    public LocalDate getNextBillingDate() {
+        return nextBillingDate;
+    }
+
+    public void setNextBillingDate(LocalDate nextBillingDate) {
+        this.nextBillingDate = nextBillingDate;
+    }
+
+    public String getContactName() {
+        return contactName;
+    }
+
+    public void setContactName(String contactName) {
+        this.contactName = contactName;
+    }
+
+    public String getContactPhone() {
+        return contactPhone;
+    }
+
+    public void setContactPhone(String contactPhone) {
+        this.contactPhone = contactPhone;
+    }
+
+    public String getContactEmail() {
+        return contactEmail;
+    }
+
+    public void setContactEmail(String contactEmail) {
+        this.contactEmail = contactEmail;
+    }
+
+    public String getCnpjCpf() {
+        return cnpjCpf;
+    }
+
+    public void setCnpjCpf(String cnpjCpf) {
+        this.cnpjCpf = cnpjCpf;
+    }
+
+    public String getBillingNotes() {
+        return billingNotes;
+    }
+
+    public void setBillingNotes(String billingNotes) {
+        this.billingNotes = billingNotes;
+    }
+
+    public Boolean getAutoRenew() {
+        return autoRenew;
+    }
+
+    public void setAutoRenew(Boolean autoRenew) {
+        this.autoRenew = autoRenew;
     }
 
     public Instant getCreatedAt() {
