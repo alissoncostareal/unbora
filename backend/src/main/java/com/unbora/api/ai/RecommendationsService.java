@@ -94,11 +94,11 @@ public class RecommendationsService {
     }
 
     public RecommendationResult recommend(RecommendDto dto) {
-        String city = InputSanitizer.sanitizeCityOrCountry(dto.city(), 100);
-        if (city == null || city.isBlank()) city = "Brasil";
+        String rawCity = InputSanitizer.sanitizeCityOrCountry(dto.city(), 100);
+        final String city = (rawCity == null || rawCity.isBlank()) ? "Brasil" : rawCity;
 
-        String country = InputSanitizer.sanitizeCityOrCountry(dto.country(), 100);
-        if (country == null || country.isBlank()) country = "Brasil";
+        String rawCountry = InputSanitizer.sanitizeCityOrCountry(dto.country(), 100);
+        final String country = (rawCountry == null || rawCountry.isBlank()) ? "Brasil" : rawCountry;
 
         String region = InputSanitizer.sanitizeCityOrCountry(dto.region(), 100);
         String humor = InputSanitizer.sanitizeForPrompt(dto.humor(), 100);
@@ -107,10 +107,10 @@ public class RecommendationsService {
 
         int maxResults = locationSettingsService != null ? locationSettingsService.getEffectiveMaxResults(city) : 24;
 
-        Double radiusKm = dto.radiusKm() != null ? Math.min(Math.max(dto.radiusKm(), 1.0), 100.0) : 8.0;
+        final Double radiusKm = dto.radiusKm() != null ? Math.min(Math.max(dto.radiusKm(), 1.0), 100.0) : 8.0;
         CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
-        Double lat = center != null ? center.latitude() : dto.latitude();
-        Double lng = center != null ? center.longitude() : dto.longitude();
+        final Double lat = center != null ? center.latitude() : dto.latitude();
+        final Double lng = center != null ? center.longitude() : dto.longitude();
         Set<String> dismissed = loadDismissed(userId);
 
         LocalDate now = LocalDate.now();
@@ -263,11 +263,11 @@ public class RecommendationsService {
 
     public RecommendationResult search(SearchDto dto) {
         String query = InputSanitizer.sanitizeForPrompt(dto.query(), 300);
-        String city = InputSanitizer.sanitizeCityOrCountry(dto.city(), 100);
-        if (city == null || city.isBlank()) city = "Brasil";
+        String rawCity = InputSanitizer.sanitizeCityOrCountry(dto.city(), 100);
+        final String city = (rawCity == null || rawCity.isBlank()) ? "Brasil" : rawCity;
 
-        String country = InputSanitizer.sanitizeCityOrCountry(dto.country(), 100);
-        if (country == null || country.isBlank()) country = "Brasil";
+        String rawCountry = InputSanitizer.sanitizeCityOrCountry(dto.country(), 100);
+        final String country = (rawCountry == null || rawCountry.isBlank()) ? "Brasil" : rawCountry;
 
         String region = InputSanitizer.sanitizeCityOrCountry(dto.region(), 100);
         String userId = InputSanitizer.sanitizePlaceId(dto.userId(), 100);
@@ -275,9 +275,9 @@ public class RecommendationsService {
         int maxResults = locationSettingsService != null ? locationSettingsService.getEffectiveMaxResults(city) : 24;
 
         CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
-        Double lat = center != null ? center.latitude() : dto.latitude();
-        Double lng = center != null ? center.longitude() : dto.longitude();
-        double radiusKm = 25.0;
+        final Double lat = center != null ? center.latitude() : dto.latitude();
+        final Double lng = center != null ? center.longitude() : dto.longitude();
+        final double radiusKm = 25.0;
         Set<String> dismissed = loadDismissed(userId);
 
         LocalDate now = LocalDate.now();
