@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { PlaceCard } from '../components/PlaceCard';
+import { SEOHead } from '../components/SEOHead';
 import { fetchDismissed, recommend, searchPlaces, sendFeedback, type Place, type Recommendation } from '../lib/api';
 import { saveRole } from '../lib/savedRoles';
 import { useAuth } from '../lib/auth';
@@ -367,6 +368,17 @@ export function ResultPage() {
 
   return (
     <main className="mx-auto w-full max-w-xl px-6 py-12 sm:py-16">
+      <SEOHead
+        title={`Recomendações e Lugares em ${journey?.city || result.subtitle || 'sua cidade'} · Unbora`}
+        description={`Confira o roteiro e sugestões personalizadas de onde ir em ${journey?.city || result.subtitle || 'sua cidade'}. Lugares reais com fotos, notas e motivo da escolha.`}
+        canonical="https://unbora.com.br/results"
+        city={journey?.city || result.subtitle || 'Fortaleza'}
+        breadcrumbs={[
+          { name: 'Início', url: '/' },
+          { name: journey?.city || result.subtitle || 'Fortaleza', url: '/home' },
+          { name: 'Resultados', url: '/results' },
+        ]}
+      />
       <p className="text-sm text-muted">{journey?.city || result.subtitle}</p>
       <h1 className="mt-3 max-w-[14ch] text-4xl leading-[1.08] font-light tracking-tight sm:text-5xl">{headline}</h1>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

@@ -17,6 +17,7 @@ import {
 } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useCity } from '../lib/city';
+import { SEOHead } from '../components/SEOHead';
 
 export function MerchantPage() {
   const { user, upgradeToMerchantRole } = useAuth();
@@ -300,13 +301,44 @@ export function MerchantPage() {
   const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(1) : '0.0';
   const totalBalance = places.reduce((acc, p) => acc + (p.creditBalance || 0), 0);
 
+  const merchantFaqs = [
+    {
+      question: 'Por que anunciar meu restaurante ou bar no Unbora?',
+      answer: 'Diferente das redes sociais convencionais, onde o público consome vídeos de forma passiva, no Unbora 100% dos usuários estão pesquisando ativamente onde sair, comer e beber nas próximas horas. A conversão de visitas presenciais é imediata.',
+    },
+    {
+      question: 'O que é o Unbora Perks e como ele atrai clientes?',
+      answer: 'O Unbora Perks é um programa de benefícios onde seu estabelecimento oferece um incentivo exclusivo (como 15% de desconto, drink de boas-vindas ou sobremesa). Os clientes descobrem seu local e visitam para resgatar a experiência.',
+    },
+    {
+      question: 'Quais são as opções de planos e modelos de cobrança?',
+      answer: 'Oferecemos planos mensais por assinatura com destaque prioritário nas buscas da sua cidade e modalidades com recarga de créditos por clique. O pagamento é realizado instantaneamente via PIX.',
+    },
+    {
+      question: 'Quanto tempo leva para meu estabelecimento aparecer no ar?',
+      answer: 'A ativação ocorre em tempo real logo após a aprovação e confirmação do PIX. Seu estabelecimento já fica disponível na curadoria da cidade.',
+    },
+  ];
+
   // 1. NÃO AUTENTICADO (Página de Apresentação / Parcerias)
   if (!user) {
     return (
       <div className="min-h-screen bg-[#faf8f5] py-16 px-4 sm:px-6 lg:px-8">
+        <SEOHead
+          title="Anuncie seu Restaurante, Bar ou Estabelecimento · Unbora Business"
+          description="Cadastre seu restaurante, bar ou cafeteria no Unbora. Alcance clientes locais com intenção imediata de sair e aumente seu faturamento com destaque garantido."
+          keywords="anunciar restaurante fortaleza, cadastrar bar fortaleza, divulgar restaurante, marketing gastronomico fortaleza, unbora parceiros, unbora business, atrair clientes para restaurante"
+          canonical="https://unbora.com.br/merchant"
+          city={city || 'Fortaleza'}
+          faqs={merchantFaqs}
+          breadcrumbs={[
+            { name: 'Início', url: '/' },
+            { name: 'Lojistas & Parceiros', url: '/merchant' },
+          ]}
+        />
         <div className="max-w-4xl mx-auto text-center space-y-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#faf2ee] border border-[#dbc1bb]/80 text-[#7c2f1d] text-xs font-bold uppercase tracking-[0.12em] mx-auto">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#7c2f1d]" aria-hidden />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-none bg-[#faf2ee] border border-[#dbc1bb]/80 text-[#7c2f1d] text-xs font-bold uppercase tracking-[0.12em] mx-auto">
+            <span className="h-1.5 w-1.5 rounded-none bg-[#7c2f1d]" aria-hidden />
             {partnerSettings.badgeText || 'Programa de Parceiros · Unbora Business'}
           </div>
 
@@ -320,8 +352,8 @@ export function MerchantPage() {
 
           {/* 3 Pilares com Ícones de Biblioteca Padrão e Alinhamento Centralizado */}
           <div className="grid sm:grid-cols-3 gap-6 pt-4">
-            <div className="bg-white p-8 rounded-2xl border border-[#eadfd4] shadow-xs flex flex-col items-center text-center space-y-4">
-              <div className="w-12 h-12 rounded-xl bg-[#faf2ee] border border-[#dbc1bb]/60 flex items-center justify-center text-[#7c2f1d]">
+            <div className="bg-white p-8 rounded-none border border-[#eadfd4] shadow-xs flex flex-col items-center text-center space-y-4">
+              <div className="w-12 h-12 rounded-none bg-[#faf2ee] border border-[#dbc1bb]/60 flex items-center justify-center text-[#7c2f1d]">
                 <CompassIcon className="w-6 h-6" />
               </div>
               <h3 className="font-semibold text-lg text-[#1e1b19]">
@@ -332,8 +364,8 @@ export function MerchantPage() {
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl border border-[#eadfd4] shadow-xs flex flex-col items-center text-center space-y-4">
-              <div className="w-12 h-12 rounded-xl bg-[#faf2ee] border border-[#dbc1bb]/60 flex items-center justify-center text-[#7c2f1d]">
+            <div className="bg-white p-8 rounded-none border border-[#eadfd4] shadow-xs flex flex-col items-center text-center space-y-4">
+              <div className="w-12 h-12 rounded-none bg-[#faf2ee] border border-[#dbc1bb]/60 flex items-center justify-center text-[#7c2f1d]">
                 <GiftIcon className="w-6 h-6" />
               </div>
               <h3 className="font-semibold text-lg text-[#1e1b19]">
@@ -344,8 +376,8 @@ export function MerchantPage() {
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl border border-[#eadfd4] shadow-xs flex flex-col items-center text-center space-y-4">
-              <div className="w-12 h-12 rounded-xl bg-[#faf2ee] border border-[#dbc1bb]/60 flex items-center justify-center text-[#7c2f1d]">
+            <div className="bg-white p-8 rounded-none border border-[#eadfd4] shadow-xs flex flex-col items-center text-center space-y-4">
+              <div className="w-12 h-12 rounded-none bg-[#faf2ee] border border-[#dbc1bb]/60 flex items-center justify-center text-[#7c2f1d]">
                 <QrCodeIcon className="w-6 h-6" />
               </div>
               <h3 className="font-semibold text-lg text-[#1e1b19]">
@@ -361,16 +393,16 @@ export function MerchantPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
               to="/register"
-              className="w-full sm:w-auto px-8 py-4 bg-[#1e1b19] hover:bg-[#7c2f1d] text-[#fff8f5] text-xs font-semibold tracking-[0.14em] uppercase rounded-xl shadow-md transition flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-4 bg-[#1e1b19] hover:bg-[#7c2f1d] text-[#fff8f5] text-xs font-semibold tracking-[0.14em] uppercase rounded-none shadow-md transition flex items-center justify-center gap-2"
             >
               <span>{partnerSettings.ctaPrimaryText || 'Criar Conta de Lojista'}</span>
               <ArrowRightIcon className="w-4 h-4" />
             </Link>
             <Link
               to="/login"
-              className="w-full sm:w-auto px-8 py-4 bg-white border border-[#dbc1bb] text-[#1e1b19] text-xs font-semibold tracking-[0.14em] uppercase rounded-xl hover:bg-[#faf2ee] transition"
+              className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-[#f4ece8] text-[#1e1b19] border border-[#eadfd4] text-xs font-semibold tracking-[0.14em] uppercase rounded-none transition flex items-center justify-center gap-2"
             >
-              {partnerSettings.ctaSecondaryText || 'Já sou cadastrado · Entrar'}
+              <span>{partnerSettings.ctaSecondaryText || 'Já sou cadastrado · Entrar'}</span>
             </Link>
           </div>
         </div>

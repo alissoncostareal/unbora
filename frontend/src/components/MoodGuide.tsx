@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { HomeGazette } from './HomeGazette';
+import { SEOHead } from './SEOHead';
 import { recommend } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { isBrazilianState, placeArea, readRadiusKm, useCity } from '../lib/city';
@@ -238,10 +239,42 @@ export function MoodGuide() {
   const current = steps[step];
   const opening = step === 0;
   const continueLabel = step === steps.length - 1 ? 'Ver recomendações\u00a0→' : 'Continuar\u00a0→';
+  const cityName = city.trim() || 'Fortaleza';
+
+  const homeFaqs = [
+    {
+      question: `Como o Unbora recomenda lugares e restaurantes em ${cityName}?`,
+      answer: `O Unbora utiliza inteligência artificial para cruzar seu humor, interesses, companhia, tempo disponível e orçamento com os melhores estabelecimentos em ${cityName}, entregando fotos reais, endereço e o motivo da recomendação.`,
+    },
+    {
+      question: 'O Unbora é gratuito para os usuários?',
+      answer: 'Sim, o acesso ao guia de lugares, recomendações inteligentes com IA, roteiros urbanos e benefícios Unbora Perks é 100% gratuito.',
+    },
+    {
+      question: `Como encontrar cafeterias, bares e restaurantes para trabalhar ou relaxar em ${cityName}?`,
+      answer: `Você pode filtrar por momentos (como "Relaxar", "Animado", "Cafés", "Gastronomia", "Em paz") para receber sugestões selecionadas com a atmosfera ideal para o seu objetivo.`,
+    },
+    {
+      question: 'Como anunciar meu bar, cafeteria ou restaurante no Unbora?',
+      answer: 'Restaurantes e bares podem se cadastrar pelo portal de parceiros em unbora.com.br/merchant ou business.unbora.com.br para obter destaque exclusivo e criar benefícios do Unbora Perks.',
+    },
+  ];
 
   if (opening) {
     return (
       <div className="flex flex-1 flex-col bg-white">
+        <SEOHead
+          title={`Guia de Lugares, Onde Comer, Bares e Rolês em ${cityName} · Unbora`}
+          description={`Descubra o que fazer hoje em ${cityName}: restaurantes, bares, cafeterias e eventos culturais com fotos reais, notas e recomendações inteligentes por IA.`}
+          keywords={`guia gastronômico ${cityName}, onde comer em ${cityName}, bares ${cityName}, restaurantes ${cityName}, o que fazer hoje ${cityName}, cafeterias ${cityName}, rolês em ${cityName}, turismo urbano`}
+          canonical="https://unbora.com.br/home"
+          city={cityName}
+          faqs={homeFaqs}
+          breadcrumbs={[
+            { name: 'Início', url: '/' },
+            { name: cityName, url: '/home' },
+          ]}
+        />
         <section id="intencao" className="bg-white lg:grid lg:grid-cols-2 lg:items-stretch">
           <ProjectCarousel city={city} label={placeLine} />
           <div className="flex flex-col justify-center bg-[#f4f4f2] px-5 py-8 lg:my-8 lg:mr-6 lg:overflow-y-auto lg:px-10 lg:py-10">
@@ -301,13 +334,19 @@ export function MoodGuide() {
 
   return (
     <main className="flex min-h-[calc(100dvh-5rem)] flex-col bg-white">
+      <SEOHead
+        title={`Passo ${step + 1}: ${current.question} · Unbora ${cityName}`}
+        description={`Personalize seu roteiro em ${cityName}: escolha seu estilo, orçamento e tempo para encontrar os melhores restaurantes, cafés e bares.`}
+        canonical="https://unbora.com.br/home"
+        city={cityName}
+      />
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
         <p className="break-words px-1 text-center text-[11px] tracking-[0.12em] text-muted uppercase sm:tracking-[0.2em]">
           Passo {step + 1} de {steps.length} · {city}
         </p>
         <div className="mx-auto mt-2 h-px w-12 bg-[#e7dfd8]" />
 
-        <div key={step} className="step-in mx-auto mt-8 w-full min-w-0 max-w-3xl rounded-xl border border-[#e7dfd8] bg-white p-4 shadow-sm sm:mt-12 sm:p-8 md:p-12">
+        <div key={step} className="step-in mx-auto mt-8 w-full min-w-0 max-w-3xl rounded-none border border-[#e7dfd8] bg-white p-4 shadow-sm sm:mt-12 sm:p-8 md:p-12">
           <h1 className="break-words text-center text-2xl font-light tracking-tight sm:text-3xl md:text-4xl">{current.question}</h1>
           <p className="mt-2 text-center text-sm text-muted">{current.hint}</p>
 

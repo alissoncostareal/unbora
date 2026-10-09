@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { GoogleAuthButton } from '../components/GoogleAuthButton';
+import { SEOHead } from '../components/SEOHead';
 import { forgotPassword } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
@@ -66,6 +67,15 @@ export function LoginPage() {
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-white px-4 py-10 sm:px-8 lg:px-12">
+      <SEOHead
+        title="Entrar · Unbora"
+        description="Acesse sua conta no Unbora para salvar lugares favoritos, registrar rolês passados e obter recomendações sob medida."
+        canonical="https://unbora.com.br/login"
+        breadcrumbs={[
+          { name: 'Início', url: '/' },
+          { name: 'Entrar', url: '/login' },
+        ]}
+      />
       <div className="grid w-full max-w-6xl overflow-hidden bg-white shadow-sm lg:grid-cols-12">
         <section className="flex flex-col justify-between bg-[#faf2ee] p-8 sm:p-12 lg:col-span-5 lg:p-16">
           <div>

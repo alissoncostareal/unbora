@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { GoogleAuthButton } from '../components/GoogleAuthButton';
+import { SEOHead } from '../components/SEOHead';
 import { useAuth } from '../lib/auth';
 
 const fieldClass = 'h-12 w-full bg-white px-4 text-[15px] text-[#1e1b19] shadow-[inset_0_0_0_1px_#dbc1bb] outline-none placeholder:text-[#88726d]/70 focus:bg-[#faf2ee] focus:shadow-[inset_0_0_0_1px_#1e1b19]';
@@ -48,6 +49,15 @@ export function RegisterPage() {
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-white px-4 py-10 sm:px-8 lg:px-12">
+      <SEOHead
+        title="Cadastrar Conta Gratuita · Unbora"
+        description="Crie sua conta gratuita no Unbora. Salve rolês favoritos, faça check-ins em lugares incríveis e receba recomendações com IA."
+        canonical="https://unbora.com.br/register"
+        breadcrumbs={[
+          { name: 'Início', url: '/' },
+          { name: 'Cadastrar', url: '/register' },
+        ]}
+      />
       <div className="grid w-full max-w-6xl overflow-hidden bg-white shadow-sm lg:grid-cols-12">
         <section className="flex flex-col justify-between bg-[#faf2ee] p-8 sm:p-12 lg:col-span-5 lg:p-16">
           <div>

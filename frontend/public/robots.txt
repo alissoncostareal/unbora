@@ -1,6 +1,21 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Allow: /
+Allow: /home
+Allow: /results
+Allow: /search
+Allow: /merchant
+Allow: /login
+Allow: /register
 
-# Sitemaps
+# Bloqueio de rotas autenticadas / privadas para evitar indexação desnecessária
+Disallow: /profile
+Disallow: /notifications
+Disallow: /favorites
+Disallow: /ratings
+Disallow: /create
+Disallow: /reset-password
+Disallow: /confirm-account
+
+# Sitemap Oficial Unbora
 Sitemap: https://unbora.com.br/sitemap.xml

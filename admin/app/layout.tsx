@@ -14,6 +14,12 @@ const dmSans = localFont({
 export const metadata: Metadata = {
   title: 'Unbora Admin',
   description: 'Portal administrativo do Unbora',
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+    nosnippet: true,
+  },
   icons: {
     icon: '/favicon.svg?v=2',
     shortcut: '/favicon.svg?v=2',

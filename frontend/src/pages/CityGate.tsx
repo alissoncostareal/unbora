@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { CityAutocomplete } from '../components/CityAutocomplete';
+import { SEOHead } from '../components/SEOHead';
 import type { CityPlace } from '../lib/api';
 import { formatPlace, placeArea, readRadiusKm, saveRadiusKm, useCity } from '../lib/city';
 
@@ -20,13 +21,20 @@ export function CityGate() {
 
   return (
     <main className="flex min-h-dvh w-full flex-col bg-white">
+      <SEOHead
+        title="Unbora · Escolha sua Cidade | O Guia Inteligente de Lugares e Rolês"
+        description="Descubra onde comer, beber e passear na sua cidade com inteligência artificial. O guia definitivo de restaurantes, cafeterias e vida noturna com fotos reais."
+        keywords="unbora, guia de cidades, onde comer hoje, onde sair hoje, restaurantes fortaleza, bares fortaleza, rolês curitiba"
+        canonical="https://unbora.com.br/"
+        city={city}
+      />
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
         <p className="break-words px-1 text-center text-[11px] tracking-[0.12em] text-muted uppercase sm:tracking-[0.2em]">
           {modelCity ? `Cidade modelo · ${city}` : placeLine}
         </p>
         <div className="mx-auto mt-2 h-px w-12 bg-[#e7dfd8]" />
 
-        <div className="step-in mx-auto mt-8 w-full min-w-0 max-w-xl rounded-xl border border-[#e7dfd8] bg-white p-4 shadow-sm sm:mt-12 sm:p-8 md:p-12">
+        <div className="step-in mx-auto mt-8 w-full min-w-0 max-w-xl rounded-none border border-[#e7dfd8] bg-white p-4 shadow-sm sm:mt-12 sm:p-8 md:p-12">
           <h1 className="break-words text-center text-2xl font-light tracking-tight sm:text-3xl md:text-4xl">Onde você está?</h1>
           <p className="mt-2 text-center text-sm text-muted">Cidade e raio.</p>
 
