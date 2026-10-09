@@ -18,15 +18,16 @@ public class HealthController {
         Map<String, String> endpoints = new LinkedHashMap<>();
         endpoints.put("health", "/health");
         endpoints.put("swagger", "/swagger-ui.html");
-        endpoints.put("recommend", "POST /api/recomendar");
-        endpoints.put("search", "POST /api/buscar");
-        endpoints.put("events", "POST /api/eventos");
+        endpoints.put("recommendations", "POST /api/recommendations");
+        endpoints.put("search", "POST /api/search");
+        endpoints.put("events", "POST /api/events");
         endpoints.put("users", "/users");
         endpoints.put("usersStats", "/users/stats");
         endpoints.put("carousels", "/carousels");
         endpoints.put("notifications", "/notifications");
         endpoints.put("locations", "/locations");
         endpoints.put("adminLogin", "POST /admin/auth/login");
+        endpoints.put("merchantSponsored", "/merchant/sponsored/places");
 
         Map<String, Object> root = new LinkedHashMap<>();
         root.put("status", "ok");

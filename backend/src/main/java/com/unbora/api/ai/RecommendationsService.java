@@ -639,68 +639,78 @@ public class RecommendationsService {
 
         List<PlaceDto> enriched = new ArrayList<>();
         ImageEnrichmentService.BatchSession batch = new ImageEnrichmentService.BatchSession();
-        for (PlaceDto place : result.getLugares()) {
-            String address = place.getEndereco() != null ? place.getEndereco() : city + ", " + country;
+        final String effectiveAddressSuffix = city + ", " + country;
 
-            GooglePlacesDiscoveryService.DiscoveredPlace matched = null;
-            if (livePlaces != null) {
-                for (GooglePlacesDiscoveryService.DiscoveredPlace lp : livePlaces) {
-                    if (imageEnrichmentService.calculateNameSimilarity(place.getNome(), lp.displayName()) >= 0.4) {
-                        matched = lp;
-                        break;
+        List<CompletableFuture<PlaceDto>> futures = result.getLugares().stream()
+                .map(place -> CompletableFuture.supplyAsync(() -> {
+                    String address = place.getEndereco() != null ? place.getEndereco() : effectiveAddressSuffix;
+
+                    GooglePlacesDiscoveryService.DiscoveredPlace matched = null;
+                    if (livePlaces != null) {
+                        for (GooglePlacesDiscoveryService.DiscoveredPlace lp : livePlaces) {
+                            if (imageEnrichmentService.calculateNameSimilarity(place.getNome(), lp.displayName()) >= 0.4) {
+                                matched = lp;
+                                break;
+                            }
+                        }
                     }
-                }
-            }
 
-            ImageSubjectClassifier.Kind imageKind = imageSubjectClassifier.classify(
-                    place.getNome(),
-                    place.getTipo(),
-                    place.getCategoryTag()
-            );
-            // Venue encontrado no Google Maps → sempre foto do Maps (nunca tema/Unsplash).
-            boolean culturalEvent = matched == null
-                    && imageKind == ImageSubjectClassifier.Kind.CULTURAL_EVENT;
+                    ImageSubjectClassifier.Kind imageKind = imageSubjectClassifier.classify(
+                            place.getNome(),
+                            place.getTipo(),
+                            place.getCategoryTag()
+                    );
+                    boolean culturalEvent = matched == null
+                            && imageKind == ImageSubjectClassifier.Kind.CULTURAL_EVENT;
 
-            if (matched != null) {
-                if (matched.googleMapsUri() != null && !matched.googleMapsUri().isBlank()) {
-                    place.setGoogleMapsUri(matched.googleMapsUri());
-                }
-                if (matched.placeId() != null) place.setPlaceId(matched.placeId());
-                if (matched.latitude() != null) place.setLatitude(matched.latitude());
-                if (matched.longitude() != null) place.setLongitude(matched.longitude());
-                if (matched.rating() != null && matched.rating() > 0) place.setNota(matched.rating());
-                if (matched.openNow() != null) place.setOpenNow(matched.openNow());
-                if (matched.priceLevel() != null) place.setPriceLevel(matched.priceLevel());
-                if (matched.userRatingCount() != null) place.setUserRatingCount(matched.userRatingCount());
-                if (place.getTipo() == null || place.getTipo().isBlank()) {
-                    place.setTipo(humanizePlaceType(matched.primaryType()));
-                }
-                if (place.getCategoryTag() == null || place.getCategoryTag().isBlank()) {
-                    place.setCategoryTag(categoryForPlaceType(matched.primaryType()));
-                }
-            }
+                    if (matched != null) {
+                        if (matched.googleMapsUri() != null && !matched.googleMapsUri().isBlank()) {
+                            place.setGoogleMapsUri(matched.googleMapsUri());
+                        }
+                        if (matched.placeId() != null) place.setPlaceId(matched.placeId());
+                        if (matched.latitude() != null) place.setLatitude(matched.latitude());
+                        if (matched.longitude() != null) place.setLongitude(matched.longitude());
+                        if (matched.rating() != null && matched.rating() > 0) place.setNota(matched.rating());
+                        if (matched.openNow() != null) place.setOpenNow(matched.openNow());
+                        if (matched.priceLevel() != null) place.setPriceLevel(matched.priceLevel());
+                        if (matched.userRatingCount() != null) place.setUserRatingCount(matched.userRatingCount());
+                        if (place.getTipo() == null || place.getTipo().isBlank()) {
+                            place.setTipo(humanizePlaceType(matched.primaryType()));
+                        }
+                        if (place.getCategoryTag() == null || place.getCategoryTag().isBlank()) {
+                            place.setCategoryTag(categoryForPlaceType(matched.primaryType()));
+                        }
+                    }
 
-            if (culturalEvent) {
-                place.setImagem(null);
-                String photo = imageEnrichmentService.fetchEventImage(
-                        place.getNome(),
-                        address,
-                        city,
-                        place.getTipo(),
-                        place.getVisualQuery(),
-                        place.getCategoryTag(),
-                        batch
-                );
-                place.setImagem(photo);
-                place.setImagemIlustrativa(
-                        photo != null && imageEnrichmentService.isIllustrativeImageUrl(photo)
-                );
-            } else {
-                applyMapsPhoto(place, matched, address, city, latitude, longitude, batch);
-            }
+                    if (culturalEvent) {
+                        place.setImagem(null);
+                        String photo = imageEnrichmentService.fetchEventImage(
+                                place.getNome(),
+                                address,
+                                city,
+                                place.getTipo(),
+                                place.getVisualQuery(),
+                                place.getCategoryTag(),
+                                batch
+                        );
+                        place.setImagem(photo);
+                        place.setImagemIlustrativa(
+                                photo != null && imageEnrichmentService.isIllustrativeImageUrl(photo)
+                        );
+                    } else {
+                        applyMapsPhoto(place, matched, address, city, latitude, longitude, batch);
+                    }
 
-            if (place.getIcone() == null || place.getIcone().isBlank()) place.setIcone("📍");
-            enriched.add(place);
+                    if (place.getIcone() == null || place.getIcone().isBlank()) place.setIcone("📍");
+                    return place;
+                }, discoveryExecutor))
+                .toList();
+
+        for (CompletableFuture<PlaceDto> f : futures) {
+            try {
+                PlaceDto p = f.get(3, TimeUnit.SECONDS);
+                if (p != null) enriched.add(p);
+            } catch (Exception ignored) {}
         }
 
         result.setLugares(enriched);

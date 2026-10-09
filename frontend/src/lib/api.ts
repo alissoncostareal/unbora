@@ -254,7 +254,7 @@ export async function recommend(input: {
   radiusKm?: number;
   userId?: string;
 }): Promise<Recommendation> {
-  const data = await post<RecommendationDto>('/api/recomendar', {
+  const data = await post<RecommendationDto>('/api/recommendations', {
     humor: input.humor,
     sentir: input.sentir,
     activities: input.activities,
@@ -307,17 +307,17 @@ export function sendFeedback(input: {
   placeId?: string;
   userId?: string;
 }): Promise<void> {
-  return post<void>('/api/recomendar/feedback', input).then(() => undefined);
+  return post<void>('/api/recommendations/feedback', input).then(() => undefined);
 }
 
 export async function fetchDismissed(userId: string): Promise<string[]> {
-  const response = await fetch(`${API_BASE}/api/recomendar/dislikes?userId=${encodeURIComponent(userId)}`);
+  const response = await fetch(`${API_BASE}/api/recommendations/dislikes?userId=${encodeURIComponent(userId)}`);
   if (!response.ok) return [];
   return response.json() as Promise<string[]>;
 }
 
 export async function searchPlaces(query: string, scope: CityPlace, userId?: string): Promise<Recommendation> {
-  const data = await post<RecommendationDto>('/api/buscar', {
+  const data = await post<RecommendationDto>('/api/search', {
     query,
     city: scope.city,
     region: scope.region,

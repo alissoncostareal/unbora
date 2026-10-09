@@ -108,7 +108,7 @@ function mapRecommendation(dto: RecommendationDto): Recommendation {
 export async function fetchRecommendations(
   request: RecommendationRequest,
 ): Promise<Recommendation> {
-  const data = await apiPost<RecommendationDto>('/api/recomendar', request, 120_000);
+  const data = await apiPost<RecommendationDto>('/api/recommendations', request, 120_000);
   return mapRecommendation(data);
 }
 
@@ -119,7 +119,7 @@ export async function searchPlaces(
   longitude?: number,
 ): Promise<Recommendation> {
   const data = await apiPost<RecommendationDto>(
-    '/api/buscar',
+    '/api/search',
     { query, city, latitude, longitude },
     120_000,
   );
@@ -130,7 +130,7 @@ export async function sendRecommendationFeedback(
   feedback: RecommendationFeedbackPayload,
 ): Promise<void> {
   try {
-    await apiPost('/api/recomendar/feedback', feedback, 10_000);
+    await apiPost('/api/recommendations/feedback', feedback, 10_000);
   } catch (err) {
     // Non-blocking telemetry
     console.debug('Failed to send recommendation feedback:', err);

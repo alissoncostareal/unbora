@@ -29,35 +29,35 @@ public class RecommendationsController {
         this.recommendationsService = recommendationsService;
     }
 
-    @PostMapping("/recomendar")
-    @Operation(summary = "Gerar recomendações personalizadas por humor, sentimento e atividades")
+    @PostMapping({"/recommendations", "/recommend", "/recomendar"})
+    @Operation(summary = "Generate personalized AI recommendations by mood, feelings, and activities")
     public RecommendationResult recommend(@Valid @RequestBody RecommendDto dto) {
         return recommendationsService.recommend(dto);
     }
 
-    @PostMapping("/buscar")
-    @Operation(summary = "Buscar lugares/eventos em Fortaleza usando IA")
+    @PostMapping({"/search", "/buscar"})
+    @Operation(summary = "Smart AI search for places and venues")
     public RecommendationResult search(@Valid @RequestBody SearchDto dto) {
         return recommendationsService.search(dto);
     }
 
-    @PostMapping("/eventos")
-    @Operation(summary = "Descobrir eventos e programações culturais em Fortaleza com IA")
+    @PostMapping({"/events/discover", "/events", "/eventos"})
+    @Operation(summary = "Discover events and cultural schedule using AI")
     public DiscoverEventsResult discoverEvents(@Valid @RequestBody(required = false) DiscoverEventsDto dto) {
         DiscoverEventsDto effective = dto != null ? dto : new DiscoverEventsDto("Fortaleza");
         return recommendationsService.discoverEvents(effective);
     }
 
-    @GetMapping("/recomendar/dislikes")
-    @Operation(summary = "Lugares que a pessoa logada pediu para não ver de novo")
-    public List<String> dislikes(@RequestParam @Size(max = 120, message = "ID de usuário inválido") String userId) {
+    @GetMapping({"/recommendations/dislikes", "/recomendar/dislikes"})
+    @Operation(summary = "Get list of places dismissed by user")
+    public List<String> dislikes(@RequestParam @Size(max = 120, message = "Invalid user ID") String userId) {
         return recommendationsService.dismissedKeys(userId);
     }
 
-    @PostMapping("/recomendar/feedback")
-    @Operation(summary = "Registrar feedback de recomendação (Like, Dislike, Maps) para calibração da IA")
+    @PostMapping({"/recommendations/feedback", "/recomendar/feedback"})
+    @Operation(summary = "Register user recommendation feedback (Like, Dislike, Maps) for AI calibration")
     public ResponseEntity<?> feedback(@Valid @RequestBody RecommendationFeedbackDto feedbackDto) {
         recommendationsService.processFeedback(feedbackDto);
-        return ResponseEntity.ok(Map.of("status", "success", "message", "Feedback registrado com sucesso"));
+        return ResponseEntity.ok(Map.of("status", "success", "message", "Feedback registered successfully"));
     }
 }
