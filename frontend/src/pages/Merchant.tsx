@@ -283,7 +283,7 @@ export function MerchantPage() {
       <div className="min-h-screen bg-[#faf8f5] py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#7c2f1d]/10 text-[#7c2f1d] text-xs font-semibold uppercase tracking-wider">
-            ✦ Programa de Parceiros Unbora
+            Programa de Parceiros Unbora
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-[#1e1b19] tracking-tight">
             Coloque seu estabelecimento no radar de quem decide onde ir agora.
@@ -294,21 +294,39 @@ export function MerchantPage() {
 
           <div className="grid sm:grid-cols-3 gap-6 text-left pt-6">
             <div className="bg-white p-6 rounded-2xl border border-[#eadfd4] shadow-sm space-y-3">
-              <div className="text-2xl">🎯</div>
+              <div className="w-10 h-10 rounded-xl bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d]">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <circle cx="12" cy="12" r="6" />
+                  <circle cx="12" cy="12" r="2" />
+                </svg>
+              </div>
               <h3 className="font-bold text-lg text-[#1e1b19]">Slot de Ouro nas Buscas</h3>
               <p className="text-sm text-[#73685e]">
                 Apareça no topo dos resultados recomendados quando os usuários procurarem por opções no seu estilo e cidade.
               </p>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-[#eadfd4] shadow-sm space-y-3">
-              <div className="text-2xl">🎁</div>
+              <div className="w-10 h-10 rounded-xl bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d]">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 12 20 22 4 22 4 12" />
+                  <rect x="2" y="7" width="20" height="5" />
+                  <line x1="12" y1="22" x2="12" y2="7" />
+                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                </svg>
+              </div>
               <h3 className="font-bold text-lg text-[#1e1b19]">Unbora Perks Exclusivo</h3>
               <p className="text-sm text-[#73685e]">
                 Ofereça um benefício especial (ex: 15% de desconto ou drink de boas-vindas) para atrair e fidelizar clientes.
               </p>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-[#eadfd4] shadow-sm space-y-3">
-              <div className="text-2xl">⚡</div>
+              <div className="w-10 h-10 rounded-xl bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d]">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+              </div>
               <h3 className="font-bold text-lg text-[#1e1b19]">Pagamento Rápido via PIX</h3>
               <p className="text-sm text-[#73685e]">
                 Ativação instantânea via PIX Copia e Cola. Escolha planos mensais fixos ou créditos pré-pagos por clique.
@@ -342,7 +360,11 @@ export function MerchantPage() {
         <div className="max-w-3xl mx-auto bg-white rounded-3xl border border-[#eadfd4] p-8 sm:p-12 shadow-sm space-y-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-[#7c2f1d]/10 flex items-center justify-center text-[#7c2f1d] font-bold text-xl">
-              🏢
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+                <path d="M9 22v-4h6v4" />
+                <path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01" />
+              </svg>
             </div>
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-[#7c2f1d]">Ativação de Conta</span>
@@ -430,7 +452,11 @@ export function MerchantPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-[#7c2f1d] text-white flex items-center justify-center font-bold text-xl shadow-sm">
-              🏢
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+                <path d="M9 22v-4h6v4" />
+                <path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01" />
+              </svg>
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -438,7 +464,7 @@ export function MerchantPage() {
                   {user.businessName || user.name}
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold uppercase tracking-wider">
-                  ✦ Parceiro Verificado
+                  Parceiro Verificado
                 </span>
               </div>
               <p className="text-xs text-[#73685e]">Portal de Gestão de Estabelecimentos & Monetização</p>
@@ -465,7 +491,7 @@ export function MerchantPage() {
                 : 'border-transparent text-[#73685e] hover:text-[#1e1b19]'
             }`}
           >
-            📍 Meus Estabelecimentos ({places.length})
+            Meus Estabelecimentos ({places.length})
           </button>
           <button
             onClick={() => setActiveTab('plans')}
@@ -475,7 +501,7 @@ export function MerchantPage() {
                 : 'border-transparent text-[#73685e] hover:text-[#1e1b19]'
             }`}
           >
-            💎 Planos & Recarga CPC
+            Planos & Recarga CPC
           </button>
           <button
             onClick={() => setActiveTab('invoices')}
@@ -485,7 +511,7 @@ export function MerchantPage() {
                 : 'border-transparent text-[#73685e] hover:text-[#1e1b19]'
             }`}
           >
-            💳 Faturas & Pagamentos ({invoices.length})
+            Faturas & Pagamentos ({invoices.length})
           </button>
         </div>
       </header>
@@ -530,7 +556,12 @@ export function MerchantPage() {
           <div className="space-y-6">
             {places.length === 0 ? (
               <div className="bg-white rounded-3xl border border-[#eadfd4] p-12 text-center space-y-4">
-                <div className="text-4xl">📍</div>
+                <div className="w-12 h-12 rounded-2xl bg-[#7c2f1d]/10 text-[#7c2f1d] flex items-center justify-center mx-auto">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </div>
                 <h3 className="text-xl font-bold text-[#1e1b19]">Nenhum estabelecimento cadastrado ainda</h3>
                 <p className="text-sm text-[#73685e] max-w-md mx-auto">
                   Cadastre o seu primeiro restaurante, bar, pub, bistrô ou evento para começar a receber clientes do Unbora.
@@ -556,17 +587,20 @@ export function MerchantPage() {
                         )}
                         <div className="absolute top-3 left-3 flex items-center gap-2">
                           <span className="px-3 py-1 rounded-full bg-amber-500 text-stone-900 font-bold text-xs shadow-md">
-                            Patrocinado ✦
+                            Patrocinado
                           </span>
                           <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                             place.active ? 'bg-emerald-600 text-white' : 'bg-stone-600 text-white'
                           }`}>
-                            {place.active ? '● Ativo' : '○ Pausado'}
+                            {place.active ? 'Ativo' : 'Pausado'}
                           </span>
                         </div>
                         <div className="absolute top-3 right-3">
-                          <span className="px-2.5 py-1 rounded-full bg-black/70 text-white font-bold text-xs backdrop-blur-xs">
-                            ★ {place.rating?.toFixed(1) || '4.8'}
+                          <span className="px-2.5 py-1 rounded-full bg-black/70 text-white font-bold text-xs backdrop-blur-xs flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5 text-amber-400 fill-amber-400" viewBox="0 0 24 24">
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                            {place.rating?.toFixed(1) || '4.8'}
                           </span>
                         </div>
                       </div>
@@ -583,7 +617,13 @@ export function MerchantPage() {
 
                         {place.benefitText && (
                           <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2">
-                            <span className="text-base">🎁</span>
+                            <svg className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 12 20 22 4 22 4 12" />
+                              <rect x="2" y="7" width="20" height="5" />
+                              <line x1="12" y1="22" x2="12" y2="7" />
+                              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                            </svg>
                             <div className="text-xs text-amber-900 font-medium leading-relaxed">
                               <strong>Unbora Perks:</strong> {place.benefitText}
                             </div>
@@ -685,7 +725,7 @@ export function MerchantPage() {
                 >
                   {plan.tier === 'SILVER' && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#7c2f1d] text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                      Mais Popular 🔥
+                      Mais Popular
                     </div>
                   )}
 
@@ -918,7 +958,7 @@ export function MerchantPage() {
             </div>
 
             <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
-              ⚡ A compensação é instantânea. Seu local será ativado no Slot de Ouro assim que o pagamento for concluído.
+              A compensação é instantânea. Seu local será ativado no Slot de Ouro assim que o pagamento for concluído.
             </div>
           </div>
         </div>
@@ -1037,7 +1077,7 @@ export function MerchantPage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#55433e] mb-1">
-                  Benefício Exclusivo (Unbora Perks 🎁)
+                  Benefício Exclusivo (Unbora Perks)
                 </label>
                 <input
                   type="text"
