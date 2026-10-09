@@ -69,9 +69,9 @@ export const metadata: Metadata = {
     images: ['https://unbora.com.br/og-image.jpg'],
   },
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+    icon: '/favicon.svg?v=2',
+    shortcut: '/favicon.svg?v=2',
+    apple: '/favicon.svg?v=2',
   },
 };
 
@@ -99,9 +99,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" dir="ltr">
       <head>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="alternate icon" href="/favicon.svg" />
-        <link rel="apple-touch-icon" href="/favicon.svg" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+        <link rel="alternate icon" href="/favicon.svg?v=2" />
+        <link rel="apple-touch-icon" href="/favicon.svg?v=2" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
