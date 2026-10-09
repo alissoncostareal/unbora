@@ -3,7 +3,9 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import { SidebarProvider } from '@/lib/sidebarContext';
 import { Sidebar } from '@/components/Sidebar';
+import { BottomNav } from '@/components/BottomNav';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -29,11 +31,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex">
-      <Sidebar />
-      <div className="flex-1 ml-64 min-w-0 flex flex-col min-h-screen">
-        <main className="flex-1">{children}</main>
+    <SidebarProvider>
+      <div className="min-h-screen bg-[#f8fafc] flex">
+        <Sidebar />
+        <div className="flex-1 ml-0 lg:ml-64 min-w-0 flex flex-col min-h-screen pb-24 lg:pb-8">
+          <main className="flex-1">{children}</main>
+        </div>
+        <BottomNav />
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

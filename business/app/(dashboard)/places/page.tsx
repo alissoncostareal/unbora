@@ -62,7 +62,7 @@ export default function PlacesPage() {
   }
 
   return (
-    <div className="pb-16 space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <Header
         title="Meus Estabelecimentos"
         subtitle="Gerencie seus locais, fotos de capa, endereço no Google Maps e benefício Unbora Perks"
@@ -72,18 +72,18 @@ export default function PlacesPage() {
               setEditingPlace(null);
               setModalOpen(true);
             }}
-            className="px-4 py-2 bg-[#7c2f1d] hover:bg-[#602416] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2"
+            className="px-3.5 sm:px-4 py-2 bg-[#7c2f1d] hover:bg-[#602416] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 shrink-0"
           >
-            <span>+</span> Cadastrar Novo Local
+            <span>+</span> <span>Novo Local</span>
           </button>
         }
       />
 
-      <div className="px-6 sm:px-8 space-y-6">
+      <div className="px-4 sm:px-8 space-y-6">
         {places.length === 0 ? (
-          <div className="business-card p-12 text-center space-y-4">
+          <div className="business-card p-8 sm:p-12 text-center space-y-4">
             <div className="text-4xl">📍</div>
-            <h3 className="text-xl font-bold text-slate-900">Nenhum estabelecimento cadastrado</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900">Nenhum estabelecimento cadastrado</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               Cadastre seu restaurante, bar, cafeteria ou casa de eventos para começar a receber clientes do Unbora.
             </p>
@@ -98,7 +98,7 @@ export default function PlacesPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {places.map((place) => (
               <div
                 key={place.id}
@@ -106,7 +106,7 @@ export default function PlacesPage() {
               >
                 <div>
                   {/* Foto de Capa com Tags */}
-                  <div className="relative h-48 bg-slate-200">
+                  <div className="relative h-44 sm:h-48 bg-slate-200">
                     {place.imageUrl ? (
                       <img
                         src={place.imageUrl}
@@ -119,11 +119,11 @@ export default function PlacesPage() {
                       </div>
                     )}
                     <div className="absolute top-3 left-3 flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-full bg-amber-500 text-slate-950 font-bold text-xs shadow-md">
+                      <span className="px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold text-[11px] sm:text-xs shadow-md">
                         Patrocinado ✦
                       </span>
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                        className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase ${
                           place.active ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-white'
                         }`}
                       >
@@ -131,45 +131,45 @@ export default function PlacesPage() {
                       </span>
                     </div>
                     <div className="absolute top-3 right-3">
-                      <span className="px-2.5 py-1 rounded-full bg-black/70 text-white font-bold text-xs backdrop-blur-xs">
+                      <span className="px-2 py-1 rounded-full bg-black/70 text-white font-bold text-[11px] sm:text-xs backdrop-blur-xs">
                         ★ {place.rating?.toFixed(1) || '4.8'}
                       </span>
                     </div>
                   </div>
 
                   {/* Detalhes do Local */}
-                  <div className="p-6 space-y-4">
+                  <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                     <div>
                       <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-bold text-slate-900">{place.name}</h3>
-                        <span className="text-xs font-bold text-[#7c2f1d] uppercase">{place.type}</span>
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 truncate">{place.name}</h3>
+                        <span className="text-[11px] sm:text-xs font-bold text-[#7c2f1d] uppercase shrink-0">{place.type}</span>
                       </div>
-                      <p className="text-xs text-slate-500">{place.address || place.city}</p>
+                      <p className="text-xs text-slate-500 truncate">{place.address || place.city}</p>
                     </div>
 
                     {place.benefitText && (
                       <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2">
-                        <span className="text-base">🎁</span>
-                        <div className="text-xs text-amber-900 font-medium leading-relaxed">
+                        <span className="text-base shrink-0">🎁</span>
+                        <div className="text-[11px] sm:text-xs text-amber-900 font-medium leading-relaxed">
                           <strong>Unbora Perks:</strong> {place.benefitText}
                         </div>
                       </div>
                     )}
 
                     {/* Métricas e Dados Financeiros */}
-                    <div className="grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100">
+                    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-2 text-xs border-t border-slate-100">
                       <div>
-                        <span className="text-slate-400 block">Plano Atual:</span>
-                        <strong className="text-slate-900">
+                        <span className="text-slate-400 block text-[10px] sm:text-xs">Plano Atual:</span>
+                        <strong className="text-slate-900 text-[11px] sm:text-xs truncate block">
                           {place.billingModel === 'SUBSCRIPTION'
                             ? `Plano ${place.planTier}`
                             : 'Créditos CPC'}
                         </strong>
                       </div>
                       <div>
-                        <span className="text-slate-400 block">Status Financeiro:</span>
+                        <span className="text-slate-400 block text-[10px] sm:text-xs">Status Financeiro:</span>
                         <span
-                          className={`font-bold ${
+                          className={`font-bold text-[11px] sm:text-xs ${
                             place.paymentStatus === 'PAID' ? 'text-emerald-600' : 'text-amber-600'
                           }`}
                         >
@@ -177,11 +177,11 @@ export default function PlacesPage() {
                         </span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block">Visualizações:</span>
+                        <span className="text-slate-400 block text-[10px] sm:text-xs">Visualizações:</span>
                         <strong className="text-slate-900">{place.impressionsCount}</strong>
                       </div>
                       <div>
-                        <span className="text-slate-400 block">Cliques no Maps:</span>
+                        <span className="text-slate-400 block text-[10px] sm:text-xs">Cliques no Maps:</span>
                         <strong className="text-[#7c2f1d]">{place.clicksCount}</strong>
                       </div>
                     </div>
@@ -189,22 +189,22 @@ export default function PlacesPage() {
                 </div>
 
                 {/* Rodapé de Ações */}
-                <div className="p-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-between gap-2">
+                <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleToggle(place.id)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-200 transition"
+                      className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-200 transition"
                     >
-                      {place.active ? 'Pausar Anúncio' : 'Ativar Anúncio'}
+                      {place.active ? 'Pausar' : 'Ativar'}
                     </button>
                     <button
                       onClick={() => {
                         setEditingPlace(place);
                         setModalOpen(true);
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-200 transition"
+                      className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-200 transition"
                     >
-                      Editar Dados
+                      Editar
                     </button>
                   </div>
 
@@ -213,7 +213,7 @@ export default function PlacesPage() {
                       href={place.mapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs font-bold text-[#7c2f1d] hover:underline"
+                      className="text-xs font-bold text-[#7c2f1d] hover:underline shrink-0"
                     >
                       Ver no Maps ↗
                     </a>
