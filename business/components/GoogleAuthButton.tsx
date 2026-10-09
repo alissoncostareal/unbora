@@ -9,8 +9,17 @@ const GOOGLE_CLIENT_ID =
 interface GoogleAccounts {
   accounts: {
     id: {
-      initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void;
-      renderButton: (parent: HTMLElement, options: { theme: string; size: string; width: number }) => void;
+      initialize: (config: {
+        client_id: string;
+        callback: (response: { credential: string }) => void;
+        auto_select?: boolean;
+        cancel_on_tap_outside?: boolean;
+      }) => void;
+      renderButton: (
+        parent: HTMLElement,
+        options: { theme: string; size: string; width: number; text?: string }
+      ) => void;
+      prompt?: (callback?: (notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void;
     };
   };
 }
@@ -31,44 +40,71 @@ export function GoogleAuthButton({
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || !host.current) return;
     let cancelled = false;
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.onload = () => {
+
+    function initGoogle() {
       const google = (window as Window & { google?: GoogleAccounts }).google;
       if (cancelled || !google || !host.current) return;
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => onCredentialRef.current(response.credential),
-      });
-      google.accounts.id.renderButton(host.current, { theme: 'outline', size: 'large', width: 360 });
-    };
-    document.body.appendChild(script);
-    return () => {
-      cancelled = true;
-      script.remove();
-    };
+      try {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (response) => onCredentialRef.current(response.credential),
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+        google.accounts.id.renderButton(host.current, {
+          theme: 'outline',
+          size: 'large',
+          width: 360,
+          text: 'continue_with',
+        });
+        if (google.accounts.id.prompt) {
+          google.accounts.id.prompt();
+        }
+      } catch (err) {
+        console.warn('Google Identity initialization error:', err);
+      }
+    }
+
+    const existingGoogle = (window as Window & { google?: GoogleAccounts }).google;
+    if (existingGoogle) {
+      initGoogle();
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = initGoogle;
+      document.body.appendChild(script);
+      return () => {
+        cancelled = true;
+      };
+    }
   }, []);
 
   return (
-    <>
+    <div className="relative flex h-12 w-full items-center justify-center overflow-hidden">
+      {/* Visual Editorial Button */}
       <button
         type="button"
-        className="flex h-12 w-full cursor-pointer items-center justify-center gap-3 bg-white text-[11px] font-semibold tracking-[0.12em] text-[#1e1b19] uppercase shadow-[inset_0_0_0_1px_#dbc1bb] transition-colors hover:bg-[#faf2ee]"
-        onClick={() => {
-          if (!GOOGLE_CLIENT_ID) {
-            onError('O login com Google ainda não está configurado.');
-            return;
-          }
-          const button = host.current?.querySelector('[role="button"]') as HTMLElement | null;
-          button?.click();
-        }}
+        className="flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-none bg-white text-[11px] font-semibold tracking-[0.12em] text-[#1e1b19] uppercase shadow-[inset_0_0_0_1px_#dbc1bb] transition-colors hover:bg-[#faf2ee]"
       >
         <GoogleMark />
         {label}
       </button>
-      <div ref={host} className="absolute h-0 w-0 overflow-hidden" aria-hidden />
-    </>
+
+      {/* Invisible Real Google Button Overlay for Native Gesture Capture */}
+      <div
+        ref={host}
+        className="absolute inset-0 z-10 flex h-full w-full cursor-pointer items-center justify-center overflow-hidden"
+        style={{ opacity: 0.001 }}
+        aria-hidden="true"
+        onClick={() => {
+          if (!GOOGLE_CLIENT_ID) {
+            onError('O login com Google ainda não está configurado.');
+          }
+        }}
+      />
+    </div>
   );
 }
 
