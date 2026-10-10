@@ -53,7 +53,7 @@ public class RecommendationsService {
     private final LocationSettingsService locationSettingsService;
     private final SponsoredPlaceService sponsoredPlaceService;
     private final CheckinRepository checkinRepository;
-    private final ExecutorService discoveryExecutor = Executors.newFixedThreadPool(8, r -> {
+    private final ExecutorService discoveryExecutor = Executors.newFixedThreadPool(24, r -> {
         Thread thread = new Thread(r, "places-discovery-pool");
         thread.setDaemon(true);
         return thread;
@@ -1085,12 +1085,12 @@ public class RecommendationsService {
                 batch.claim(place.getImagem());
             }
         }
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (PlaceDto place : result.getLugares()) {
             if (isGoogleMapsPhotoUrl(place.getImagem())) continue;
 
             ImageSubjectClassifier.Kind kind = imageSubjectClassifier.classify(
                     place.getNome(), place.getTipo(), place.getCategoryTag());
-            // Eventos com arte temática já resolvida — não sobrescreve com Maps.
             if (kind == ImageSubjectClassifier.Kind.CULTURAL_EVENT
                     && Boolean.TRUE.equals(place.getImagemIlustrativa())) {
                 continue;
@@ -1104,7 +1104,14 @@ public class RecommendationsService {
             }
 
             String address = place.getEndereco() != null ? place.getEndereco() : city;
-            applyMapsPhoto(place, null, address, city, latitude, longitude, batch);
+            futures.add(CompletableFuture.runAsync(() -> {
+                applyMapsPhoto(place, null, address, city, latitude, longitude, batch);
+            }, discoveryExecutor));
+        }
+        if (!futures.isEmpty()) {
+            try {
+                CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).get(3, TimeUnit.SECONDS);
+            } catch (Exception ignored) {}
         }
     }
 
@@ -1146,102 +1153,35 @@ public class RecommendationsService {
                         ? activity.searchHint()
                         : activity.label();
                 if (hint == null || hint.isBlank()) continue;
-                queries.add(hint + " em " + city);
                 queries.add("melhores " + hint + " em " + city);
-                queries.add(hint + " bem avaliados em " + city);
-                queries.add(hint + " famosos em " + city);
-                queries.add(hint + " recomendados em " + city);
+                queries.add(hint + " em " + city);
 
                 if (mood.contains("relax") || mood.contains("paz")) {
-                    queries.add(hint + " tranquilos em " + city);
                     queries.add(hint + " aconchegantes em " + city);
                 } else if (mood.contains("animad") || mood.contains("energia")) {
-                    queries.add(hint + " movimentados em " + city);
                     queries.add(hint + " badalados em " + city);
                 } else if (company.contains("a dois") || company.contains("encontro")) {
-                    queries.add(hint + " romanticos para dois em " + city);
-                    queries.add(hint + " intimistas em " + city);
-                }
-
-                String label = fold((activity.label() == null ? "" : activity.label()) + " "
-                        + (activity.searchHint() == null ? "" : activity.searchHint()));
-                if (label.contains("caf")) {
-                    queries.add("cafeterias especiais em " + city);
-                    queries.add("padarias artesanais e confeitarias em " + city);
-                    queries.add("brunch e cafés em " + city);
-                    queries.add("bistrôs com café em " + city);
-                } else if (label.contains("gastro") || label.contains("comida")) {
-                    queries.add("restaurantes bem avaliados em " + city);
-                    queries.add("bistrôs e gastronomia contemporânea em " + city);
-                    queries.add("restaurantes tradicionais e regionais em " + city);
-                    queries.add("pizzarias e hamburguerias artesanais em " + city);
-                } else if (label.contains("mus") || label.contains("bar") || label.contains("show")) {
-                    queries.add("bares com musica ao vivo em " + city);
-                    queries.add("pubs e gastrobares em " + city);
-                    queries.add("botecos e chopeiras em " + city);
-                } else if (label.contains("natureza") || label.contains("parque")) {
-                    queries.add("parques e praças em " + city);
-                    queries.add("mirantes e áreas verdes em " + city);
-                } else if (label.contains("praia")) {
-                    queries.add("barracas de praia famosas em " + city);
-                    queries.add("orla e quiosques em " + city);
-                } else if (label.contains("cultura")) {
-                    queries.add("museus e centros culturais em " + city);
-                    queries.add("teatros e galerias de arte em " + city);
+                    queries.add(hint + " romanticos em " + city);
                 }
             }
         }
         if (queries.isEmpty()) {
-            queries.add("lugares para sair em " + city);
             queries.add("melhores restaurantes em " + city);
             queries.add("melhores bares em " + city);
-            queries.add("pontos turisticos e passeios em " + city);
+            queries.add("lugares famosos para sair em " + city);
         }
-        int queryLimit = maxResults > 20 ? 15 : 8;
+        int queryLimit = maxResults > 20 ? 6 : 4;
         return queries.stream().distinct().limit(queryLimit).toList();
     }
 
     private List<String> buildSearchPlacesQueries(String query, String city, int maxResults) {
         String q = query != null ? query.trim() : "";
-        String lower = fold(q);
         List<String> queries = new ArrayList<>();
-        queries.add(q);
         queries.add(q + " em " + city);
         queries.add("melhores " + q + " em " + city);
-        queries.add(q + " bem avaliados em " + city);
-        queries.add(q + " famosos em " + city);
-        queries.add(q + " recomendados em " + city);
-        queries.add(q + " populares em " + city);
+        queries.add(q);
 
-        if (lower.contains("restaurante") || lower.contains("comida") || lower.contains("gastronom")) {
-            queries.add("restaurantes em " + city);
-            queries.add("restaurantes tradicionais em " + city);
-            queries.add("bistrôs e gastronomia em " + city);
-            queries.add("restaurantes contemporâneos em " + city);
-            queries.add("pizzarias e hamburguerias em " + city);
-            queries.add("frutos do mar e culinária regional em " + city);
-        } else if (lower.contains("bar") || lower.contains("pub")) {
-            queries.add("bares em " + city);
-            queries.add("pubs e gastrobares em " + city);
-            queries.add("botecos tradicionais em " + city);
-            queries.add("rooftops e drinks em " + city);
-        } else if (lower.contains("caf") || lower.contains("coffee")) {
-            queries.add("cafeterias em " + city);
-            queries.add("cafés especiais em " + city);
-            queries.add("padarias artesanais em " + city);
-            queries.add("confeitarias e brunch em " + city);
-        } else if (lower.contains("praia")) {
-            queries.add("barracas de praia em " + city);
-            queries.add("orla e quiosques em " + city);
-        } else if (lower.contains("parque") || lower.contains("natureza")) {
-            queries.add("parques e praças em " + city);
-            queries.add("áreas verdes e passeios ao ar livre em " + city);
-        } else if (lower.contains("cultura") || lower.contains("museu")) {
-            queries.add("museus e centros culturais em " + city);
-            queries.add("pontos turísticos em " + city);
-        }
-
-        int queryLimit = maxResults > 20 ? 15 : 8;
+        int queryLimit = maxResults > 20 ? 5 : 3;
         return queries.stream().distinct().limit(queryLimit).toList();
     }
 

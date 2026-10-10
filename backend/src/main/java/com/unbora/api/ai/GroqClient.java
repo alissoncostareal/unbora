@@ -74,11 +74,6 @@ public class GroqClient {
         return callGroqJson(systemPrompt, userPrompt, responseClass, temperature, maxTokens, Duration.ofSeconds(15), 2);
     }
 
-    /**
-     * Execução Híbrida e Ultra-Rápida:
-     * Dispara o modelo instantâneo da Groq em paralelo com a LLM local (Ollama) caso configurada.
-     * O provedor mais rápido que responder com JSON válido vence imediatamente, reduzindo o tempo de resposta para ~300ms.
-     */
     public <T> T callGroqJson(
             String systemPrompt,
             String userPrompt,
@@ -88,40 +83,6 @@ public class GroqClient {
             Duration budget,
             int maxModels
     ) {
-        // Se a LLM local (Ollama) estiver configurada e tivermos Groq, executamos de forma cooperativa
-        if (fallbackLlmClient != null && fallbackLlmClient.configured() && !groqApiKey.isBlank()) {
-            try {
-                CompletableFuture<T> groqFuture = CompletableFuture.supplyAsync(
-                        () -> executeGroqSingleFast(systemPrompt, userPrompt, responseClass, temperature, maxTokens),
-                        llmExecutor
-                );
-
-                CompletableFuture<T> fallbackFuture = CompletableFuture.supplyAsync(
-                        () -> tryFallback(systemPrompt, userPrompt, responseClass, temperature, maxTokens),
-                        llmExecutor
-                );
-
-                // Espera o Groq primeiro com timeout curto (ex: 4s)
-                try {
-                    T groqResult = groqFuture.get(4, TimeUnit.SECONDS);
-                    if (groqResult != null) return groqResult;
-                } catch (TimeoutException te) {
-                    log.info("[LLM Hybrid] Groq demorou >4s — aguardando LLM local auxiliar...");
-                } catch (Exception e) {
-                    log.info("[LLM Hybrid] Groq falhou — verificando LLM local auxiliar: {}", e.getMessage());
-                }
-
-                // Se o Groq falhou ou demorou, pega da LLM local
-                try {
-                    T fallbackResult = fallbackFuture.get(8, TimeUnit.SECONDS);
-                    if (fallbackResult != null) return fallbackResult;
-                } catch (Exception ignored) {}
-            } catch (Exception e) {
-                log.warn("[LLM Hybrid] Falha na corrida cooperativa: {}", e.getMessage());
-            }
-        }
-
-        // Execução direta padrão com fallback sequencial rápido
         return executeGroqWithFallback(systemPrompt, userPrompt, responseClass, temperature, maxTokens, budget, maxModels);
     }
 
