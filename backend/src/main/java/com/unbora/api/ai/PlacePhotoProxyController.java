@@ -104,8 +104,8 @@ public class PlacePhotoProxyController {
             response.reset();
             response.setCharacterEncoding(null);
             response.setHeader("Content-Type", contentType);
-            // 12h browser/CDN; expo-image também cacheia em memory-disk no app
-            response.setHeader("Cache-Control", "public, max-age=43200, immutable");
+            // 7 dias browser/CDN + 1 dia stale-while-revalidate; expo-image tambem cacheia no app
+            response.setHeader("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400, immutable");
             response.setHeader("Access-Control-Allow-Origin", "*");
             response.setContentLength(upstream.body().length);
             response.getOutputStream().write(upstream.body());

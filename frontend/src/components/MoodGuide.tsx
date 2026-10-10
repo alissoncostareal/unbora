@@ -157,7 +157,7 @@ export function MoodGuide() {
     const chosen = interests.filter((item) => picked.includes(item.id));
     const withWhom = company.find((item) => item.label === social);
     const time = durations.find((item) => item.id === chosenTimeId);
-    if (!mood || chosen.length === 0 || !withWhom || !time) return;
+    if (busy || !mood || chosen.length === 0 || !withWhom || !time) return;
 
     const journey: JourneyChoice = {
       moodLabel: mood.label,

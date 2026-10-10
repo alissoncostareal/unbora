@@ -24,7 +24,7 @@ export function SearchPage() {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!query.trim()) return;
+    if (loading || !query.trim()) return;
     setLoading(true);
     setError(null);
     try {

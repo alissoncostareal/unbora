@@ -54,6 +54,12 @@ public class RecommendationsService {
     private final SponsoredPlaceService sponsoredPlaceService;
     private final CheckinRepository checkinRepository;
     private final RecommendationCacheService recommendationCacheService;
+
+    // Singleflight: consolida requisicoes simultaneas identicas em um unico processamento
+    private final ConcurrentHashMap<String, CompletableFuture<RecommendationResult>> inFlightRecommend = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CompletableFuture<RecommendationResult>> inFlightSearch = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CompletableFuture<DiscoverEventsResult>> inFlightEvents = new ConcurrentHashMap<>();
+
     private final ExecutorService discoveryExecutor = Executors.newFixedThreadPool(24, r -> {
         Thread thread = new Thread(r, "places-discovery-pool");
         thread.setDaemon(true);
@@ -120,19 +126,13 @@ public class RecommendationsService {
         final Double lat = center != null ? center.latitude() : (dto != null ? dto.latitude() : null);
         final Double lng = center != null ? center.longitude() : (dto != null ? dto.longitude() : null);
         Set<String> dismissed = loadDismissed(userId);
-
-        LocalDate now = LocalDate.now();
-        String dateLabel = now.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
-        String mesAno = now.format(DateTimeFormatter.ofPattern("MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
+        Double budgetReais = budgetCeiling(sentir);
 
         List<String> labels = dto.activities() != null
                 ? dto.activities().stream().map(a -> InputSanitizer.sanitizeText(a.label(), 100)).filter(Objects::nonNull).toList()
                 : List.of();
 
-        Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
-        Double budgetReais = budgetCeiling(sentir);
-
-        // Verificacao de cache persistente (alivia Groq e Google Places)
+        // 1. Verificacao de cache persistente (L1 em memoria / L2 no PostgreSQL)
         String cacheKey = recommendationCacheService.computeRecommendKey(
                 city, region, humor, sentir, dto.activities(), radiusKm, budgetReais
         );
@@ -159,12 +159,77 @@ public class RecommendationsService {
             }
         }
 
+        // 2. Request Coalescing (Singleflight): se outra requisicao idêntica estiver em execucao, aguarda e reutiliza
+        CompletableFuture<RecommendationResult> inFlight = inFlightRecommend.computeIfAbsent(cacheKey, key -> CompletableFuture.supplyAsync(() -> {
+            return executeRecommendWorkflow(dto, city, country, region, humor, sentir, maxResults, radiusKm, center, lat, lng, budgetReais, labels, cacheKey);
+        }, discoveryExecutor));
+
+        try {
+            RecommendationResult raw = inFlight.join();
+            return prepareCachedResult(raw, dismissed, city, dto.humor(), labels, null, maxResults);
+        } finally {
+            inFlightRecommend.remove(cacheKey, inFlight);
+        }
+    }
+
+    private RecommendationResult executeRecommendWorkflow(
+            RecommendDto dto,
+            String city,
+            String country,
+            String region,
+            String humor,
+            String sentir,
+            int maxResults,
+            Double radiusKm,
+            CityAnchor.Center center,
+            Double lat,
+            Double lng,
+            Double budgetReais,
+            List<String> labels,
+            String cacheKey
+    ) {
+        LocalDate now = LocalDate.now();
+        String dateLabel = now.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
+        String mesAno = now.format(DateTimeFormatter.ofPattern("MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
+
+        Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
+
+        // 1. Descoberta Local Híbrida via PostgreSQL (pgvector) antes do Google Maps
+        boolean hasEnoughLocalPlaces = false;
+        if (placeEmbeddingRepository != null && embeddingService != null) {
+            try {
+                long localCount = placeEmbeddingRepository.countByCityIgnoreCase(city);
+                if (localCount >= 18) {
+                    String queryText = (humor != null ? humor : "") + " "
+                            + (sentir != null ? sentir : "") + " "
+                            + (labels != null ? String.join(" ", labels) : "");
+                    String queryVector = embeddingService.getEmbeddingVectorString(queryText.trim());
+                    List<PlaceEmbeddingProjection> localProjections = placeEmbeddingRepository.findSimilarPlaces(city, queryVector, maxResults);
+                    if (localProjections != null && localProjections.size() >= 12) {
+                        for (PlaceEmbeddingProjection proj : localProjections) {
+                            GooglePlacesDiscoveryService.DiscoveredPlace dp = projectionToDiscoveredPlace(proj);
+                            String key = dp.placeId() != null && !dp.placeId().isBlank()
+                                    ? dp.placeId()
+                                    : imageEnrichmentService.normalizeText(dp.displayName());
+                            placeMap.putIfAbsent(key, dp);
+                        }
+                        if (placeMap.size() >= 12) {
+                            hasEnoughLocalPlaces = true;
+                            log.info("[LocalDiscovery] {} locais carregados do catálogo PostgreSQL para '{}'. Pulando Places API.", placeMap.size(), city);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("[LocalDiscovery] Erro ao consultar catálogo local: {}", e.getMessage());
+            }
+        }
+
         CompletableFuture<String> webContextFuture = CompletableFuture.supplyAsync(
                 () -> groqClient.fetchWebContext(city, labels, mesAno),
                 discoveryExecutor
         );
 
-        if (googlePlacesDiscoveryService.isConfigured()) {
+        if (!hasEnoughLocalPlaces && googlePlacesDiscoveryService.isConfigured()) {
             List<String> queries = buildTargetedPlacesQueries(dto, city, maxResults);
             Double searchRadiusKm = maxResults > 20 ? Math.max(radiusKm, 16.0) : radiusKm;
             List<CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>>> futures = queries.stream()
@@ -189,7 +254,7 @@ public class RecommendationsService {
             }
         }
 
-        keepInCity(placeMap, center, radiusKm, city, dismissed, dto.activities(), budgetReais);
+        keepInCity(placeMap, center, radiusKm, city, Set.of(), dto.activities(), budgetReais);
         List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces = new ArrayList<>(placeMap.values());
 
         // 2. Contexto da Web (Agenda local e Instagram ao vivo)
@@ -247,8 +312,8 @@ public class RecommendationsService {
                 "latitude", lat != null ? lat.toString() : "N/A",
                 "longitude", lng != null ? lng.toString() : "N/A",
                 "dateLabel", dateLabel,
-                "humor", dto.humor() != null ? dto.humor() : "Animado",
-                "sentir", dto.sentir() != null ? dto.sentir() : "Alegre",
+                "humor", humor != null ? humor : "Animado",
+                "sentir", sentir != null ? sentir : "Alegre",
                 "activitiesText", activitiesText.toString(),
                 "groundingContext", groundingContext.toString(),
                 "webContext", webContext != null ? webContext : ""
@@ -256,7 +321,6 @@ public class RecommendationsService {
 
         RecommendationResult result;
         try {
-            boolean hasLive = !livePlaces.isEmpty();
             int maxTokens = Math.max(1200, Math.min(3000, maxResults * 100));
             result = groqClient.callGroqJson(
                     systemPrompt,
@@ -286,10 +350,10 @@ public class RecommendationsService {
         }
         RecommendationResult enriched = enrichPlaces(result, city, country, lat, lng, livePlaces);
         enriched = appendMissingLivePlaces(enriched, livePlaces, city, maxResults);
-        retainInCity(enriched, center, radiusKm, city, dismissed, dto.activities(), budgetReais);
+        retainInCity(enriched, center, radiusKm, city, Set.of(), dto.activities(), budgetReais);
         fillMissingMapsPhotos(enriched, city, lat, lng);
         ensurePhotographedPlaces(enriched, livePlaces, maxResults);
-        injectSponsoredPlaces(enriched, city, dto.humor(), dto.activities() != null ? dto.activities().stream().map(ActivityItemDto::label).toList() : List.of(), null, maxResults);
+        injectSponsoredPlaces(enriched, city, humor, dto.activities() != null ? dto.activities().stream().map(ActivityItemDto::label).toList() : List.of(), null, maxResults);
 
         String topPlace = enriched.getLugares() != null && !enriched.getLugares().isEmpty()
                 ? enriched.getLugares().get(0).getNome()
@@ -299,8 +363,8 @@ public class RecommendationsService {
 
         kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
                 "RECOMMENDATION_GENERATED",
-                dto.humor(),
-                dto.sentir(),
+                humor,
+                sentir,
                 labels,
                 null,
                 city,
@@ -333,13 +397,7 @@ public class RecommendationsService {
         final double radiusKm = 25.0;
         Set<String> dismissed = loadDismissed(userId);
 
-        LocalDate now = LocalDate.now();
-        String dateLabel = now.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
-        String mesAno = now.format(DateTimeFormatter.ofPattern("MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
-
-        Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
-
-        // Verificacao de cache persistente para busca (alivia Groq e Google Places)
+        // 1. Verificacao de cache persistente para busca (alivia Groq e Google Places)
         String cacheKey = recommendationCacheService.computeSearchKey(city, region, query);
         Optional<RecommendationResult> cachedOpt = recommendationCacheService.getCachedRecommendation(cacheKey);
         if (cachedOpt.isPresent()) {
@@ -364,12 +422,71 @@ public class RecommendationsService {
             }
         }
 
+        // 2. Request Coalescing (Singleflight) para buscas simultâneas
+        CompletableFuture<RecommendationResult> inFlight = inFlightSearch.computeIfAbsent(cacheKey, key -> CompletableFuture.supplyAsync(() -> {
+            return executeSearchWorkflow(dto, query, city, country, region, maxResults, radiusKm, center, lat, lng, cacheKey);
+        }, discoveryExecutor));
+
+        try {
+            RecommendationResult raw = inFlight.join();
+            return prepareCachedResult(raw, dismissed, city, null, List.of(), dto.query(), maxResults);
+        } finally {
+            inFlightSearch.remove(cacheKey, inFlight);
+        }
+    }
+
+    private RecommendationResult executeSearchWorkflow(
+            SearchDto dto,
+            String query,
+            String city,
+            String country,
+            String region,
+            int maxResults,
+            double radiusKm,
+            CityAnchor.Center center,
+            Double lat,
+            Double lng,
+            String cacheKey
+    ) {
+        LocalDate now = LocalDate.now();
+        String dateLabel = now.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
+        String mesAno = now.format(DateTimeFormatter.ofPattern("MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
+
+        Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
+
+        // 1. Descoberta Local Híbrida no PostgreSQL
+        boolean hasEnoughLocalPlaces = false;
+        if (placeEmbeddingRepository != null && embeddingService != null) {
+            try {
+                long localCount = placeEmbeddingRepository.countByCityIgnoreCase(city);
+                if (localCount >= 18) {
+                    String queryVector = embeddingService.getEmbeddingVectorString(query + " " + city);
+                    List<PlaceEmbeddingProjection> localProjections = placeEmbeddingRepository.findSimilarPlaces(city, queryVector, maxResults);
+                    if (localProjections != null && localProjections.size() >= 12) {
+                        for (PlaceEmbeddingProjection proj : localProjections) {
+                            GooglePlacesDiscoveryService.DiscoveredPlace dp = projectionToDiscoveredPlace(proj);
+                            String key = dp.placeId() != null && !dp.placeId().isBlank()
+                                    ? dp.placeId()
+                                    : imageEnrichmentService.normalizeText(dp.displayName());
+                            placeMap.putIfAbsent(key, dp);
+                        }
+                        if (placeMap.size() >= 12) {
+                            hasEnoughLocalPlaces = true;
+                            log.info("[LocalSearch] {} locais carregados do catálogo PostgreSQL para '{}'. Pulando Places API.", placeMap.size(), city);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("[LocalSearch] Erro ao consultar catálogo local: {}", e.getMessage());
+            }
+        }
+
         CompletableFuture<String> webContextFuture = CompletableFuture.supplyAsync(
-                () -> groqClient.fetchWebContext(city, List.of(dto.query()), mesAno),
+                () -> groqClient.fetchWebContext(city, List.of(query), mesAno),
                 discoveryExecutor
         );
 
-        if (googlePlacesDiscoveryService.isConfigured()) {
+        if (!hasEnoughLocalPlaces && googlePlacesDiscoveryService.isConfigured()) {
             List<String> searchQueries = buildSearchPlacesQueries(query, city, maxResults);
             List<CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>>> futures = searchQueries.stream()
                     .map(q -> CompletableFuture.supplyAsync(
@@ -392,7 +509,7 @@ public class RecommendationsService {
                 } catch (Exception ignored) {}
             }
         }
-        keepInCity(placeMap, center, radiusKm, city, dismissed, null, null);
+        keepInCity(placeMap, center, radiusKm, city, Set.of(), null, null);
         List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces = new ArrayList<>(placeMap.values());
 
         String webContext = "";
@@ -431,14 +548,13 @@ public class RecommendationsService {
                 "city", city,
                 "country", country,
                 "dateLabel", dateLabel,
-                "query", dto.query(),
+                "query", query,
                 "groundingContext", groundingContext.toString(),
                 "webContext", webContext != null ? webContext : ""
         ));
 
         RecommendationResult result;
         try {
-            boolean hasLive = !livePlaces.isEmpty();
             int maxTokens = Math.max(1200, Math.min(3000, maxResults * 100));
             result = groqClient.callGroqJson(
                     systemPrompt,
@@ -452,7 +568,7 @@ public class RecommendationsService {
         } catch (Exception e) {
             log.warn("[Search] Groq falhou — lista completa via Google Places: {}", e.getMessage());
             result = recommendationFromLivePlaces(
-                    "Busca: " + dto.query(),
+                    "Busca: " + query,
                     "Lista completa em " + city,
                     livePlaces,
                     maxResults
@@ -460,7 +576,7 @@ public class RecommendationsService {
         }
         if (result == null || result.getLugares() == null || result.getLugares().isEmpty()) {
             result = recommendationFromLivePlaces(
-                    "Busca: " + dto.query(),
+                    "Busca: " + query,
                     "Lista completa em " + city,
                     livePlaces,
                     maxResults
@@ -468,10 +584,10 @@ public class RecommendationsService {
         }
         RecommendationResult enriched = enrichPlaces(result, city, country, lat, lng, livePlaces);
         enriched = appendMissingLivePlaces(enriched, livePlaces, city, maxResults);
-        retainInCity(enriched, center, radiusKm, city, dismissed, null, null);
+        retainInCity(enriched, center, radiusKm, city, Set.of(), null, null);
         fillMissingMapsPhotos(enriched, city, lat, lng);
         ensurePhotographedPlaces(enriched, livePlaces, maxResults);
-        injectSponsoredPlaces(enriched, city, null, List.of(), dto.query(), maxResults);
+        injectSponsoredPlaces(enriched, city, null, List.of(), query, maxResults);
 
         String topPlace = enriched.getLugares() != null && !enriched.getLugares().isEmpty()
                 ? enriched.getLugares().get(0).getNome()
@@ -484,7 +600,7 @@ public class RecommendationsService {
                 null,
                 null,
                 List.of(),
-                dto.query(),
+                query,
                 city,
                 enriched.getLugares() != null ? enriched.getLugares().size() : 0,
                 topPlace,
@@ -499,13 +615,26 @@ public class RecommendationsService {
     public DiscoverEventsResult discoverEvents(DiscoverEventsDto dto) {
         String city = (dto != null && dto.city() != null && !dto.city().isBlank()) ? dto.city().trim() : "Fortaleza";
         
-        // Verificacao de cache persistente para eventos
+        // 1. Verificacao de cache persistente para eventos
         String cacheKey = recommendationCacheService.computeEventsKey(city);
         Optional<DiscoverEventsResult> cachedOpt = recommendationCacheService.getCachedEvents(cacheKey);
         if (cachedOpt.isPresent()) {
             return cachedOpt.get();
         }
 
+        // 2. Request Coalescing (Singleflight)
+        CompletableFuture<DiscoverEventsResult> inFlight = inFlightEvents.computeIfAbsent(cacheKey, key -> CompletableFuture.supplyAsync(() -> {
+            return executeEventsWorkflow(dto, city, cacheKey);
+        }, discoveryExecutor));
+
+        try {
+            return inFlight.join();
+        } finally {
+            inFlightEvents.remove(cacheKey, inFlight);
+        }
+    }
+
+    private DiscoverEventsResult executeEventsWorkflow(DiscoverEventsDto dto, String city, String cacheKey) {
         LocalDate now = LocalDate.now();
         String dateLabel = now.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
         String mesAno = now.format(DateTimeFormatter.ofPattern("MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR")));
@@ -541,6 +670,24 @@ public class RecommendationsService {
         recommendationCacheService.putEvents(cacheKey, city, enriched, Duration.ofHours(4));
 
         return enriched;
+    }
+
+    private GooglePlacesDiscoveryService.DiscoveredPlace projectionToDiscoveredPlace(PlaceEmbeddingProjection p) {
+        return new GooglePlacesDiscoveryService.DiscoveredPlace(
+                p.getId(),
+                p.getName(),
+                p.getFormattedAddress(),
+                p.getRating() != null ? p.getRating() : 4.7,
+                p.getUserRatingCount() != null ? p.getUserRatingCount() : 0,
+                p.getPrimaryType() != null ? p.getPrimaryType() : p.getCategoryTag(),
+                p.getPhotoUrl(),
+                p.getGoogleMapsUri(),
+                p.getLatitude(),
+                p.getLongitude(),
+                null,
+                null,
+                p.getVibeSummary()
+        );
     }
 
     public RecommendationResult recommendFromHistory(PersonalizedRecommendDto dto) {
