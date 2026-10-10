@@ -388,13 +388,16 @@ export function ResultPage() {
             <button
               type="button"
               onClick={handleSaveRole}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer shadow-xs ${
+              className={`inline-flex items-center gap-1.5 rounded-none px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs ${
                 savedRoleSuccess
-                  ? 'bg-emerald-600 text-white'
+                  ? 'bg-emerald-700 text-white'
                   : 'bg-stone-100 hover:bg-[#1c1917] hover:text-white text-stone-800 border border-stone-200'
               }`}
             >
-              <span>{savedRoleSuccess ? '✓ Rolê Salvo no Perfil!' : '✨ Salvar este Rolê'}</span>
+              <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              <span>{savedRoleSuccess ? 'Rolê Salvo no Perfil' : 'Salvar este Rolê'}</span>
             </button>
           )}
           {totalPages > 1 && (

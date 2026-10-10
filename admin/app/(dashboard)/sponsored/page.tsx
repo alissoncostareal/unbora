@@ -534,7 +534,7 @@ export default function SponsoredPlacesPage() {
               : 'border-transparent text-muted hover:text-ink'
           }`}
         >
-          📍 Locais & Campanhas ({items.length})
+          Locais & Campanhas ({items.length})
         </button>
 
         <button
@@ -546,7 +546,7 @@ export default function SponsoredPlacesPage() {
               : 'border-transparent text-muted hover:text-ink'
           }`}
         >
-          💳 Faturas & Pagamentos ({invoices.length})
+          Faturas & Pagamentos ({invoices.length})
         </button>
 
         <button
@@ -558,7 +558,7 @@ export default function SponsoredPlacesPage() {
               : 'border-transparent text-muted hover:text-ink'
           }`}
         >
-          📊 Modelos & Planos de Monetização
+          Modelos & Planos de Monetização
         </button>
 
         <button
@@ -570,7 +570,7 @@ export default function SponsoredPlacesPage() {
               : 'border-transparent text-muted hover:text-ink'
           }`}
         >
-          📄 Página de Parceiros (Landing)
+          Página de Parceiros (Landing)
         </button>
       </div>
 
@@ -586,8 +586,8 @@ export default function SponsoredPlacesPage() {
                 Configure os dados do estabelecimento, vantagens exclusivas e as regras comerciais de monetização.
               </p>
             </div>
-            <Button variant="ghost" className="px-3 py-1.5 text-xs" onClick={handleCancelForm}>
-              ✕ Fechar
+            <Button variant="ghost" className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider" onClick={handleCancelForm}>
+              Fechar
             </Button>
           </div>
 
@@ -668,7 +668,6 @@ export default function SponsoredPlacesPage() {
             {/* SEÇÃO 2: Modelo de Cobrança (Monetização) */}
             <div className="rounded-none border border-emerald-200 bg-emerald-50/30 p-5">
               <div className="flex items-center gap-2 text-emerald-950 font-bold text-sm">
-                <span>💰</span>
                 <span>2. Modelo de Cobrança & Monetização</span>
               </div>
               <p className="text-xs text-emerald-800/80 mt-1">
@@ -718,12 +717,12 @@ export default function SponsoredPlacesPage() {
                     onChange={(e) => setForm({ ...form, paymentStatus: e.target.value as PaymentStatus })}
                     className={`${inputClassName} bg-white font-medium`}
                   >
-                    <option value="PAID">🟢 Em Dia (Pago)</option>
-                    <option value="TRIAL">🟣 Degustação / Teste Grátis (Trial)</option>
-                    <option value="PENDING">🟡 Fatura Pendente</option>
-                    <option value="OVERDUE">🔴 Atrasado (Suspender Veiculação)</option>
-                    <option value="EXPIRED">⚪ Expirado</option>
-                    <option value="CANCELED">❌ Cancelado</option>
+                    <option value="PAID">Em Dia (Pago)</option>
+                    <option value="TRIAL">Degustação / Teste Grátis (Trial)</option>
+                    <option value="PENDING">Fatura Pendente</option>
+                    <option value="OVERDUE">Atrasado (Suspender Veiculação)</option>
+                    <option value="EXPIRED">Expirado</option>
+                    <option value="CANCELED">Cancelado</option>
                   </select>
                 </Field>
 
@@ -826,7 +825,6 @@ export default function SponsoredPlacesPage() {
             {/* SEÇÃO 3: Vantagem Exclusiva & Curadoria */}
             <div className="rounded-none border border-amber-300 bg-amber-50/70 p-4">
               <div className="flex items-center gap-2 text-amber-900 font-semibold text-sm">
-                <span>🎁</span>
                 <span>3. Selo de Benefício Exclusivo (Unbora Perks)</span>
               </div>
               <p className="text-xs text-amber-800/90 mt-1">
@@ -905,17 +903,17 @@ export default function SponsoredPlacesPage() {
               <h3 className="text-sm font-semibold text-ink">Canais de Exibição & Veiculação</h3>
               <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <CheckboxField
-                  label="✨ Slot de Ouro nos Resultados (Método A)"
+                  label="Slot de Ouro nos Resultados (Método A)"
                   checked={Boolean(form.slotBoost)}
                   onChange={(val) => setForm({ ...form, slotBoost: val })}
                 />
                 <CheckboxField
-                  label="🏠 Destaque na Home (Método C)"
+                  label="Destaque na Home (Método C)"
                   checked={Boolean(form.homeHighlight)}
                   onChange={(val) => setForm({ ...form, homeHighlight: val })}
                 />
                 <CheckboxField
-                  label="🟢 Ativo e Veiculando"
+                  label="Ativo e Veiculando"
                   checked={Boolean(form.active)}
                   onChange={(val) => setForm({ ...form, active: val })}
                 />
@@ -961,10 +959,10 @@ export default function SponsoredPlacesPage() {
                 className="rounded-none border border-[#d8d0c7] bg-white px-3 py-1.5 text-sm text-ink focus:border-ink focus:outline-none"
               >
                 <option value="ALL">Todos os status financeiros</option>
-                <option value="PAID">🟢 Em Dia</option>
-                <option value="TRIAL">🟣 Trial / Degustação</option>
-                <option value="PENDING">🟡 Fatura Aberta</option>
-                <option value="OVERDUE">🔴 Atrasado</option>
+                <option value="PAID">Em Dia</option>
+                <option value="TRIAL">Trial / Degustação</option>
+                <option value="PENDING">Fatura Aberta</option>
+                <option value="OVERDUE">Atrasado</option>
               </select>
 
               <select
@@ -1027,13 +1025,13 @@ export default function SponsoredPlacesPage() {
                             <p className="font-semibold text-ink">{item.name}</p>
                             {item.merchantName && (
                               <span className="px-1.5 py-0.5 rounded-none bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold">
-                                🏢 {item.merchantName}
+                                {item.merchantName}
                               </span>
                             )}
                           </div>
                           <p className="text-xs text-muted">{item.type || 'Estabelecimento'}</p>
                           {item.contactName ? (
-                            <p className="text-[11px] text-muted/80">👤 {item.contactName} {item.contactPhone ? `· ${item.contactPhone}` : ''}</p>
+                            <p className="text-[11px] text-muted/80">{item.contactName} {item.contactPhone ? `· ${item.contactPhone}` : ''}</p>
                           ) : null}
                         </div>
                       </div>
@@ -1050,7 +1048,7 @@ export default function SponsoredPlacesPage() {
                       <div>
                         <div className="flex items-center gap-1.5">
                           <span className="font-bold text-ink text-xs">
-                            {item.billingModel === 'CPC_CREDITS' ? '⚡ Desempenho (CPC)' : `Plano ${item.planTier || 'GOLD'}`}
+                            {item.billingModel === 'CPC_CREDITS' ? 'Desempenho (CPC)' : `Plano ${item.planTier || 'GOLD'}`}
                           </span>
                         </div>
                         {item.billingModel === 'CPC_CREDITS' ? (
@@ -1112,7 +1110,7 @@ export default function SponsoredPlacesPage() {
                             onClick={() => setRechargeTarget(item)}
                             title="Recarregar créditos de cliques"
                           >
-                            ⚡ Recarregar
+                            Recarregar
                           </Button>
                         ) : (
                           <Button
@@ -1124,7 +1122,7 @@ export default function SponsoredPlacesPage() {
                             }}
                             title="Emitir nova fatura mensal"
                           >
-                            📄 Fatura
+                            Fatura
                           </Button>
                         )}
 
@@ -1233,7 +1231,7 @@ export default function SponsoredPlacesPage() {
                               })
                             }
                           >
-                            🔑 Ver PIX
+                            Ver PIX
                           </Button>
                         )}
                         {inv.status !== 'PAID' && (
@@ -1243,7 +1241,7 @@ export default function SponsoredPlacesPage() {
                             onClick={() => handleMarkInvoicePaid(inv.id)}
                             disabled={!canManage}
                           >
-                            ✓ Marcar Pago
+                            Marcar Pago
                           </Button>
                         )}
                       </div>
@@ -1273,9 +1271,9 @@ export default function SponsoredPlacesPage() {
                 <p className="mt-2 text-xs text-muted">Ideal para pequenos cafés e bares locais ganharem visibilidade.</p>
 
                 <ul className="mt-4 space-y-2 text-xs text-ink">
-                  <li className="flex items-center gap-2">✓ Slot de Ouro na busca da cidade</li>
-                  <li className="flex items-center gap-2">✓ Selo Destaque Parceiro</li>
-                  <li className="flex items-center gap-2">✓ Relatório de visualizações e cliques</li>
+                  <li className="flex items-center gap-2">Slot de Ouro na busca da cidade</li>
+                  <li className="flex items-center gap-2">Selo Destaque Parceiro</li>
+                  <li className="flex items-center gap-2">Relatório de visualizações e cliques</li>
                 </ul>
               </div>
             </Panel>
@@ -1293,12 +1291,12 @@ export default function SponsoredPlacesPage() {
                 <p className="mt-2 text-xs text-muted">Para restaurantes e bistrôs que querem atrair com benefícios exclusivos.</p>
 
                 <ul className="mt-4 space-y-2 text-xs text-ink">
-                  <li className="flex items-center gap-2">✓ Slot de Ouro com maior prioridade</li>
+                  <li className="flex items-center gap-2">Slot de Ouro com maior prioridade</li>
                   <li className="flex items-center gap-2 font-semibold text-blue-900">
-                    ✓ Selo de Benefício Exclusivo (Unbora Perks 🎁)
+                    Selo de Benefício Exclusivo (Unbora Perks)
                   </li>
-                  <li className="flex items-center gap-2">✓ Matching de humor pela IA</li>
-                  <li className="flex items-center gap-2">✓ Telemetria de cliques em tempo real</li>
+                  <li className="flex items-center gap-2">Matching de humor pela IA</li>
+                  <li className="flex items-center gap-2">Telemetria de cliques em tempo real</li>
                 </ul>
               </div>
             </Panel>
@@ -1316,12 +1314,12 @@ export default function SponsoredPlacesPage() {
                 <p className="mt-2 text-xs text-muted">Máxima exposição na tela inicial do app e nas principais pesquisas.</p>
 
                 <ul className="mt-4 space-y-2 text-xs text-ink">
-                  <li className="flex items-center gap-2">✓ Topo absoluto no Slot de Ouro</li>
+                  <li className="flex items-center gap-2">Topo absoluto no Slot de Ouro</li>
                   <li className="flex items-center gap-2 font-semibold text-amber-900">
-                    ✓ Carrossel de Destaques na Home do App 🏠
+                    Carrossel de Destaques na Home do App
                   </li>
-                  <li className="flex items-center gap-2">✓ Selo de Benefício Exclusivo 🎁</li>
-                  <li className="flex items-center gap-2">✓ Suporte dedicado & relatórios de conversão</li>
+                  <li className="flex items-center gap-2">Selo de Benefício Exclusivo</li>
+                  <li className="flex items-center gap-2">Suporte dedicado & relatórios de conversão</li>
                 </ul>
               </div>
             </Panel>
@@ -1330,7 +1328,6 @@ export default function SponsoredPlacesPage() {
           {/* Modelo por Desempenho CPC */}
           <Panel className="p-6 border-[#e8e0d7]">
             <div className="flex items-center gap-2">
-              <span className="text-lg">⚡</span>
               <h3 className="text-base font-bold text-ink">Modelo Alternativo: Créditos por Desempenho (CPC / CPM)</h3>
             </div>
             <p className="mt-1 text-xs text-muted max-w-3xl">
@@ -1349,7 +1346,7 @@ export default function SponsoredPlacesPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#e8e0d7] pb-4">
               <div>
                 <h2 className="text-lg font-bold text-ink flex items-center gap-2">
-                  <span>📄</span> Conteúdo da Página de Parceiros (/merchant)
+                  <span>Conteúdo da Página de Parceiros (/merchant)</span>
                 </h2>
                 <p className="text-xs text-muted mt-0.5">
                   Personalize os textos principais, títulos de recursos e chamadas para ação da landing page de parceiros e lojistas.
@@ -1362,7 +1359,7 @@ export default function SponsoredPlacesPage() {
                   rel="noreferrer"
                   className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-none border border-[#e8e0d7] text-ink hover:bg-[#faf8f5] transition flex items-center gap-1.5"
                 >
-                  <span>🔗</span> Ver no Portal Público
+                  <span>Ver no Portal Público</span>
                 </a>
               </div>
             </div>
@@ -1371,7 +1368,10 @@ export default function SponsoredPlacesPage() {
               {/* 1. Cabeçalho / Hero */}
               <div className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-5 space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-2">
-                  <span>✨</span> Destaque Principal (Hero & Badge)
+                  <svg className="size-4 text-[#7c2f1d]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+                  </svg>
+                  <span>Destaque Principal (Hero & Badge)</span>
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1494,7 +1494,12 @@ export default function SponsoredPlacesPage() {
               {/* 3. Botões de Ação (CTA) */}
               <div className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-5 space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-2">
-                  <span>🎯</span> Botões de Ação (Chamadas para Ação)
+                  <svg className="size-4 text-[#7c2f1d]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="12" r="6" />
+                    <circle cx="12" cy="12" r="2" />
+                  </svg>
+                  <span>Botões de Ação (Chamadas para Ação)</span>
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1526,7 +1531,11 @@ export default function SponsoredPlacesPage() {
               <div className="rounded-none border border-[#eadfd4] bg-white p-6 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
-                    <span>👁️</span> Pré-visualização em Tempo Real
+                    <svg className="size-3.5 text-[#7c2f1d]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <span>Pré-visualização em Tempo Real</span>
                   </span>
                   <span className="text-[10px] text-muted">Como os futuros parceiros verão no portal</span>
                 </div>
@@ -1574,7 +1583,12 @@ export default function SponsoredPlacesPage() {
       {rechargeTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-none border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
-            <h3 className="text-lg font-bold text-ink">⚡ Recarregar Créditos (CPC)</h3>
+            <div className="flex items-center gap-2">
+              <svg className="size-5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              <h3 className="text-lg font-bold text-ink">Recarregar Créditos (CPC)</h3>
+            </div>
             <p className="text-xs text-muted mt-1">
               Adicione saldo de desempenho para <strong>{rechargeTarget.name}</strong>.
             </p>
@@ -1637,7 +1651,16 @@ export default function SponsoredPlacesPage() {
       {newInvoiceTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-none border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
-            <h3 className="text-lg font-bold text-ink">📄 Emitir Fatura de Mensalidade</h3>
+            <div className="flex items-center gap-2">
+              <svg className="size-5 text-stone-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+              <h3 className="text-lg font-bold text-ink">Emitir Fatura de Mensalidade</h3>
+            </div>
             <p className="text-xs text-muted mt-1">
               Gerar cobrança para <strong>{newInvoiceTarget.name}</strong>.
             </p>
@@ -1681,7 +1704,11 @@ export default function SponsoredPlacesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-none border border-[#e8e0d7] bg-white p-6 shadow-2xl animate-in zoom-in-95">
             <div className="flex items-center gap-2 text-emerald-700 font-bold">
-              <span>🔑</span>
+              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="7.5" cy="16.5" r="4.5" />
+                <path d="m10.5 13.5 8.5-8.5" />
+                <path d="M21 2l-2 2m-1-1l-3 3" />
+              </svg>
               <h3 className="text-base font-bold">Cobrança PIX Gerada</h3>
             </div>
             <p className="text-xs text-muted mt-1">
@@ -1703,7 +1730,11 @@ export default function SponsoredPlacesPage() {
                   setSuccess('Código PIX copiado para a área de transferência!');
                 }}
               >
-                📋 Copiar Código PIX
+                <svg className="size-3.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                </svg>
+                Copiar Código PIX
               </Button>
             </div>
 

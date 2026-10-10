@@ -278,7 +278,7 @@ export default function OverviewPage() {
                         </button>
                       ) : (
                         <span className="px-2.5 py-1 rounded-none bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider">
-                          ✓ Pago
+                          Pago
                         </span>
                       )}
                     </div>

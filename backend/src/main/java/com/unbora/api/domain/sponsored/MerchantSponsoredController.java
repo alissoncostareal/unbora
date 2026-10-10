@@ -88,7 +88,7 @@ public class MerchantSponsoredController {
                         "monthlyPrice", BigDecimal.valueOf(99.00),
                         "description", "Presença garantida nas buscas com selo de Patrocinado e benefício exclusivo.",
                         "features", List.of(
-                                "Selo 'Patrocinado ✦' nas buscas da cidade",
+                                "Selo 'Patrocinado' nas buscas da cidade",
                                 "Destaque do Benefício Exclusivo (Unbora Perks)",
                                 "Aparece em pesquisas com intenção e humor compatíveis",
                                 "Relatório básico de visualizações e cliques"

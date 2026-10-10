@@ -938,7 +938,7 @@ public class RecommendationsService {
                         applyMapsPhoto(place, matched, address, city, latitude, longitude, batch);
                     }
 
-                    if (place.getIcone() == null || place.getIcone().isBlank()) place.setIcone("📍");
+                    if (place.getIcone() == null || place.getIcone().isBlank()) place.setIcone("");
                     return place;
                 }, discoveryExecutor))
                 .toList();
@@ -1357,14 +1357,7 @@ public class RecommendationsService {
     }
 
     private static String emojiForPlaceType(String primaryType) {
-        if (primaryType == null) return "📍";
-        String t = primaryType.toLowerCase(Locale.ROOT);
-        if (t.contains("restaurant")) return "🍽️";
-        if (t.contains("cafe") || t.contains("coffee")) return "☕";
-        if (t.contains("bar") || t.contains("pub")) return "🍸";
-        if (t.contains("park")) return "🌳";
-        if (t.contains("beach")) return "🏖️";
-        return "📍";
+        return "";
     }
 
     private static String categoryForPlaceType(String primaryType) {
@@ -1464,7 +1457,7 @@ public class RecommendationsService {
             PlaceDto dto = new PlaceDto();
             dto.setNome(sp.getName());
             dto.setTipo(sp.getType() != null && !sp.getType().isBlank() ? sp.getType() : "Destaque Parceiro");
-            dto.setIcone("⭐");
+            dto.setIcone("");
             dto.setEndereco(sp.getAddress());
             dto.setNota(sp.getRating() != null ? sp.getRating() : 4.9);
             dto.setDescricao(sp.getDescription() != null && !sp.getDescription().isBlank() ? sp.getDescription() : "Parceiro Oficial Unbora com benefícios exclusivos.");

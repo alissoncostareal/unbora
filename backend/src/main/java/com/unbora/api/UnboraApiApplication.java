@@ -50,7 +50,7 @@ public class UnboraApiApplication {
 
             System.out.println("");
             System.out.println("╔══════════════════════════════════════════════╗");
-            System.out.println(formatRow("✓ Unbora API (Spring Boot 3.4) rodando"));
+            System.out.println(formatRow("Unbora API (Spring Boot 3.4) rodando"));
             System.out.println("╠══════════════════════════════════════════════╣");
             System.out.println(formatRow("Local:    " + baseUrl));
             System.out.println(formatRow("Health:   " + baseUrl + "/health"));

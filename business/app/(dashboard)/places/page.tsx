@@ -82,7 +82,12 @@ export default function PlacesPage() {
       <div className="px-4 sm:px-8 space-y-6">
         {places.length === 0 ? (
           <div className="business-card p-8 sm:p-12 text-center space-y-4 rounded-none">
-            <div className="text-4xl">📍</div>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center bg-stone-100 text-[#7c2f1d]">
+              <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </div>
             <h3 className="text-lg sm:text-xl font-bold text-slate-900">Nenhum estabelecimento cadastrado</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               Cadastre seu restaurante, bar, cafeteria ou casa de eventos para começar a receber clientes do Unbora.
@@ -120,19 +125,22 @@ export default function PlacesPage() {
                     )}
                     <div className="absolute top-3 left-3 flex items-center gap-2">
                       <span className="px-2.5 py-1 rounded-none bg-amber-500 text-slate-950 font-bold uppercase tracking-wider text-[10px] sm:text-[11px] shadow-sm">
-                        Patrocinado ✦
+                        Patrocinado
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-none text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${
                           place.active ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-white'
                         }`}
                       >
-                        {place.active ? '● Ativo' : '○ Pausado'}
+                        {place.active ? 'Ativo' : 'Pausado'}
                       </span>
                     </div>
                     <div className="absolute top-3 right-3">
-                      <span className="px-2 py-1 rounded-none bg-black/70 text-white font-bold text-[10px] sm:text-[11px] backdrop-blur-xs">
-                        ★ {place.rating?.toFixed(1) || '4.8'}
+                      <span className="px-2 py-1 rounded-none bg-black/70 text-white font-bold text-[10px] sm:text-[11px] backdrop-blur-xs inline-flex items-center gap-1">
+                        <svg className="size-3 fill-amber-400" viewBox="0 0 24 24">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        {place.rating?.toFixed(1) || '4.8'}
                       </span>
                     </div>
                   </div>
@@ -149,7 +157,9 @@ export default function PlacesPage() {
 
                     {place.benefitText && (
                       <div className="p-3 bg-amber-50 rounded-none border border-amber-200 flex items-start gap-2">
-                        <span className="text-base shrink-0">🎁</span>
+                        <svg className="size-4 text-amber-800 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" />
+                        </svg>
                         <div className="text-[11px] sm:text-xs text-amber-900 font-medium leading-relaxed">
                           <strong>Unbora Perks:</strong> {place.benefitText}
                         </div>
@@ -173,7 +183,7 @@ export default function PlacesPage() {
                             place.paymentStatus === 'PAID' ? 'text-emerald-600' : 'text-amber-600'
                           }`}
                         >
-                          {place.paymentStatus === 'PAID' ? '✓ Em Dia' : '● Pendente'}
+                          {place.paymentStatus === 'PAID' ? 'Em Dia' : 'Pendente'}
                         </span>
                       </div>
                       <div>

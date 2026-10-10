@@ -190,7 +190,7 @@ export default function LocationsPage() {
               </div>
 
               <div className="rounded-none border border-[#e8e0d7] bg-[#faf8f5] p-3 text-xs leading-relaxed text-[#73685e]">
-                💡 <strong>Dica:</strong> Se uma busca for feita em uma cidade sem regra personalizada abaixo, o sistema trará até <strong>{globalMax}</strong> experiências verificadas no Google Maps.
+                <strong>Dica:</strong> Se uma busca for feita em uma cidade sem regra personalizada abaixo, o sistema trará até <strong>{globalMax}</strong> experiências verificadas no Google Maps.
               </div>
             </div>
           </Panel>

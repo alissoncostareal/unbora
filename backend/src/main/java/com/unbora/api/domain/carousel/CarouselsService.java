@@ -107,13 +107,13 @@ public class CarouselsService {
         List<CarouselRecordDto> combined = new ArrayList<>();
         for (SponsoredPlace sp : sponsored) {
             String subtitle = (sp.getBenefitText() != null && !sp.getBenefitText().isBlank())
-                    ? "🎁 " + sp.getBenefitText()
+                    ? sp.getBenefitText()
                     : sp.getDescription();
             combined.add(new CarouselRecordDto(
                     "sponsored-" + sp.getId(),
                     sp.getName(),
                     subtitle != null ? subtitle : "",
-                    "⭐ Destaque Parceiro",
+                    "Destaque Parceiro",
                     sp.getImageUrl() != null && !sp.getImageUrl().isBlank() ? sp.getImageUrl() : "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80",
                     sp.getCity() != null ? sp.getCity() : LocationsConstants.DEFAULT_CITY,
                     sp.getRegion() != null ? sp.getRegion() : LocationsConstants.DEFAULT_REGION,

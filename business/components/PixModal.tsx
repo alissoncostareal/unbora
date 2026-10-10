@@ -25,16 +25,16 @@ export function PixModal({ invoice, onClose }: PixModalProps) {
       <div className="bg-white rounded-none max-w-md w-full p-5 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[94vh] overflow-y-auto my-auto">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 sm:pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-none bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-base shrink-0">
-              ❖
+            <div className="w-8 h-8 rounded-none bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+              PIX
             </div>
             <div>
               <h3 className="font-black text-sm sm:text-base text-slate-900 tracking-tight">Pagamento via PIX</h3>
               <p className="text-[10px] text-slate-500">Compensação em poucos segundos</p>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Fechar" className="text-slate-400 hover:text-slate-700 font-bold p-1">
-            ✕
+          <button onClick={onClose} aria-label="Fechar" className="text-slate-400 hover:text-slate-700 text-xs font-bold uppercase p-1">
+            Fechar
           </button>
         </div>
 
@@ -81,13 +81,18 @@ export function PixModal({ invoice, onClose }: PixModalProps) {
                   : 'bg-[#7c2f1d] hover:bg-[#602416] text-white shadow-xs'
               }`}
             >
-              {copied ? 'Copiado! ✓' : 'Copiar'}
+              {copied ? 'Copiado' : 'Copiar'}
             </button>
           </div>
         </div>
 
-        <div className="p-3 bg-amber-50 rounded-none border border-amber-200/80 text-[10px] sm:text-[11px] text-amber-900 leading-relaxed">
-          ⚡ <strong>Ativação Automática:</strong> Assim que a transferência for confirmada pelo seu banco, a campanha do estabelecimento será ativada com destaque máximo nas buscas do Unbora.
+        <div className="p-3 bg-amber-50 rounded-none border border-amber-200/80 text-[10px] sm:text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
+          <svg className="size-4 text-amber-700 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          <div>
+            <strong>Ativação Automática:</strong> Assim que a transferência for confirmada pelo seu banco, a campanha do estabelecimento será ativada com destaque máximo nas buscas do Unbora.
+          </div>
         </div>
       </div>
     </div>

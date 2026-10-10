@@ -108,7 +108,7 @@ export default function InvoicesPage() {
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        {inv.status === 'PAID' ? '✓ Pago' : inv.status === 'PENDING' ? '● Pendente' : '✕ Cancelado'}
+                        {inv.status === 'PAID' ? 'Pago' : inv.status === 'PENDING' ? 'Pendente' : 'Cancelado'}
                       </span>
                     </div>
 
@@ -126,7 +126,7 @@ export default function InvoicesPage() {
                             onClick={() => setSelectedInvoice(inv)}
                             className="px-4 py-2 bg-emerald-600 active:bg-emerald-700 text-white rounded-none font-bold uppercase tracking-wider text-xs shadow-xs transition"
                           >
-                            Pagar PIX ❖
+                            Pagar PIX
                           </button>
                         ) : (
                           <button
@@ -178,10 +178,10 @@ export default function InvoicesPage() {
                             }`}
                           >
                             {inv.status === 'PAID'
-                              ? '✓ Pago'
+                              ? 'Pago'
                               : inv.status === 'PENDING'
-                              ? '● Pendente'
-                              : '✕ Cancelado'}
+                              ? 'Pendente'
+                              : 'Cancelado'}
                           </span>
                         </td>
                         <td className="p-4 text-right">

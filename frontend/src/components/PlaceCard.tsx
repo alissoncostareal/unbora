@@ -110,8 +110,7 @@ export function PlaceCard({
           onError={() => setImgSrc(DEFAULT_FALLBACK_IMAGE)}
         />
         {place.isSponsored ? (
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-600 to-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-md backdrop-blur-sm">
-            <span className="text-xs">✨</span>
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-none bg-gradient-to-r from-amber-600 to-orange-500 px-3 py-1 text-[11px] font-semibold tracking-wider uppercase text-white shadow-md backdrop-blur-sm">
             <span>{place.sponsoredBadge || 'Destaque Parceiro'}</span>
           </div>
         ) : null}
@@ -121,7 +120,7 @@ export function PlaceCard({
           type="button"
           onClick={handleFavoriteClick}
           aria-label={isFav ? 'Remover dos favoritos' : 'Salvar nos favoritos'}
-          className={`absolute ${checkedIn ? 'top-12' : 'top-3'} right-3 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-md transition-all shadow-md cursor-pointer ${
+          className={`absolute ${checkedIn ? 'top-12' : 'top-3'} right-3 flex h-9 w-9 items-center justify-center rounded-none backdrop-blur-md transition-all shadow-md cursor-pointer ${
             isFav
               ? 'bg-rose-600 text-white scale-105'
               : 'bg-white/80 text-stone-700 hover:bg-white hover:text-rose-600'
@@ -134,7 +133,7 @@ export function PlaceCard({
 
         {/* Badge de Check-in no Card quando já visitado */}
         {checkedIn && (
-          <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-emerald-700/90 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white shadow-lg animate-in fade-in zoom-in-90 duration-300">
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-none bg-emerald-700/90 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white shadow-lg animate-in fade-in zoom-in-90 duration-300">
             <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 6 9 17l-5-5" />
             </svg>
@@ -152,18 +151,21 @@ export function PlaceCard({
             <button
               type="button"
               onClick={handleFavoriteClick}
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 rounded-none px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                 isFav
-                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:text-rose-600'
+                  ? 'bg-rose-50 text-rose-700 border border-rose-300'
+                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:text-rose-700 hover:border-rose-300'
               }`}
             >
-              <span>{isFav ? '❤️ Salvo' : '🤍 Salvar'}</span>
+              <svg className="size-3.5" viewBox="0 0 24 24" fill={isFav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+              </svg>
+              <span>{isFav ? 'Salvo' : 'Salvar'}</span>
             </button>
 
             {/* Botão de Check-in "Estive aqui" */}
             {checkedIn ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-300/80 px-3 py-1 text-xs font-semibold text-emerald-800">
+              <span className="inline-flex items-center gap-1.5 rounded-none bg-emerald-50 border border-emerald-300/80 px-3 py-1 text-xs font-semibold text-emerald-800 uppercase tracking-wider">
                 <svg className="size-3.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 6 9 17l-5-5" />
                 </svg>
@@ -173,7 +175,7 @@ export function PlaceCard({
               <button
                 type="button"
                 onClick={handleCheckinTrigger}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#1c1917]/20 bg-stone-50 hover:bg-[#1c1917] hover:text-white px-3.5 py-1 text-xs font-semibold text-[#1c1917] transition-all shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-none border border-[#1c1917]/20 bg-stone-50 hover:bg-[#1c1917] hover:text-white px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-[#1c1917] transition-all shadow-xs cursor-pointer"
               >
                 <svg className="size-3.5 text-coral group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 6 9 17l-5-5" />
@@ -209,8 +211,14 @@ export function PlaceCard({
 
         {/* Selo de Benefício Exclusivo Unbora */}
         {place.benefitText ? (
-          <div className="mt-3.5 flex items-start gap-2.5 rounded-xl border border-amber-300/80 bg-gradient-to-r from-amber-50/95 via-orange-50/80 to-amber-50/90 p-3.5 text-amber-950 shadow-sm">
-            <span className="mt-0.5 text-base select-none">🎁</span>
+          <div className="mt-3.5 flex items-start gap-2.5 rounded-none border border-amber-300/80 bg-gradient-to-r from-amber-50/95 via-orange-50/80 to-amber-50/90 p-3.5 text-amber-950 shadow-sm">
+            <svg className="mt-0.5 size-4 shrink-0 text-amber-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 12v10H4V12" />
+              <path d="M2 7h20v5H2z" />
+              <path d="M12 22V7" />
+              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+            </svg>
             <div className="flex-1">
               <p className="text-[11px] font-bold uppercase tracking-wider text-amber-900">Benefício Exclusivo Unbora</p>
               <p className="mt-0.5 text-sm font-medium leading-snug text-amber-950">{place.benefitText}</p>
@@ -254,23 +262,26 @@ export function PlaceCard({
       {/* Modal de Confirmação de Check-in e Avaliação */}
       {showCheckinModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-stone-200">
+          <div className="relative w-full max-w-md rounded-none bg-white p-6 sm:p-8 shadow-2xl border border-stone-200">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div className="flex items-center gap-2">
-                <span className="text-xl">📍</span>
+                <svg className="size-5 text-[#7c2f1d]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
                 <h3 className="text-lg font-bold text-[#1c1917]">Check-in em {place.name}</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCheckinModal(false)}
-                className="text-stone-400 hover:text-stone-700 p-1 text-lg leading-none"
+                className="text-stone-400 hover:text-stone-700 p-1 text-sm font-bold uppercase tracking-wider"
               >
-                ✕
+                Fechar
               </button>
             </div>
 
             <p className="mt-3 text-xs text-stone-600 leading-relaxed">
-              Marque esta visita no seu <strong>Passaporte Urbano Unbora</strong>. Você poderá consultar depois e receber lembretes para voltar!
+              Marque esta visita no seu <strong>Passaporte Urbano Unbora</strong>. Você poderá consultar depois e receber lembretes para voltar.
             </p>
 
             <div className="mt-5 space-y-4">
@@ -284,13 +295,15 @@ export function PlaceCard({
                       key={star}
                       type="button"
                       onClick={() => setRating(star)}
-                      className="p-1 text-2xl transition-transform hover:scale-125 focus:outline-none cursor-pointer"
+                      className="p-1 text-amber-500 transition-transform hover:scale-110 focus:outline-none cursor-pointer"
                     >
-                      {star <= rating ? '⭐' : '☆'}
+                      <svg className="size-6" viewBox="0 0 24 24" fill={star <= rating ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
                     </button>
                   ))}
-                  <span className="text-xs font-bold text-stone-600 ml-2">
-                    {rating === 5 ? 'Incrível!' : rating === 4 ? 'Muito bom' : rating === 3 ? 'Gostei' : 'Regular'}
+                  <span className="text-xs font-bold text-stone-600 ml-2 uppercase tracking-wider">
+                    {rating === 5 ? 'Incrível' : rating === 4 ? 'Muito bom' : rating === 3 ? 'Gostei' : 'Regular'}
                   </span>
                 </div>
               </div>
@@ -304,7 +317,7 @@ export function PlaceCard({
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Ex: O café filtrado e o atendimento foram impecáveis..."
                   rows={3}
-                  className="w-full rounded-xl border border-stone-300 p-3 text-sm text-stone-900 focus:border-[#7c2f1d] focus:ring-1 focus:ring-[#7c2f1d] outline-none"
+                  className="w-full rounded-none border border-stone-300 p-3 text-sm text-stone-900 focus:border-[#7c2f1d] focus:ring-1 focus:ring-[#7c2f1d] outline-none"
                 />
               </div>
             </div>
@@ -313,7 +326,7 @@ export function PlaceCard({
               <button
                 type="button"
                 onClick={() => setShowCheckinModal(false)}
-                className="flex-1 rounded-xl border border-stone-200 py-3 text-xs font-bold uppercase tracking-wider text-stone-600 hover:bg-stone-50 cursor-pointer"
+                className="flex-1 rounded-none border border-stone-200 py-3 text-xs font-bold uppercase tracking-wider text-stone-600 hover:bg-stone-50 cursor-pointer"
               >
                 Cancelar
               </button>
@@ -321,7 +334,7 @@ export function PlaceCard({
                 type="button"
                 disabled={submittingCheckin}
                 onClick={handleSaveCheckin}
-                className="flex-1 rounded-xl bg-[#7c2f1d] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition disabled:opacity-50 cursor-pointer"
+                className="flex-1 rounded-none bg-[#7c2f1d] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition disabled:opacity-50 cursor-pointer"
               >
                 {submittingCheckin ? 'Salvando...' : 'Salvar Visita'}
               </button>
@@ -333,24 +346,27 @@ export function PlaceCard({
       {/* Modal de Autenticação Rápida para Check-in */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-stone-200 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#7c2f1d]/10 text-3xl">
-              🗺️
+          <div className="relative w-full max-w-md rounded-none bg-white p-6 sm:p-8 shadow-2xl border border-stone-200 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-none bg-[#7c2f1d]/10 text-[#7c2f1d]">
+              <svg className="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+              </svg>
             </div>
             <h3 className="mt-4 text-xl font-bold text-[#1c1917]">Crie seu Passaporte Urbano</h3>
             <p className="mt-2 text-xs sm:text-sm text-stone-600 leading-relaxed">
-              Faça login ou cadastre-se no Unbora para registrar onde você esteve, ver locais visitados no mês passado e receber convites para revisitar seus favoritos!
+              Faça login ou cadastre-se no Unbora para registrar onde você esteve, ver locais visitados no mês passado e receber convites para revisitar seus favoritos.
             </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Link
                 to="/login"
-                className="flex-1 rounded-xl bg-[#7c2f1d] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition"
+                className="flex-1 rounded-none bg-[#7c2f1d] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition"
               >
                 Entrar
               </Link>
               <Link
                 to="/register"
-                className="flex-1 rounded-xl border border-stone-300 py-3 text-xs font-bold uppercase tracking-wider text-stone-800 hover:bg-stone-50 transition"
+                className="flex-1 rounded-none border border-stone-300 py-3 text-xs font-bold uppercase tracking-wider text-stone-800 hover:bg-stone-50 transition"
               >
                 Criar Conta
               </Link>

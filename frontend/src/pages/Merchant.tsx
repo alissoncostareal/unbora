@@ -568,9 +568,9 @@ export function MerchantPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
         {actionSuccess && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-sm flex items-center justify-between">
+          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-none text-sm flex items-center justify-between">
             <span>{actionSuccess}</span>
-            <button onClick={() => setActionSuccess('')} className="text-emerald-900 font-bold ml-4 cursor-pointer">✕</button>
+            <button onClick={() => setActionSuccess('')} className="text-emerald-900 text-xs font-bold uppercase tracking-wider ml-4 cursor-pointer">Fechar</button>
           </div>
         )}
 
@@ -694,7 +694,7 @@ export function MerchantPage() {
                             <span className={`font-bold ${
                               place.paymentStatus === 'PAID' ? 'text-emerald-600' : 'text-amber-600'
                             }`}>
-                              {place.paymentStatus === 'PAID' ? '✓ Em Dia' : '● Pagamento Pendente'}
+                              {place.paymentStatus === 'PAID' ? 'Em Dia' : 'Pagamento Pendente'}
                             </span>
                           </div>
                           <div>
@@ -812,7 +812,7 @@ export function MerchantPage() {
                             className="w-full py-2 px-3 bg-[#faf8f5] hover:bg-[#7c2f1d] hover:text-white border border-[#eadfd4] rounded-xl text-xs font-bold text-[#1e1b19] transition flex items-center justify-between cursor-pointer"
                           >
                             <span>{place.name}</span>
-                            <span>{place.planTier === plan.tier ? '✓ Atual' : 'Contratar →'}</span>
+                            <span>{place.planTier === plan.tier ? 'Atual' : 'Contratar →'}</span>
                           </button>
                         ))}
                       </div>
@@ -915,7 +915,7 @@ export function MerchantPage() {
                               ? 'bg-amber-100 text-amber-900'
                               : 'bg-red-100 text-red-800'
                           }`}>
-                            {inv.status === 'PAID' ? '✓ Pago' : inv.status === 'PENDING' ? '● Pendente' : '✕ Cancelado'}
+                            {inv.status === 'PAID' ? 'Pago' : inv.status === 'PENDING' ? 'Pendente' : 'Cancelado'}
                           </span>
                         </td>
                         <td className="p-4 text-right">
@@ -958,9 +958,9 @@ export function MerchantPage() {
               </div>
               <button
                 onClick={() => setPixModalInvoice(null)}
-                className="text-[#8a8178] hover:text-[#1e1b19] font-bold p-1 cursor-pointer"
+                className="text-[#8a8178] hover:text-[#1e1b19] text-xs font-bold uppercase tracking-wider p-1 cursor-pointer"
               >
-                ✕
+                Fechar
               </button>
             </div>
 
@@ -1003,7 +1003,7 @@ export function MerchantPage() {
                     copiedPix ? 'bg-emerald-600 text-white' : 'bg-[#1e1b19] text-white hover:bg-[#7c2f1d]'
                   }`}
                 >
-                  {copiedPix ? 'Copiado! ✓' : 'Copiar'}
+                  {copiedPix ? 'Copiado' : 'Copiar'}
                 </button>
               </div>
             </div>
@@ -1021,7 +1021,7 @@ export function MerchantPage() {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-[#eadfd4]">
             <div className="flex items-center justify-between border-b border-[#f0e8e0] pb-4">
               <h3 className="font-bold text-lg text-[#1e1b19]">Recarregar Créditos (CPC)</h3>
-              <button onClick={() => setRechargePlace(null)} className="text-[#8a8178] font-bold cursor-pointer">✕</button>
+              <button onClick={() => setRechargePlace(null)} className="text-[#8a8178] hover:text-[#1e1b19] text-xs font-bold uppercase tracking-wider cursor-pointer">Fechar</button>
             </div>
 
             <div>
@@ -1066,7 +1066,7 @@ export function MerchantPage() {
               <h3 className="font-bold text-xl text-[#1e1b19]">
                 {editingPlace ? 'Editar Estabelecimento' : 'Cadastrar Novo Estabelecimento'}
               </h3>
-              <button onClick={() => setIsNewPlaceModal(false)} className="text-[#8a8178] font-bold cursor-pointer">✕</button>
+              <button onClick={() => setIsNewPlaceModal(false)} className="text-[#8a8178] hover:text-[#1e1b19] text-xs font-bold uppercase tracking-wider cursor-pointer">Fechar</button>
             </div>
 
             <form onSubmit={handleSavePlace} className="space-y-4">

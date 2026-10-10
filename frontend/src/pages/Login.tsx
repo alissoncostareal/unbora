@@ -231,22 +231,25 @@ export function LoginPage() {
       {/* Modal de Recuperação de Senha */}
       {showForgotModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-stone-200">
+          <div className="relative w-full max-w-md rounded-none bg-white p-6 sm:p-8 shadow-2xl border border-stone-200">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <h3 className="text-xl font-bold text-[#1c1917]">Recuperar Senha</h3>
               <button
                 type="button"
                 onClick={() => setShowForgotModal(false)}
-                className="text-stone-400 hover:text-stone-700 p-1 text-lg leading-none cursor-pointer"
+                className="text-stone-400 hover:text-stone-700 p-1 text-xs font-bold uppercase tracking-wider cursor-pointer"
               >
-                ✕
+                Fechar
               </button>
             </div>
 
             {forgotMessage ? (
               <div className="mt-5 space-y-4 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-2xl">
-                  ✉️
+                <div className="mx-auto flex h-14 w-14 items-center justify-center bg-emerald-50 text-emerald-700">
+                  <svg className="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
                 </div>
                 <h4 className="text-base font-bold text-stone-900">E-mail Enviado!</h4>
                 <p className="text-xs text-stone-600 leading-relaxed">
@@ -255,7 +258,7 @@ export function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(false)}
-                  className="w-full rounded-xl bg-[#1c1917] py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#7c2f1d] transition cursor-pointer"
+                  className="w-full rounded-none bg-[#1c1917] py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#7c2f1d] transition cursor-pointer"
                 >
                   Fechar
                 </button>

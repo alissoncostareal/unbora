@@ -28,15 +28,20 @@ export default function SettingsPage() {
 
       <div className="px-6 sm:px-8 max-w-3xl space-y-6">
         {saved && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-none text-xs font-bold uppercase tracking-wider">
-            ✓ Dados comerciais salvos com sucesso!
+          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-none text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+            <svg className="size-4 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span>Dados comerciais salvos com sucesso!</span>
           </div>
         )}
 
         <form onSubmit={handleSave} className="business-card p-6 sm:p-8 space-y-6 rounded-none">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-10 h-10 rounded-none bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-lg">
-              🏢
+            <div className="w-10 h-10 rounded-none bg-slate-100 text-slate-700 flex items-center justify-center">
+              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
             </div>
             <div>
               <h3 className="font-bold text-base text-slate-900 tracking-tight">Cadastro Empresarial</h3>

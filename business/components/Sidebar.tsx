@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
@@ -8,16 +9,68 @@ import { useSidebar } from '@/lib/sidebarContext';
 interface NavItem {
   label: string;
   href: string;
-  icon: string;
+  icon: (props: { className?: string }) => React.ReactNode;
 }
 
 const navItems: NavItem[] = [
-  { label: 'Visão Geral & Métricas', href: '/', icon: '📊' },
-  { label: 'Meus Estabelecimentos', href: '/places', icon: '📍' },
-  { label: 'Planos & Recarga CPC', href: '/plans', icon: '💎' },
-  { label: 'Faturas & PIX', href: '/invoices', icon: '💳' },
-  { label: 'Validador de Perks', href: '/perks', icon: '🎁' },
-  { label: 'Dados da Empresa', href: '/settings', icon: '🏢' },
+  {
+    label: 'Visão Geral & Métricas',
+    href: '/',
+    icon: ({ className }) => (
+      <svg className={className || 'size-4'} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10" />
+        <line x1="12" y1="20" x2="12" y2="4" />
+        <line x1="6" y1="20" x2="6" y2="14" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Meus Estabelecimentos',
+    href: '/places',
+    icon: ({ className }) => (
+      <svg className={className || 'size-4'} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Planos & Recarga CPC',
+    href: '/plans',
+    icon: ({ className }) => (
+      <svg className={className || 'size-4'} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 3h12l4 6-10 12L2 9l4-6z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Faturas & PIX',
+    href: '/invoices',
+    icon: ({ className }) => (
+      <svg className={className || 'size-4'} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect width="20" height="14" x="2" y="5" rx="0" />
+        <line x1="2" x2="22" y1="10" y2="10" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Validador de Perks',
+    href: '/perks',
+    icon: ({ className }) => (
+      <svg className={className || 'size-4'} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Dados da Empresa',
+    href: '/settings',
+    icon: ({ className }) => (
+      <svg className={className || 'size-4'} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+      </svg>
+    ),
+  },
 ];
 
 export function Sidebar() {
@@ -65,9 +118,9 @@ export function Sidebar() {
             <button
               onClick={closeMobile}
               aria-label="Fechar Menu"
-              className="lg:hidden w-8 h-8 rounded-none bg-slate-800/80 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm cursor-pointer"
+              className="lg:hidden w-8 h-8 rounded-none bg-slate-800/80 text-slate-400 hover:text-white flex items-center justify-center font-bold text-xs uppercase cursor-pointer"
             >
-              ✕
+              Fechar
             </button>
           </div>
 
@@ -78,6 +131,7 @@ export function Sidebar() {
             </span>
             {navItems.map((item) => {
               const isActive = pathname === item.href;
+              const IconComp = item.icon;
               return (
                 <Link
                   key={item.href}
@@ -89,7 +143,7 @@ export function Sidebar() {
                       : 'text-slate-400 hover:bg-white/5 hover:text-slate-100'
                   }`}
                 >
-                  <span className="text-base shrink-0">{item.icon}</span>
+                  <span className="shrink-0">{IconComp({ className: 'size-4' })}</span>
                   <span className="truncate">{item.label}</span>
                 </Link>
               );
@@ -114,9 +168,14 @@ export function Sidebar() {
               closeMobile();
               logout();
             }}
-            className="w-full py-2 px-3 rounded-none text-xs font-bold text-slate-400 hover:text-red-400 hover:bg-red-950/20 border border-slate-800 transition flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2 px-3 rounded-none text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-red-400 hover:bg-red-950/20 border border-slate-800 transition flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>🚪</span> Sair da Conta
+            <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span>Sair da Conta</span>
           </button>
         </div>
       </aside>

@@ -117,8 +117,8 @@ export function PlaceModal({ isOpen, place, onClose, onSave }: PlaceModalProps) 
             </h3>
             <p className="text-[11px] sm:text-xs text-slate-500">Divulgue seu negócio para milhares de clientes</p>
           </div>
-          <button onClick={onClose} aria-label="Fechar" className="text-slate-400 hover:text-slate-700 font-bold p-1">
-            ✕
+          <button onClick={onClose} aria-label="Fechar" className="text-slate-400 hover:text-slate-700 text-xs font-bold uppercase p-1">
+            Fechar
           </button>
         </div>
 
@@ -182,7 +182,9 @@ export function PlaceModal({ isOpen, place, onClose, onSave }: PlaceModalProps) 
           {/* Unbora Perks */}
           <div className="p-3.5 sm:p-4 bg-amber-50 rounded-none border border-amber-200/80 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-base shrink-0">🎁</span>
+              <svg className="size-4 text-amber-800 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" />
+              </svg>
               <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-amber-900">
                 Benefício Exclusivo aos Usuários (Unbora Perks)
               </label>

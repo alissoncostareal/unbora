@@ -42,12 +42,12 @@ export function ResetPasswordPage() {
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-[#faf8f5] px-4 py-12">
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 sm:p-10 shadow-sm border border-[#eadfd4]">
+      <div className="w-full max-w-md rounded-none bg-white p-8 sm:p-10 shadow-sm border border-[#eadfd4]">
         <div className="text-center space-y-2">
           <Link to="/home" className="inline-block text-2xl font-light tracking-tight text-[#1c1917]">
             Unbora
           </Link>
-          <h1 className="text-2xl font-black text-[#1c1917]">Redefinir Senha</h1>
+          <h1 className="text-2xl font-light text-[#1c1917]">Redefinir Senha</h1>
           <p className="text-xs sm:text-sm text-[#73685e]">
             Escolha uma nova senha segura para acessar sua conta.
           </p>
@@ -55,8 +55,10 @@ export function ResetPasswordPage() {
 
         {success ? (
           <div className="mt-8 text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-3xl">
-              ✓
+            <div className="mx-auto flex h-14 w-14 items-center justify-center bg-emerald-50 text-emerald-700">
+              <svg className="size-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
             </div>
             <h2 className="text-lg font-bold text-stone-900">Senha Alterada com Sucesso!</h2>
             <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
@@ -65,7 +67,7 @@ export function ResetPasswordPage() {
             <div className="pt-2">
               <Link
                 to="/login"
-                className="inline-flex w-full items-center justify-center rounded-xl bg-[#7c2f1d] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition"
+                className="inline-flex w-full items-center justify-center rounded-none bg-[#7c2f1d] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition"
               >
                 Fazer Login Agora
               </Link>
@@ -73,15 +75,19 @@ export function ResetPasswordPage() {
           </div>
         ) : !token ? (
           <div className="mt-8 text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-2xl">
-              ⚠️
+            <div className="mx-auto flex h-14 w-14 items-center justify-center bg-amber-50 text-amber-700">
+              <svg className="size-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
             </div>
             <p className="text-xs sm:text-sm text-stone-600">
               O link de redefinição parece incompleto ou expirou. Solicite um novo link na tela de login.
             </p>
             <Link
               to="/login"
-              className="inline-flex w-full items-center justify-center rounded-xl border border-stone-300 py-3 text-xs font-bold uppercase tracking-wider text-stone-800 hover:bg-stone-50 transition"
+              className="inline-flex w-full items-center justify-center rounded-none border border-stone-300 py-3 text-xs font-bold uppercase tracking-wider text-stone-800 hover:bg-stone-50 transition"
             >
               Voltar ao Login
             </Link>
@@ -100,7 +106,7 @@ export function ResetPasswordPage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  className="h-12 w-full rounded-xl border border-stone-300 px-4 pr-12 text-sm text-stone-900 focus:border-[#7c2f1d] focus:ring-1 focus:ring-[#7c2f1d] outline-none"
+                  className="h-12 w-full rounded-none border border-stone-300 px-4 pr-12 text-sm text-stone-900 focus:border-[#7c2f1d] focus:ring-1 focus:ring-[#7c2f1d] outline-none"
                 />
                 <button
                   type="button"
@@ -123,12 +129,12 @@ export function ResetPasswordPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repita a nova senha"
-                className="h-12 w-full rounded-xl border border-stone-300 px-4 text-sm text-stone-900 focus:border-[#7c2f1d] focus:ring-1 focus:ring-[#7c2f1d] outline-none"
+                className="h-12 w-full rounded-none border border-stone-300 px-4 text-sm text-stone-900 focus:border-[#7c2f1d] focus:ring-1 focus:ring-[#7c2f1d] outline-none"
               />
             </div>
 
             {error && (
-              <p className="text-xs font-medium text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200">
+              <p className="text-xs font-medium text-red-600 bg-red-50 p-2.5 rounded-none border border-red-200">
                 {error}
               </p>
             )}
@@ -136,7 +142,7 @@ export function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-[#7c2f1d] py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition disabled:opacity-50 cursor-pointer"
+              className="w-full rounded-none bg-[#7c2f1d] py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition disabled:opacity-50 cursor-pointer"
             >
               {loading ? 'Atualizando Senha...' : 'Salvar Nova Senha'}
             </button>

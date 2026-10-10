@@ -104,7 +104,7 @@ export default function PlansPage() {
             >
               {p.tier === 'SILVER' && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-1 rounded-none bg-[#7c2f1d] text-white text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.14em] shadow-xs">
-                  Mais Popular 🔥
+                  Mais Escolhido
                 </div>
               )}
 
@@ -124,7 +124,9 @@ export default function PlansPage() {
                 <ul className="space-y-2.5 pt-4 text-xs text-slate-700 border-t border-slate-100">
                   {p.features.map((f, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                      <svg className="size-4 text-emerald-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                       <span>{f}</span>
                     </li>
                   ))}
