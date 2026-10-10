@@ -20,14 +20,18 @@ public class DatabaseVectorInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        log.info("[DatabaseInitializer] Verificando tabelas RAG e cache de fotos no PostgreSQL...");
+
+        // 1. Extensão vector (opcional caso a imagem postgres não contenha pgvector)
         try {
-            log.info("[pgvector] Inicializando extensão vector e tabelas RAG no PostgreSQL...");
-
-            // 1. Extensão (Flyway V2 também cria; aqui é rede de segurança no boot)
             jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS vector;");
-            log.info("[pgvector] Extensão 'vector' verificada com sucesso.");
+            log.info("[DatabaseInitializer] Extensão 'vector' verificada com sucesso.");
+        } catch (Exception e) {
+            log.debug("[DatabaseInitializer] Extensão 'vector' não disponível no Postgres: {}", e.getMessage());
+        }
 
-            // 2. Garante tabela/índices mesmo se a extensão já existir sem o DDL aplicado
+        // 2. Tabela place_embeddings
+        try {
             String createTableSql = """
                 CREATE TABLE IF NOT EXISTS place_embeddings (
                     id VARCHAR(64) PRIMARY KEY,
@@ -43,28 +47,28 @@ public class DatabaseVectorInitializer implements ApplicationRunner {
                     google_maps_uri TEXT,
                     photo_url TEXT,
                     vibe_summary TEXT,
-                    embedding vector(1536),
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 );
             """;
             jdbcTemplate.execute(createTableSql);
-            // Hibernate cria a tabela sem a coluna vector; CREATE TABLE IF NOT EXISTS não a adiciona depois.
-            jdbcTemplate.execute("ALTER TABLE place_embeddings ADD COLUMN IF NOT EXISTS embedding vector(1536);");
 
-            // 3. Criar índices
+            try {
+                jdbcTemplate.execute("ALTER TABLE place_embeddings ADD COLUMN IF NOT EXISTS embedding vector(1536);");
+            } catch (Exception ignored) {}
+
             jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_place_embeddings_city ON place_embeddings(LOWER(city));");
             jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_place_embeddings_category ON place_embeddings(category_tag);");
 
-            // 4. Criar índice HNSW vetorial para buscas de cosseno ultrarrápidas
             try {
                 jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_place_embeddings_hnsw ON place_embeddings USING hnsw (embedding vector_cosine_ops);");
-                log.info("[pgvector] Índice HNSW criado/verificado para place_embeddings.");
-            } catch (Exception hnswEx) {
-                log.debug("[pgvector] Aviso no índice HNSW (pode já existir ou precisar de dados): {}", hnswEx.getMessage());
-            }
+            } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.warn("[DatabaseInitializer] Aviso na tabela place_embeddings: {}", e.getMessage());
+        }
 
-            // 5. Cache persistente de fotos de locais (Fetch Once, Serve Forever)
+        // 3. Cache persistente de fotos de locais (Fetch Once, Serve Forever)
+        try {
             String createPhotoCacheSql = """
                 CREATE TABLE IF NOT EXISTS place_photo_cache (
                     photo_key VARCHAR(255) PRIMARY KEY,
@@ -75,10 +79,11 @@ public class DatabaseVectorInitializer implements ApplicationRunner {
                 CREATE INDEX IF NOT EXISTS idx_place_photo_cache_created_at ON place_photo_cache(created_at);
             """;
             jdbcTemplate.execute(createPhotoCacheSql);
-
-            log.info("[pgvector] Estrutura RAG e cache de fotos prontos.");
+            log.info("[DatabaseInitializer] Tabela place_photo_cache verificada com sucesso.");
         } catch (Exception e) {
-            log.warn("[pgvector] Aviso na inicialização vetorial: {}", e.getMessage());
+            log.warn("[DatabaseInitializer] Erro ao criar place_photo_cache: {}", e.getMessage());
         }
+
+        log.info("[DatabaseInitializer] Inicialização de tabelas e cache concluída.");
     }
 }
