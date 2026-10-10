@@ -29,12 +29,12 @@ public class CityAnchor {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Map<String, Center> cache = new ConcurrentHashMap<>();
 
-    public record Center(double latitude, double longitude) {}
+    public record Center(Double latitude, Double longitude) {}
 
     public Center resolve(String city, String region, String country, Double latitude, Double longitude) {
         Center named = geocode(city, region, country);
         if (latitude != null && longitude != null && !latitude.isNaN() && !longitude.isNaN()) {
-            if (named == null || distanceKm(latitude, longitude, named.latitude(), named.longitude()) <= 40) {
+            if (named == null || (named.latitude() != null && named.longitude() != null && distanceKm(latitude, longitude, named.latitude(), named.longitude()) <= 40)) {
                 return new Center(latitude, longitude);
             }
             log.info("[City] Coordenadas descartadas: estão longe de {}", city);
@@ -43,7 +43,7 @@ public class CityAnchor {
     }
 
     public boolean contains(Center center, double radiusKm, Double latitude, Double longitude, String address, String city) {
-        if (center != null && latitude != null && longitude != null) {
+        if (center != null && center.latitude() != null && center.longitude() != null && latitude != null && longitude != null) {
             double limit = Math.max(radiusKm > 0 ? radiusKm : 8, 1) * 1.35;
             return distanceKm(latitude, longitude, center.latitude(), center.longitude()) <= limit;
         }

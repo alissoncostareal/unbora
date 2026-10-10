@@ -114,8 +114,8 @@ public class RecommendationsService {
 
         final Double radiusKm = dto.radiusKm() != null ? Math.min(Math.max(dto.radiusKm(), 1.0), 100.0) : 8.0;
         CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
-        final Double lat = center != null ? center.latitude() : dto.latitude();
-        final Double lng = center != null ? center.longitude() : dto.longitude();
+        final Double lat = center != null ? center.latitude() : (dto != null ? dto.latitude() : null);
+        final Double lng = center != null ? center.longitude() : (dto != null ? dto.longitude() : null);
         Set<String> dismissed = loadDismissed(userId);
 
         LocalDate now = LocalDate.now();
@@ -296,8 +296,8 @@ public class RecommendationsService {
         int maxResults = locationSettingsService != null ? locationSettingsService.getEffectiveMaxResults(city) : 24;
 
         CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
-        final Double lat = center != null ? center.latitude() : dto.latitude();
-        final Double lng = center != null ? center.longitude() : dto.longitude();
+        final Double lat = center != null ? center.latitude() : (dto != null ? dto.latitude() : null);
+        final Double lng = center != null ? center.longitude() : (dto != null ? dto.longitude() : null);
         final double radiusKm = 25.0;
         Set<String> dismissed = loadDismissed(userId);
 
@@ -488,8 +488,8 @@ public class RecommendationsService {
 
         final Double radiusKm = dto.radiusKm() != null ? Math.min(Math.max(dto.radiusKm(), 1.0), 100.0) : 15.0;
         CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
-        final Double lat = center != null ? center.latitude() : dto.latitude();
-        final Double lng = center != null ? center.longitude() : dto.longitude();
+        final Double lat = center != null ? center.latitude() : (dto != null ? dto.latitude() : null);
+        final Double lng = center != null ? center.longitude() : (dto != null ? dto.longitude() : null);
         Set<String> dismissed = loadDismissed(userId);
 
         List<Checkin> checkins = (userId != null && !userId.isBlank())
