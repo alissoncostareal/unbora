@@ -59,6 +59,7 @@ public class GooglePlacesDiscoveryService {
                 .connectTimeout(Duration.ofSeconds(6))
                 .build();
         this.objectMapper = new ObjectMapper();
+        log.info("[PhotoCache] GooglePlacesDiscoveryService inicializado. jdbcTemplate={}", jdbcTemplate != null);
     }
 
     public GooglePlacesDiscoveryService(String googlePlacesKey) {
@@ -321,8 +322,9 @@ public class GooglePlacesDiscoveryService {
                     """,
                     photoKey, photoUri
             );
+            log.info("[PhotoCache] Gravado no banco para {}: {}", photoKey, photoUri.length() > 50 ? photoUri.substring(0, 50) + "..." : photoUri);
         } catch (Exception e) {
-            log.debug("[PhotoCache] Falha na gravação DB cache para {}: {}", photoKey, e.getMessage());
+            log.warn("[PhotoCache] Falha na gravação DB cache para {}: {}", photoKey, e.getMessage());
         }
     }
 }
