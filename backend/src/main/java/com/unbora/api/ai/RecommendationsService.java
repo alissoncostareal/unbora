@@ -165,7 +165,7 @@ public class RecommendationsService {
         // 2. Contexto da Web (Agenda local e Instagram ao vivo)
         String webContext = "";
         try {
-            webContext = webContextFuture.get(2, TimeUnit.SECONDS);
+            webContext = webContextFuture.get(800, TimeUnit.MILLISECONDS);
         } catch (Exception ignored) {}
 
         // 3. Grounding amplo — lista completa para a IA (e para merge posterior)
@@ -340,7 +340,7 @@ public class RecommendationsService {
 
         String webContext = "";
         try {
-            webContext = webContextFuture.get(2, TimeUnit.SECONDS);
+            webContext = webContextFuture.get(800, TimeUnit.MILLISECONDS);
             if (webContext != null && webContext.length() > 900) {
                 webContext = webContext.substring(0, 900);
             }
@@ -1322,11 +1322,11 @@ public class RecommendationsService {
                 if (direct != null && !direct.isBlank() && !direct.contains("places.googleapis.com")) {
                     place.setImagem(direct);
                 }
-            }));
+            }, discoveryExecutor));
         }
         if (!jobs.isEmpty()) {
             try {
-                CompletableFuture.allOf(jobs.toArray(CompletableFuture[]::new)).get(8, TimeUnit.SECONDS);
+                CompletableFuture.allOf(jobs.toArray(CompletableFuture[]::new)).get(3, TimeUnit.SECONDS);
             } catch (Exception e) {
                 log.warn("[Photos] Tempo esgotado ao resolver fotos do Google Places: {}", e.getMessage());
             }
