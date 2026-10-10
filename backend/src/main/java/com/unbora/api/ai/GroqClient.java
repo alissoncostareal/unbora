@@ -145,6 +145,7 @@ public class GroqClient {
         for (String model : models) {
             if (Instant.now().isAfter(deadline)) break;
 
+            long start = System.currentTimeMillis();
             try {
                 Map<String, Object> payload = new HashMap<>();
                 payload.put("model", model);
@@ -157,7 +158,10 @@ public class GroqClient {
                 payload.put("response_format", Map.of("type", "json_object"));
 
                 Duration remaining = Duration.between(Instant.now(), deadline);
-                Duration timeout = remaining.compareTo(Duration.ofSeconds(6)) > 0 ? Duration.ofSeconds(6) : remaining;
+                Duration timeout = remaining.compareTo(Duration.ofSeconds(15)) > 0 ? Duration.ofSeconds(15) : remaining;
+                if (timeout.isNegative() || timeout.isZero()) break;
+
+                log.info("[Groq] Enviando requisicao para modelo {} (maxTokens={}, timeout={}s)...", model, maxTokens, timeout.toSeconds());
 
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create("https://api.groq.com/openai/v1/chat/completions"))
@@ -168,20 +172,28 @@ public class GroqClient {
                         .build();
 
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                long elapsed = System.currentTimeMillis() - start;
 
                 if (response.statusCode() == 200) {
                     JsonNode json = objectMapper.readTree(response.body());
                     String content = json.path("choices").get(0).path("message").path("content").asText("");
                     T result = parseJsonObject(content, responseClass);
                     if (result != null) {
+                        log.info("[Groq] Sucesso com modelo {} em {}ms", model, elapsed);
                         return result;
                     }
+                    log.warn("[Groq] Resposta do modelo {} em {}ms nao pode ser convertida para JSON", model, elapsed);
                 } else if (response.statusCode() == 429) {
+                    log.warn("[Groq] Rate limit 429 no modelo {}: {}", model, response.body());
                     if (isDailyTokenLimit(response.body())) {
                         hitDailyLimit = true;
                     }
+                } else {
+                    log.warn("[Groq] HTTP {} no modelo {}: {}", response.statusCode(), model, response.body());
                 }
             } catch (Exception e) {
+                long elapsed = System.currentTimeMillis() - start;
+                log.warn("[Groq] Excecao no modelo {} apos {}ms: {}", model, elapsed, e.getMessage());
                 lastError = e.getMessage();
             }
         }

@@ -227,15 +227,15 @@ public class RecommendationsService {
         RecommendationResult result;
         try {
             boolean hasLive = !livePlaces.isEmpty();
-            int maxTokens = Math.max(3500, Math.min(8192, maxResults * 160));
+            int maxTokens = Math.max(1200, Math.min(3000, maxResults * 100));
             result = groqClient.callGroqJson(
                     systemPrompt,
                     userPrompt,
                     RecommendationResult.class,
                     0.3,
                     maxTokens,
-                    hasLive ? Duration.ofSeconds(16) : Duration.ofSeconds(40),
-                    hasLive ? 1 : Integer.MAX_VALUE
+                    Duration.ofSeconds(15),
+                    2
             );
         } catch (Exception e) {
             log.warn("[Recommend] Groq falhou — lista completa via Google Places: {}", e.getMessage());
@@ -382,15 +382,15 @@ public class RecommendationsService {
         RecommendationResult result;
         try {
             boolean hasLive = !livePlaces.isEmpty();
-            int maxTokens = Math.max(3500, Math.min(8192, maxResults * 160));
+            int maxTokens = Math.max(1200, Math.min(3000, maxResults * 100));
             result = groqClient.callGroqJson(
                     systemPrompt,
                     userPrompt,
                     RecommendationResult.class,
                     0.3,
                     maxTokens,
-                    hasLive ? Duration.ofSeconds(16) : Duration.ofSeconds(40),
-                    hasLive ? 1 : Integer.MAX_VALUE
+                    Duration.ofSeconds(15),
+                    2
             );
         } catch (Exception e) {
             log.warn("[Search] Groq falhou — lista completa via Google Places: {}", e.getMessage());
@@ -624,15 +624,15 @@ public class RecommendationsService {
         RecommendationResult result;
         try {
             boolean hasLive = !livePlaces.isEmpty();
-            int maxTokens = Math.max(3500, Math.min(8192, maxResults * 160));
+            int maxTokens = Math.max(1200, Math.min(3000, maxResults * 100));
             result = groqClient.callGroqJson(
                     systemPrompt,
                     promptInstruction,
                     RecommendationResult.class,
                     0.3,
                     maxTokens,
-                    hasLive ? Duration.ofSeconds(16) : Duration.ofSeconds(40),
-                    hasLive ? 1 : Integer.MAX_VALUE
+                    Duration.ofSeconds(15),
+                    2
             );
         } catch (Exception e) {
             log.warn("[PersonalizedRecommend] Groq falhou — lista via Google Places: {}", e.getMessage());
