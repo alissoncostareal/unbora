@@ -16,7 +16,8 @@ public interface PlaceEmbeddingRepository extends JpaRepository<PlaceEmbedding, 
         SELECT id, name, city, category_tag as categoryTag, primary_type as primaryType, 
                formatted_address as formattedAddress, latitude, longitude, rating, 
                user_rating_count as userRatingCount, google_maps_uri as googleMapsUri, 
-               photo_url as photoUrl, vibe_summary as vibeSummary,
+               photo_url as photoUrl, vibe_summary as vibeSummary, tags,
+               CAST(attributes AS text) as attributes,
                (1.0 - (embedding <=> CAST(:queryVector AS vector))) AS similarity
         FROM place_embeddings
         WHERE LOWER(city) = LOWER(:city)
@@ -36,7 +37,8 @@ public interface PlaceEmbeddingRepository extends JpaRepository<PlaceEmbedding, 
         SELECT id, name, city, category_tag as categoryTag, primary_type as primaryType, 
                formatted_address as formattedAddress, latitude, longitude, rating, 
                user_rating_count as userRatingCount, google_maps_uri as googleMapsUri, 
-               photo_url as photoUrl, vibe_summary as vibeSummary,
+               photo_url as photoUrl, vibe_summary as vibeSummary, tags,
+               CAST(attributes AS text) as attributes,
                (1.0 - (embedding <=> CAST(:queryVector AS vector))) AS similarity
         FROM place_embeddings
         ORDER BY (
@@ -56,11 +58,12 @@ public interface PlaceEmbeddingRepository extends JpaRepository<PlaceEmbedding, 
         INSERT INTO place_embeddings (
             id, name, city, category_tag, primary_type, formatted_address, 
             latitude, longitude, rating, user_rating_count, google_maps_uri, 
-            photo_url, vibe_summary, embedding, created_at, updated_at
+            photo_url, vibe_summary, tags, attributes, embedding, created_at, updated_at
         ) VALUES (
             :id, :name, :city, :categoryTag, :primaryType, :formattedAddress,
             :latitude, :longitude, :rating, :userRatingCount, :googleMapsUri,
-            :photoUrl, :vibeSummary, CAST(:embeddingVector AS vector), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            :photoUrl, :vibeSummary, :tags, CAST(COALESCE(:attributes, '{}') AS jsonb),
+            CAST(:embeddingVector AS vector), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         )
         ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name,
@@ -75,6 +78,8 @@ public interface PlaceEmbeddingRepository extends JpaRepository<PlaceEmbedding, 
             google_maps_uri = EXCLUDED.google_maps_uri,
             photo_url = EXCLUDED.photo_url,
             vibe_summary = EXCLUDED.vibe_summary,
+            tags = COALESCE(EXCLUDED.tags, place_embeddings.tags),
+            attributes = COALESCE(EXCLUDED.attributes, place_embeddings.attributes),
             embedding = EXCLUDED.embedding,
             updated_at = CURRENT_TIMESTAMP
         """, nativeQuery = true)
@@ -92,8 +97,22 @@ public interface PlaceEmbeddingRepository extends JpaRepository<PlaceEmbedding, 
             @Param("googleMapsUri") String googleMapsUri,
             @Param("photoUrl") String photoUrl,
             @Param("vibeSummary") String vibeSummary,
+            @Param("tags") String tags,
+            @Param("attributes") String attributes,
             @Param("embeddingVector") String embeddingVector
     );
+
+    default void upsertPlaceVector(
+            String id, String name, String city, String categoryTag, String primaryType,
+            String formattedAddress, Double latitude, Double longitude, Double rating,
+            Integer userRatingCount, String googleMapsUri, String photoUrl, String vibeSummary,
+            String embeddingVector
+    ) {
+        upsertPlaceVector(
+                id, name, city, categoryTag, primaryType, formattedAddress, latitude, longitude,
+                rating, userRatingCount, googleMapsUri, photoUrl, vibeSummary, null, "{}", embeddingVector
+        );
+    }
 
     long countByCityIgnoreCase(String city);
 }

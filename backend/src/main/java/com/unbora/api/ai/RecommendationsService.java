@@ -12,6 +12,7 @@ import com.unbora.api.kafka.event.RecommendationEvent;
 import com.unbora.api.common.security.InputSanitizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -21,6 +22,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +56,7 @@ public class RecommendationsService {
     private final SponsoredPlaceService sponsoredPlaceService;
     private final CheckinRepository checkinRepository;
     private final RecommendationCacheService recommendationCacheService;
+    private final PlaceDnaTagExtractor placeDnaTagExtractor;
 
     // Singleflight: consolida requisicoes simultaneas identicas em um unico processamento
     private final ConcurrentHashMap<String, CompletableFuture<RecommendationResult>> inFlightRecommend = new ConcurrentHashMap<>();
@@ -87,7 +90,8 @@ public class RecommendationsService {
             LocationSettingsService locationSettingsService,
             SponsoredPlaceService sponsoredPlaceService,
             CheckinRepository checkinRepository,
-            RecommendationCacheService recommendationCacheService
+            RecommendationCacheService recommendationCacheService,
+            @Autowired(required = false) PlaceDnaTagExtractor placeDnaTagExtractor
     ) {
         this.groqClient = groqClient;
         this.imageEnrichmentService = imageEnrichmentService;
@@ -105,6 +109,7 @@ public class RecommendationsService {
         this.sponsoredPlaceService = sponsoredPlaceService;
         this.checkinRepository = checkinRepository;
         this.recommendationCacheService = recommendationCacheService;
+        this.placeDnaTagExtractor = placeDnaTagExtractor != null ? placeDnaTagExtractor : new PlaceDnaTagExtractor();
     }
 
     public RecommendationResult recommend(RecommendDto dto) {
@@ -673,20 +678,25 @@ public class RecommendationsService {
     }
 
     private GooglePlacesDiscoveryService.DiscoveredPlace projectionToDiscoveredPlace(PlaceEmbeddingProjection p) {
+        List<String> tagsList = (p.getTags() != null && !p.getTags().isBlank())
+                ? Arrays.stream(p.getTags().split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList()
+                : null;
         return new GooglePlacesDiscoveryService.DiscoveredPlace(
-                p.getId(),
+                p.getName(),
                 p.getName(),
                 p.getFormattedAddress(),
-                p.getRating() != null ? p.getRating() : 4.7,
-                p.getUserRatingCount() != null ? p.getUserRatingCount() : 0,
-                p.getPrimaryType() != null ? p.getPrimaryType() : p.getCategoryTag(),
-                p.getPhotoUrl(),
-                p.getGoogleMapsUri(),
+                p.getId(),
                 p.getLatitude(),
                 p.getLongitude(),
+                p.getRating() != null ? p.getRating() : 4.7,
+                p.getUserRatingCount() != null ? p.getUserRatingCount() : 0,
                 null,
-                null,
-                p.getVibeSummary()
+                p.getPrimaryType() != null ? p.getPrimaryType() : p.getCategoryTag(),
+                tagsList,
+                p.getGoogleMapsUri(),
+                p.getVibeSummary(),
+                p.getPhotoUrl(),
+                null
         );
     }
 
@@ -1497,6 +1507,16 @@ public class RecommendationsService {
         place.setLongitude(p.longitude());
         place.setOpenNow(p.openNow());
         place.setUserRatingCount(p.userRatingCount());
+
+        if (placeDnaTagExtractor != null) {
+            PlaceDnaTagExtractor.DnaExtractionResult dna = placeDnaTagExtractor.extractDna(
+                    p.displayName(), p.primaryType(), p.types(), p.formattedAddress(),
+                    p.editorialSummary(), null, p.priceLevel(), null
+            );
+            if (dna != null && dna.tags() != null && !dna.tags().isEmpty()) {
+                place.setTags(dna.tags());
+            }
+        }
         return place;
     }
 
@@ -1569,7 +1589,17 @@ public class RecommendationsService {
             if (directPhoto != null && directPhoto.contains("places.googleapis.com")) {
                 directPhoto = googlePlacesDiscoveryService.resolveDirectPhotoUrl(directPhoto);
             }
+            PlaceDnaTagExtractor.DnaExtractionResult dnaResult = placeDnaTagExtractor != null
+                    ? placeDnaTagExtractor.extractDna(
+                            p.displayName(), p.primaryType(), p.types(), p.formattedAddress(),
+                            p.editorialSummary(), null, p.priceLevel(), null
+                    )
+                    : null;
+            String tags = dnaResult != null ? dnaResult.tagsString() : "";
+            String attributes = dnaResult != null ? dnaResult.attributesJson() : "{}";
+
             String dna = p.displayName() + " em " + city + ". "
+                    + (tags != null && !tags.isBlank() ? "Tags: " + tags + ". " : "")
                     + (p.editorialSummary() != null ? p.editorialSummary() : (p.primaryType() != null ? p.primaryType() : "Lugar"))
                     + " " + (p.formattedAddress() != null ? p.formattedAddress() : "");
             String vector = embeddingService.getEmbeddingVectorString(dna);
@@ -1587,6 +1617,8 @@ public class RecommendationsService {
                     p.googleMapsUri(),
                     directPhoto,
                     dna,
+                    tags,
+                    attributes,
                     vector
             );
         } catch (Exception ignored) {}

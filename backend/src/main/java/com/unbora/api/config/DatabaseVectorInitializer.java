@@ -57,6 +57,13 @@ public class DatabaseVectorInitializer implements ApplicationRunner {
                 jdbcTemplate.execute("ALTER TABLE place_embeddings ADD COLUMN IF NOT EXISTS embedding vector(1536);");
             } catch (Exception ignored) {}
 
+            try {
+                jdbcTemplate.execute("ALTER TABLE place_embeddings ADD COLUMN IF NOT EXISTS tags TEXT;");
+                jdbcTemplate.execute("ALTER TABLE place_embeddings ADD COLUMN IF NOT EXISTS attributes JSONB DEFAULT '{}'::jsonb;");
+                jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_place_embeddings_tags ON place_embeddings(tags);");
+                jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_place_embeddings_attributes ON place_embeddings USING gin(attributes);");
+            } catch (Exception ignored) {}
+
             jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_place_embeddings_city ON place_embeddings(LOWER(city));");
             jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_place_embeddings_category ON place_embeddings(category_tag);");
 

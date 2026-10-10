@@ -19,20 +19,23 @@ public class PlaceVectorSeederService {
     private final PlaceEmbeddingRepository placeEmbeddingRepository;
     private final EmbeddingService embeddingService;
     private final GooglePlacesDiscoveryService googlePlacesDiscoveryService;
+    private final com.unbora.api.ai.PlaceDnaTagExtractor placeDnaTagExtractor;
 
     @Autowired
     public PlaceVectorSeederService(
             PlaceEmbeddingRepository placeEmbeddingRepository,
             EmbeddingService embeddingService,
-            @Autowired(required = false) GooglePlacesDiscoveryService googlePlacesDiscoveryService
+            @Autowired(required = false) GooglePlacesDiscoveryService googlePlacesDiscoveryService,
+            @Autowired(required = false) com.unbora.api.ai.PlaceDnaTagExtractor placeDnaTagExtractor
     ) {
         this.placeEmbeddingRepository = placeEmbeddingRepository;
         this.embeddingService = embeddingService;
         this.googlePlacesDiscoveryService = googlePlacesDiscoveryService;
+        this.placeDnaTagExtractor = placeDnaTagExtractor != null ? placeDnaTagExtractor : new com.unbora.api.ai.PlaceDnaTagExtractor();
     }
 
     public PlaceVectorSeederService(PlaceEmbeddingRepository placeEmbeddingRepository, EmbeddingService embeddingService) {
-        this(placeEmbeddingRepository, embeddingService, null);
+        this(placeEmbeddingRepository, embeddingService, null, null);
     }
 
     public record SeedPlace(
@@ -245,7 +248,14 @@ public class PlaceVectorSeederService {
             );
 
             for (SeedPlace p : iconicPlaces) {
-                String vectorStr = embeddingService.getEmbeddingVectorString(p.vibeDna() + " " + p.name() + " " + p.categoryTag() + " " + p.primaryType());
+                com.unbora.api.ai.PlaceDnaTagExtractor.DnaExtractionResult dnaResult = placeDnaTagExtractor.extractDna(
+                        p.name(), p.primaryType(), List.of(p.categoryTag()), p.formattedAddress(),
+                        p.vibeDna(), p.vibeDna(), null, null
+                );
+                String tags = dnaResult != null ? dnaResult.tagsString() : "";
+                String attributes = dnaResult != null ? dnaResult.attributesJson() : "{}";
+
+                String vectorStr = embeddingService.getEmbeddingVectorString(p.vibeDna() + " " + p.name() + " " + p.categoryTag() + " " + p.primaryType() + " " + tags);
                 placeEmbeddingRepository.upsertPlaceVector(
                         p.id(),
                         p.name(),
@@ -260,6 +270,8 @@ public class PlaceVectorSeederService {
                         p.googleMapsUri(),
                         p.photoUrl(),
                         p.vibeDna(),
+                        tags,
+                        attributes,
                         vectorStr
                 );
             }
@@ -317,7 +329,15 @@ public class PlaceVectorSeederService {
                         directPhoto = googlePlacesDiscoveryService.resolveDirectPhotoUrl(directPhoto);
                     }
 
+                    com.unbora.api.ai.PlaceDnaTagExtractor.DnaExtractionResult dnaResult = placeDnaTagExtractor.extractDna(
+                            p.displayName(), p.primaryType(), p.types(), p.formattedAddress(),
+                            p.editorialSummary(), null, p.priceLevel(), null
+                    );
+                    String tags = dnaResult != null ? dnaResult.tagsString() : "";
+                    String attributes = dnaResult != null ? dnaResult.attributesJson() : "{}";
+
                     String dna = p.displayName() + " em " + city + ". "
+                            + (tags != null && !tags.isBlank() ? "Tags: " + tags + ". " : "")
                             + (p.editorialSummary() != null && !p.editorialSummary().isBlank() ? p.editorialSummary() : (p.primaryType() != null ? p.primaryType() : "Lugar"))
                             + " " + (p.formattedAddress() != null ? p.formattedAddress() : "");
 
@@ -337,6 +357,8 @@ public class PlaceVectorSeederService {
                             p.googleMapsUri(),
                             directPhoto,
                             dna,
+                            tags,
+                            attributes,
                             vector
                     );
                     totalIndexed++;

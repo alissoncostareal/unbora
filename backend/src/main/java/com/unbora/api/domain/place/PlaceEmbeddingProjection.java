@@ -14,5 +14,7 @@ public interface PlaceEmbeddingProjection {
     String getGoogleMapsUri();
     String getPhotoUrl();
     String getVibeSummary();
+    String getTags();
+    String getAttributes();
     Double getSimilarity();
 }

@@ -45,6 +45,12 @@ public class PlaceEmbedding {
     @Column(name = "vibe_summary", columnDefinition = "TEXT")
     private String vibeSummary;
 
+    @Column(columnDefinition = "TEXT")
+    private String tags;
+
+    @Column(columnDefinition = "TEXT")
+    private String attributes;
+
     @Column(name = "created_at")
     private Instant createdAt;
 
@@ -56,6 +62,14 @@ public class PlaceEmbedding {
     public PlaceEmbedding(String id, String name, String city, String categoryTag, String primaryType,
                           String formattedAddress, Double latitude, Double longitude, Double rating,
                           Integer userRatingCount, String googleMapsUri, String photoUrl, String vibeSummary) {
+        this(id, name, city, categoryTag, primaryType, formattedAddress, latitude, longitude, rating,
+             userRatingCount, googleMapsUri, photoUrl, vibeSummary, null, null);
+    }
+
+    public PlaceEmbedding(String id, String name, String city, String categoryTag, String primaryType,
+                          String formattedAddress, Double latitude, Double longitude, Double rating,
+                          Integer userRatingCount, String googleMapsUri, String photoUrl, String vibeSummary,
+                          String tags, String attributes) {
         this.id = id;
         this.name = name;
         this.city = city;
@@ -69,6 +83,8 @@ public class PlaceEmbedding {
         this.googleMapsUri = googleMapsUri;
         this.photoUrl = photoUrl;
         this.vibeSummary = vibeSummary;
+        this.tags = tags;
+        this.attributes = attributes;
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
     }
@@ -111,6 +127,12 @@ public class PlaceEmbedding {
 
     public String getVibeSummary() { return vibeSummary; }
     public void setVibeSummary(String vibeSummary) { this.vibeSummary = vibeSummary; }
+
+    public String getTags() { return tags; }
+    public void setTags(String tags) { this.tags = tags; }
+
+    public String getAttributes() { return attributes; }
+    public void setAttributes(String attributes) { this.attributes = attributes; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
