@@ -71,7 +71,7 @@ public class DatabaseVectorInitializer implements ApplicationRunner {
         try {
             String createPhotoCacheSql = """
                 CREATE TABLE IF NOT EXISTS place_photo_cache (
-                    photo_key VARCHAR(255) PRIMARY KEY,
+                    photo_key TEXT PRIMARY KEY,
                     photo_uri TEXT NOT NULL,
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
