@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -23,6 +25,7 @@ public class GooglePlacesDiscoveryService {
     private static final Logger log = LoggerFactory.getLogger(GooglePlacesDiscoveryService.class);
 
     private final String googlePlacesKey;
+    private final JdbcTemplate jdbcTemplate;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final Map<String, String> directPhotoCache = new ConcurrentHashMap<>();
@@ -45,12 +48,21 @@ public class GooglePlacesDiscoveryService {
             String priceLevel
     ) {}
 
-    public GooglePlacesDiscoveryService(@Value("${unbora.google.places-api-key:}") String googlePlacesKey) {
+    @Autowired
+    public GooglePlacesDiscoveryService(
+            @Value("${unbora.google.places-api-key:}") String googlePlacesKey,
+            @Autowired(required = false) JdbcTemplate jdbcTemplate
+    ) {
         this.googlePlacesKey = googlePlacesKey != null ? googlePlacesKey.trim() : "";
+        this.jdbcTemplate = jdbcTemplate;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(6))
                 .build();
         this.objectMapper = new ObjectMapper();
+    }
+
+    public GooglePlacesDiscoveryService(String googlePlacesKey) {
+        this(googlePlacesKey, null);
     }
 
     public boolean isConfigured() {
@@ -143,7 +155,7 @@ public class GooglePlacesDiscoveryService {
                     }
                 }
 
-                // Seleciona a melhor foto (alta resolução e proporção paisagem)
+                // Seleciona a melhor foto real do estabelecimento
                 String photoUrl = null;
                 JsonNode photos = p.path("photos");
                 if (photos.isArray() && !photos.isEmpty()) {
@@ -163,8 +175,13 @@ public class GooglePlacesDiscoveryService {
                         selectedPhotoName = photos.get(0).path("name").asText(null);
                     }
                     if (selectedPhotoName != null && !selectedPhotoName.isBlank()) {
-                        // Card covers: keep payloads small for mobile (avoid multi-MB PNGs).
-                        photoUrl = "https://places.googleapis.com/v1/" + selectedPhotoName + "/media?maxHeightPx=720&maxWidthPx=960&key=" + URLEncoder.encode(googlePlacesKey, StandardCharsets.UTF_8);
+                        // Verifica se já está em cache persistente (PostgreSQL / RAM)
+                        String cachedDirectUri = getCachedPhotoUri(selectedPhotoName);
+                        if (cachedDirectUri != null && !cachedDirectUri.isBlank()) {
+                            photoUrl = cachedDirectUri;
+                        } else {
+                            photoUrl = "https://places.googleapis.com/v1/" + selectedPhotoName + "/media?maxHeightPx=720&maxWidthPx=960&key=" + URLEncoder.encode(googlePlacesKey, StandardCharsets.UTF_8);
+                        }
                     }
                 }
 
@@ -197,15 +214,35 @@ public class GooglePlacesDiscoveryService {
     }
 
     /**
-     * O app não segue o redirect de /media (e a URL leva a chave da API).
-     * skipHttpRedirect devolve o arquivo em lh3.googleusercontent.com.
+     * Resolve a URL de foto do Google Places para a URL final direta (lh3.googleusercontent.com).
+     * Aplica arquitetura Fetch-Once-Serve-Forever com cache persistente no PostgreSQL.
      */
     public String resolveDirectPhotoUrl(String mediaUrl) {
         if (mediaUrl == null || mediaUrl.isBlank() || !mediaUrl.contains("places.googleapis.com")) {
             return mediaUrl;
         }
-        String cached = directPhotoCache.get(mediaUrl);
-        if (cached != null) return cached;
+
+        String photoKey = extractPhotoKey(mediaUrl);
+
+        // 1. Verifica cache rápido em memória
+        String memoryCached = directPhotoCache.get(mediaUrl);
+        if (memoryCached != null) return memoryCached;
+        if (photoKey != null) {
+            String keyCached = directPhotoCache.get(photoKey);
+            if (keyCached != null) return keyCached;
+        }
+
+        // 2. Verifica cache persistente no PostgreSQL
+        if (photoKey != null) {
+            String dbCached = getCachedPhotoUri(photoKey);
+            if (dbCached != null && !dbCached.isBlank()) {
+                directPhotoCache.put(mediaUrl, dbCached);
+                directPhotoCache.put(photoKey, dbCached);
+                return dbCached;
+            }
+        }
+
+        // 3. Chamada única ao endpoint do Google com skipHttpRedirect
         try {
             String requestUrl = mediaUrl.contains("skipHttpRedirect=")
                     ? mediaUrl
@@ -223,11 +260,69 @@ public class GooglePlacesDiscoveryService {
             if (photoUri.isBlank() || !photoUri.startsWith("http")) {
                 return mediaUrl;
             }
+
+            // 4. Salva permanentemente no cache
             directPhotoCache.put(mediaUrl, photoUri);
+            if (photoKey != null) {
+                saveCachedPhotoUri(photoKey, photoUri);
+            }
             return photoUri;
         } catch (Exception e) {
             log.debug("Falha ao resolver foto do Places: {}", e.getMessage());
             return mediaUrl;
+        }
+    }
+
+    private String extractPhotoKey(String mediaUrl) {
+        if (mediaUrl == null || mediaUrl.isBlank()) return null;
+        int v1Idx = mediaUrl.indexOf("/v1/");
+        int mediaIdx = mediaUrl.indexOf("/media");
+        if (v1Idx != -1 && mediaIdx > v1Idx) {
+            return mediaUrl.substring(v1Idx + 4, mediaIdx);
+        }
+        return mediaUrl;
+    }
+
+    private String getCachedPhotoUri(String photoKey) {
+        if (photoKey == null || photoKey.isBlank()) return null;
+        String mem = directPhotoCache.get(photoKey);
+        if (mem != null) return mem;
+
+        if (jdbcTemplate == null) return null;
+        try {
+            List<String> list = jdbcTemplate.query(
+                    "SELECT photo_uri FROM place_photo_cache WHERE photo_key = ?",
+                    (rs, rowNum) -> rs.getString("photo_uri"),
+                    photoKey
+            );
+            if (!list.isEmpty() && list.get(0) != null && !list.get(0).isBlank()) {
+                String uri = list.get(0);
+                directPhotoCache.put(photoKey, uri);
+                return uri;
+            }
+        } catch (Exception e) {
+            log.debug("[PhotoCache] Falha na leitura DB cache para {}: {}", photoKey, e.getMessage());
+        }
+        return null;
+    }
+
+    private void saveCachedPhotoUri(String photoKey, String photoUri) {
+        if (photoKey == null || photoKey.isBlank() || photoUri == null || photoUri.isBlank()) return;
+        directPhotoCache.put(photoKey, photoUri);
+        if (jdbcTemplate == null) return;
+        try {
+            jdbcTemplate.update(
+                    """
+                    INSERT INTO place_photo_cache (photo_key, photo_uri, updated_at)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT (photo_key) DO UPDATE SET
+                        photo_uri = EXCLUDED.photo_uri,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    photoKey, photoUri
+            );
+        } catch (Exception e) {
+            log.debug("[PhotoCache] Falha na gravação DB cache para {}: {}", photoKey, e.getMessage());
         }
     }
 }

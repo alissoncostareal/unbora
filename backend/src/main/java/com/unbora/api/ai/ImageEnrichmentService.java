@@ -700,7 +700,8 @@ public class ImageEnrichmentService {
                 }
 
                 if (selectedPhotoName != null && !selectedPhotoName.isBlank()) {
-                    return "https://places.googleapis.com/v1/" + selectedPhotoName + "/media?maxHeightPx=720&maxWidthPx=960&key=" + URLEncoder.encode(googlePlacesKey, StandardCharsets.UTF_8);
+                    String rawMediaUrl = "https://places.googleapis.com/v1/" + selectedPhotoName + "/media?maxHeightPx=720&maxWidthPx=960&key=" + URLEncoder.encode(googlePlacesKey, StandardCharsets.UTF_8);
+                    return googlePlacesDiscoveryService.resolveDirectPhotoUrl(rawMediaUrl);
                 }
             }
         } catch (Exception e) {

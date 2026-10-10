@@ -64,7 +64,19 @@ public class DatabaseVectorInitializer implements ApplicationRunner {
                 log.debug("[pgvector] Aviso no índice HNSW (pode já existir ou precisar de dados): {}", hnswEx.getMessage());
             }
 
-            log.info("[pgvector] Estrutura RAG pronta para buscas semânticas.");
+            // 5. Cache persistente de fotos de locais (Fetch Once, Serve Forever)
+            String createPhotoCacheSql = """
+                CREATE TABLE IF NOT EXISTS place_photo_cache (
+                    photo_key VARCHAR(255) PRIMARY KEY,
+                    photo_uri TEXT NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE INDEX IF NOT EXISTS idx_place_photo_cache_created_at ON place_photo_cache(created_at);
+            """;
+            jdbcTemplate.execute(createPhotoCacheSql);
+
+            log.info("[pgvector] Estrutura RAG e cache de fotos prontos.");
         } catch (Exception e) {
             log.warn("[pgvector] Aviso na inicialização vetorial: {}", e.getMessage());
         }

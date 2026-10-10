@@ -1409,6 +1409,10 @@ public class RecommendationsService {
 
     private void indexPlaceVector(GooglePlacesDiscoveryService.DiscoveredPlace p, String city) {
         try {
+            String directPhoto = p.photoUrl();
+            if (directPhoto != null && directPhoto.contains("places.googleapis.com")) {
+                directPhoto = googlePlacesDiscoveryService.resolveDirectPhotoUrl(directPhoto);
+            }
             String dna = p.displayName() + " em " + city + ". "
                     + (p.editorialSummary() != null ? p.editorialSummary() : (p.primaryType() != null ? p.primaryType() : "Lugar"))
                     + " " + (p.formattedAddress() != null ? p.formattedAddress() : "");
@@ -1425,7 +1429,7 @@ public class RecommendationsService {
                     p.rating(),
                     p.userRatingCount(),
                     p.googleMapsUri(),
-                    p.photoUrl(),
+                    directPhoto,
                     dna,
                     vector
             );

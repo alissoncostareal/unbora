@@ -1,11 +1,15 @@
 package com.unbora.api.domain.place;
 
 import com.unbora.api.ai.EmbeddingService;
+import com.unbora.api.ai.GooglePlacesDiscoveryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 @Service
 public class PlaceVectorSeederService {
@@ -14,10 +18,21 @@ public class PlaceVectorSeederService {
 
     private final PlaceEmbeddingRepository placeEmbeddingRepository;
     private final EmbeddingService embeddingService;
+    private final GooglePlacesDiscoveryService googlePlacesDiscoveryService;
 
-    public PlaceVectorSeederService(PlaceEmbeddingRepository placeEmbeddingRepository, EmbeddingService embeddingService) {
+    @Autowired
+    public PlaceVectorSeederService(
+            PlaceEmbeddingRepository placeEmbeddingRepository,
+            EmbeddingService embeddingService,
+            @Autowired(required = false) GooglePlacesDiscoveryService googlePlacesDiscoveryService
+    ) {
         this.placeEmbeddingRepository = placeEmbeddingRepository;
         this.embeddingService = embeddingService;
+        this.googlePlacesDiscoveryService = googlePlacesDiscoveryService;
+    }
+
+    public PlaceVectorSeederService(PlaceEmbeddingRepository placeEmbeddingRepository, EmbeddingService embeddingService) {
+        this(placeEmbeddingRepository, embeddingService, null);
     }
 
     public record SeedPlace(
@@ -253,5 +268,94 @@ public class PlaceVectorSeederService {
         } catch (Exception e) {
             log.warn("[pgvector Seeder] Erro ao popular seed places: {}", e.getMessage());
         }
+    }
+
+    /**
+     * Indexa proativamente os melhores locais de qualquer cidade utilizando Google Places + pgvector + cache de fotos.
+     * Modelo "Fetch Once, Serve Forever": Executa uma única vez por cidade no lançamento.
+     */
+    public Map<String, Object> seedCityFromGooglePlaces(String city, String country, Integer limitPerCategory) {
+        if (city == null || city.isBlank()) {
+            return Map.of("status", "error", "message", "Cidade e obrigatoria");
+        }
+        if (googlePlacesDiscoveryService == null || !googlePlacesDiscoveryService.isConfigured()) {
+            return Map.of("status", "error", "message", "Google Places API nao configurada");
+        }
+
+        String effectiveCountry = (country == null || country.isBlank()) ? "Brasil" : country;
+        int maxPerCat = (limitPerCategory != null && limitPerCategory > 0) ? Math.min(limitPerCategory, 20) : 15;
+
+        List<String> searchThemes = List.of(
+                "restaurantes e gastronomia",
+                "cafeterias e docerias",
+                "bares e gastrobares",
+                "pontos turisticos e cultura",
+                "parques e ar livre",
+                "baladas e vida noturna"
+        );
+
+        int totalIndexed = 0;
+        int totalDiscovered = 0;
+
+        for (String theme : searchThemes) {
+            try {
+                List<GooglePlacesDiscoveryService.DiscoveredPlace> places = googlePlacesDiscoveryService.searchPlaces(
+                        theme, null, null, 15.0, city, effectiveCountry, maxPerCat
+                );
+                if (places == null || places.isEmpty()) continue;
+
+                totalDiscovered += places.size();
+                for (GooglePlacesDiscoveryService.DiscoveredPlace p : places) {
+                    if (p.displayName() == null || p.displayName().isBlank()) continue;
+
+                    String id = p.placeId() != null && !p.placeId().isBlank()
+                            ? p.placeId()
+                            : (p.displayName().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "-") + "-" + city.toLowerCase(Locale.ROOT));
+
+                    String directPhoto = p.photoUrl();
+                    if (directPhoto != null && directPhoto.contains("places.googleapis.com")) {
+                        directPhoto = googlePlacesDiscoveryService.resolveDirectPhotoUrl(directPhoto);
+                    }
+
+                    String dna = p.displayName() + " em " + city + ". "
+                            + (p.editorialSummary() != null && !p.editorialSummary().isBlank() ? p.editorialSummary() : (p.primaryType() != null ? p.primaryType() : "Lugar"))
+                            + " " + (p.formattedAddress() != null ? p.formattedAddress() : "");
+
+                    String vector = embeddingService.getEmbeddingVectorString(dna);
+
+                    placeEmbeddingRepository.upsertPlaceVector(
+                            id,
+                            p.displayName(),
+                            city,
+                            p.primaryType(),
+                            p.primaryType(),
+                            p.formattedAddress(),
+                            p.latitude(),
+                            p.longitude(),
+                            p.rating(),
+                            p.userRatingCount(),
+                            p.googleMapsUri(),
+                            directPhoto,
+                            dna,
+                            vector
+                    );
+                    totalIndexed++;
+                }
+            } catch (Exception e) {
+                log.warn("[pgvector Seeder] Erro ao indexar tema '{}' em '{}': {}", theme, city, e.getMessage());
+            }
+        }
+
+        log.info("[pgvector Seeder] Concluida indexacao de '{}': {} locais descobertos, {} inseridos/atualizados no pgvector.",
+                city, totalDiscovered, totalIndexed);
+
+        return Map.of(
+                "status", "success",
+                "city", city,
+                "country", effectiveCountry,
+                "totalDiscovered", totalDiscovered,
+                "totalIndexed", totalIndexed,
+                "existingCityCount", placeEmbeddingRepository.countByCityIgnoreCase(city)
+        );
     }
 }
