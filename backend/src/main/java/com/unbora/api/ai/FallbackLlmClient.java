@@ -55,9 +55,7 @@ public class FallbackLlmClient {
     public String completeJson(String systemPrompt, String userPrompt, double temperature, int maxTokens) {
         if (!configured()) return null;
 
-        String withFormat = request(systemPrompt, userPrompt, temperature, maxTokens, true);
-        if (withFormat != null) return withFormat;
-        return request(systemPrompt, userPrompt, temperature, maxTokens, false);
+        return request(systemPrompt, userPrompt, temperature, maxTokens, true);
     }
 
     private String request(String systemPrompt, String userPrompt, double temperature, int maxTokens, boolean jsonMode) {
@@ -69,7 +67,7 @@ public class FallbackLlmClient {
                     Map.of("role", "user", "content", userPrompt)
             ));
             payload.put("temperature", temperature);
-            payload.put("max_tokens", Math.min(Math.max(maxTokens, 1), 4096));
+            payload.put("max_tokens", Math.min(Math.max(maxTokens, 1), 2048));
             if (jsonMode) {
                 payload.put("response_format", Map.of("type", "json_object"));
             }
@@ -78,7 +76,7 @@ public class FallbackLlmClient {
                     .uri(URI.create(baseUrl + "/chat/completions"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
-                    .timeout(Duration.ofSeconds(15));
+                    .timeout(Duration.ofSeconds(4));
             if (!apiKey.isBlank()) {
                 builder.header("Authorization", "Bearer " + apiKey);
             }

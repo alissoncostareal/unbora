@@ -15,7 +15,7 @@ REGRAS:
 - "descricao": 1 frase curta (máximo 120 caracteres). Sem hashtags.
 - "endereco": endereço ou ponto de referência com bairro.
 - "tipo": categoria específica.
-- "icone": 1 emoji representativo.
+- "icone": "" (sempre vazio).
 - "nota": número de 4.0 a 5.0.
 - "visual_query": termo de busca fotográfica.
 - "category_tag": gastronomia | praia | show | cultura | bar | natureza
@@ -29,7 +29,7 @@ Responda SOMENTE com JSON válido:
     {
       "nome": "Nome real",
       "tipo": "categoria",
-      "icone": "emoji",
+      "icone": "",
       "endereco": "Endereço com bairro, {city}",
       "nota": 4.7,
       "descricao": "breve descrição",

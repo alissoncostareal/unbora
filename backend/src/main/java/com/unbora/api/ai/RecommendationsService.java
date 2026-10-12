@@ -262,15 +262,22 @@ public class RecommendationsService {
                     ))
                     .toList();
 
+            try {
+                CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                        .get(3500, TimeUnit.MILLISECONDS);
+            } catch (Exception ignored) {}
+
             for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
                 try {
-                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.get(4, TimeUnit.SECONDS);
-                    if (found != null) {
-                        for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
-                            String key = p.placeId() != null && !p.placeId().isBlank()
-                                    ? p.placeId()
-                                    : imageEnrichmentService.normalizeText(p.displayName());
-                            placeMap.putIfAbsent(key, p);
+                    if (f.isDone() && !f.isCompletedExceptionally()) {
+                        List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.getNow(List.of());
+                        if (found != null) {
+                            for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
+                                String key = p.placeId() != null && !p.placeId().isBlank()
+                                        ? p.placeId()
+                                        : imageEnrichmentService.normalizeText(p.displayName());
+                                placeMap.putIfAbsent(key, p);
+                            }
                         }
                     }
                 } catch (Exception ignored) {}
@@ -344,15 +351,15 @@ public class RecommendationsService {
 
         RecommendationResult result;
         try {
-            int maxTokens = Math.max(1200, Math.min(3000, maxResults * 100));
+            int maxTokens = Math.max(900, Math.min(1800, maxResults * 75));
             result = groqClient.callGroqJson(
                     systemPrompt,
                     userPrompt,
                     RecommendationResult.class,
                     0.3,
                     maxTokens,
-                    Duration.ofSeconds(15),
-                    2
+                    Duration.ofSeconds(12),
+                    4
             );
         } catch (Exception e) {
             log.warn("[Recommend] Groq falhou — lista completa via Google Places: {}", e.getMessage());
@@ -543,15 +550,22 @@ public class RecommendationsService {
                     ))
                     .toList();
 
+            try {
+                CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                        .get(3500, TimeUnit.MILLISECONDS);
+            } catch (Exception ignored) {}
+
             for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
                 try {
-                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.get(4, TimeUnit.SECONDS);
-                    if (found != null) {
-                        for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
-                            String key = p.placeId() != null && !p.placeId().isBlank()
-                                    ? p.placeId()
-                                    : imageEnrichmentService.normalizeText(p.displayName());
-                            placeMap.putIfAbsent(key, p);
+                    if (f.isDone() && !f.isCompletedExceptionally()) {
+                        List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.getNow(List.of());
+                        if (found != null) {
+                            for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
+                                String key = p.placeId() != null && !p.placeId().isBlank()
+                                        ? p.placeId()
+                                        : imageEnrichmentService.normalizeText(p.displayName());
+                                placeMap.putIfAbsent(key, p);
+                            }
                         }
                     }
                 } catch (Exception ignored) {}
@@ -603,15 +617,15 @@ public class RecommendationsService {
 
         RecommendationResult result;
         try {
-            int maxTokens = Math.max(1200, Math.min(3000, maxResults * 100));
+            int maxTokens = Math.max(900, Math.min(1800, maxResults * 75));
             result = groqClient.callGroqJson(
                     systemPrompt,
                     userPrompt,
                     RecommendationResult.class,
                     0.3,
                     maxTokens,
-                    Duration.ofSeconds(15),
-                    2
+                    Duration.ofSeconds(12),
+                    4
             );
         } catch (Exception e) {
             log.warn("[Search] Groq falhou — lista completa via Google Places: {}", e.getMessage());
@@ -817,19 +831,26 @@ public class RecommendationsService {
                     ))
                     .toList();
 
+            try {
+                CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                        .get(3500, TimeUnit.MILLISECONDS);
+            } catch (Exception ignored) {}
+
             for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
                 try {
-                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.get(3, TimeUnit.SECONDS);
-                    if (found != null) {
-                        for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
-                            String normName = p.displayName().trim().toLowerCase(Locale.ROOT);
-                            if (visitedNames.contains(normName)) {
-                                continue;
+                    if (f.isDone() && !f.isCompletedExceptionally()) {
+                        List<GooglePlacesDiscoveryService.DiscoveredPlace> found = f.getNow(List.of());
+                        if (found != null) {
+                            for (GooglePlacesDiscoveryService.DiscoveredPlace p : found) {
+                                String normName = p.displayName().trim().toLowerCase(Locale.ROOT);
+                                if (visitedNames.contains(normName)) {
+                                    continue;
+                                }
+                                String key = p.placeId() != null && !p.placeId().isBlank()
+                                        ? p.placeId()
+                                        : imageEnrichmentService.normalizeText(p.displayName());
+                                placeMap.putIfAbsent(key, p);
                             }
-                            String key = p.placeId() != null && !p.placeId().isBlank()
-                                    ? p.placeId()
-                                    : imageEnrichmentService.normalizeText(p.displayName());
-                            placeMap.putIfAbsent(key, p);
                         }
                     }
                 } catch (Exception ignored) {}
@@ -898,15 +919,15 @@ public class RecommendationsService {
         RecommendationResult result;
         try {
             boolean hasLive = !livePlaces.isEmpty();
-            int maxTokens = Math.max(1200, Math.min(3000, maxResults * 100));
+            int maxTokens = Math.max(900, Math.min(1800, maxResults * 75));
             result = groqClient.callGroqJson(
                     systemPrompt,
                     promptInstruction,
                     RecommendationResult.class,
                     0.3,
                     maxTokens,
-                    Duration.ofSeconds(15),
-                    2
+                    Duration.ofSeconds(12),
+                    4
             );
         } catch (Exception e) {
             log.warn("[PersonalizedRecommend] Groq falhou — lista via Google Places: {}", e.getMessage());
@@ -1089,7 +1110,7 @@ public class RecommendationsService {
             if (label.contains("caf") && containsAny(hay, "cafe", "coffee", "padaria", "brunch", "bakery", "confeit", "doce", "panificadora", "espresso", "bistro")) return true;
             if ((label.contains("mus") || label.contains("show")) && containsAny(hay, "bar", "pub", "music", "show", "night", "live", "balada", "festa", "clube", "choperia")) return true;
             if (label.contains("natureza") && containsAny(hay, "parque", "park", "trilha", "jardim", "natureza", "mirante", "lago", "bosque", "verde", "praca")) return true;
-            if ((label.contains("gastro") || label.contains("comida")) && containsAny(hay, "restaur", "bistr", "food", "meal", "gastro", "pizza", "hamburg", "sushi", "grill", "churras", "culinaria", "barraca")) return true;
+            if ((label.contains("gastro") || label.contains("comida")) && containsAny(hay, "restaur", "bistr", "food", "meal", "gastro", "pizza", "hamburg", "sushi", "grill", "churras", "culinaria", "barraca", "lanch", "snack", "petisc", "espet", "pastel", "padar", "comida", "peixe", "boteco", "bar")) return true;
             if (label.contains("cultura") && containsAny(hay, "museu", "museum", "teatro", "theater", "cultur", "galeria", "art", "histor", "cinema", "centro cultural")) return true;
             if (label.contains("game") && containsAny(hay, "game", "jogo", "boliche", "bowling", "fliper", "arcade", "escape", "diversao")) return true;
             if (label.contains("praia") && containsAny(hay, "praia", "beach", "orla", "quiosque", "barraca", "mar")) return true;
@@ -1428,19 +1449,35 @@ public class RecommendationsService {
         String company = fold(dto.sentir());
         if (dto.activities() != null) {
             for (ActivityItemDto activity : dto.activities()) {
-                String hint = activity.searchHint() != null && !activity.searchHint().isBlank()
+                String rawHint = activity.searchHint() != null && !activity.searchHint().isBlank()
                         ? activity.searchHint()
                         : activity.label();
-                if (hint == null || hint.isBlank()) continue;
-                queries.add("melhores " + hint + " em " + city);
-                queries.add(hint + " em " + city);
+                if (rawHint == null || rawHint.isBlank()) continue;
 
+                // Divide searchHints complexos como "restaurantes, bistrôs, almoço e jantar" em termos simples
+                List<String> terms = Arrays.stream(rawHint.split("[,;]|\\be\\b"))
+                        .map(String::trim)
+                        .filter(s -> !s.isBlank() && s.length() >= 3)
+                        .toList();
+
+                if (terms.isEmpty()) {
+                    terms = List.of(rawHint.trim());
+                }
+
+                // Gera queries naturais que funcionam tanto em metropoles quanto em cidades menores
+                for (int i = 0; i < Math.min(2, terms.size()); i++) {
+                    String term = terms.get(i);
+                    queries.add(term + " em " + city);
+                    queries.add("melhores " + term + " em " + city);
+                }
+
+                String primaryTerm = terms.get(0);
                 if (mood.contains("relax") || mood.contains("paz")) {
-                    queries.add(hint + " aconchegantes em " + city);
+                    queries.add(primaryTerm + " aconchegantes em " + city);
                 } else if (mood.contains("animad") || mood.contains("energia")) {
-                    queries.add(hint + " badalados em " + city);
+                    queries.add(primaryTerm + " badalados em " + city);
                 } else if (company.contains("a dois") || company.contains("encontro")) {
-                    queries.add(hint + " romanticos em " + city);
+                    queries.add(primaryTerm + " romanticos em " + city);
                 }
             }
         }
