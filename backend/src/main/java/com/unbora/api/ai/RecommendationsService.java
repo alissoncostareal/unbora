@@ -1243,11 +1243,30 @@ public class RecommendationsService {
                 }, discoveryExecutor))
                 .toList();
 
-        for (CompletableFuture<PlaceDto> f : futures) {
+        List<PlaceDto> sourcePlaces = result.getLugares();
+        try {
+            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                    .get(1800, TimeUnit.MILLISECONDS);
+        } catch (Exception ignored) {}
+
+        for (int i = 0; i < futures.size(); i++) {
+            CompletableFuture<PlaceDto> f = futures.get(i);
+            PlaceDto original = sourcePlaces.get(i);
             try {
-                PlaceDto p = f.get(3, TimeUnit.SECONDS);
-                if (p != null) enriched.add(p);
-            } catch (Exception ignored) {}
+                if (f.isDone() && !f.isCompletedExceptionally()) {
+                    PlaceDto p = f.getNow(null);
+                    enriched.add(p != null ? p : original);
+                } else {
+                    if (original.getImagem() == null || original.getImagem().isBlank()) {
+                        original.setImagem(imageEnrichmentService.getCuratedFallback(original.getCategoryTag(), original.getNome()));
+                        original.setImagemIlustrativa(true);
+                    }
+                    if (original.getIcone() == null || original.getIcone().isBlank()) original.setIcone("");
+                    enriched.add(original);
+                }
+            } catch (Exception e) {
+                enriched.add(original);
+            }
         }
 
         result.setLugares(enriched);
@@ -1410,7 +1429,7 @@ public class RecommendationsService {
         }
         if (!futures.isEmpty()) {
             try {
-                CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).get(3, TimeUnit.SECONDS);
+                CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).get(1500, TimeUnit.MILLISECONDS);
             } catch (Exception ignored) {}
         }
     }
@@ -1652,7 +1671,7 @@ public class RecommendationsService {
         }
         if (!jobs.isEmpty()) {
             try {
-                CompletableFuture.allOf(jobs.toArray(CompletableFuture[]::new)).get(3, TimeUnit.SECONDS);
+                CompletableFuture.allOf(jobs.toArray(CompletableFuture[]::new)).get(1500, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 log.warn("[Photos] Tempo esgotado ao resolver fotos do Google Places: {}", e.getMessage());
             }

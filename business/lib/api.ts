@@ -154,3 +154,12 @@ export async function getPlans(): Promise<PlanTierOption[]> {
     cache: 'no-store',
   });
 }
+
+export async function payInvoiceMerchant(invoiceId: string, merchantId: string): Promise<BusinessInvoice> {
+  return request<BusinessInvoice>(
+    `/merchant/sponsored/invoices/${encodeURIComponent(invoiceId)}/pay?merchantId=${encodeURIComponent(merchantId)}`,
+    {
+      method: 'POST',
+    }
+  );
+}

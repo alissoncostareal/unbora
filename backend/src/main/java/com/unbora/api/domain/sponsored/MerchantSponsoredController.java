@@ -78,6 +78,12 @@ public class MerchantSponsoredController {
         return service.listInvoicesByMerchant(merchantId);
     }
 
+    @PostMapping("/invoices/{invoiceId}/pay")
+    @Operation(summary = "Confirmar liquidação de fatura PIX pelo lojista")
+    public SponsoredInvoiceDto payInvoice(@PathVariable String invoiceId, @RequestParam String merchantId) {
+        return service.markInvoicePaidForMerchant(invoiceId, merchantId);
+    }
+
     @GetMapping("/plans")
     @Operation(summary = "Tabela de preços e benefícios dos planos disponíveis")
     public List<Map<String, Object>> getAvailablePlans() {

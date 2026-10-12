@@ -35,97 +35,7 @@ public class SponsoredPlaceService {
     @PostConstruct
     @Transactional
     public void seedInitialData() {
-        if (repository.count() > 0) return;
-
-        SponsoredPlace p1 = new SponsoredPlace();
-        p1.setId(UUID.randomUUID().toString());
-        p1.setName("Brava Wine & Bistro");
-        p1.setCity("Fortaleza");
-        p1.setRegion("Grande Fortaleza");
-        p1.setCountry("Brasil");
-        p1.setType("Bistrô & Wine Bar");
-        p1.setDescription("Experiência enogastronômica refinada com mais de 300 rótulos selecionados e cardápio autoral.");
-        p1.setBenefitText("15% de desconto no jantar ou 1 taça de espumante de boas-vindas mencionando o Unbora.");
-        p1.setCategoryTags("gastronomia, romance, relaxar, comida, vinho, jantar");
-        p1.setImageUrl("https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1200&auto=format&fit=crop&q=80");
-        p1.setMapsUrl("https://maps.google.com/?q=Brava+Wine+Fortaleza");
-        p1.setAddress("Av. Padre Antônio Tomás, 850 - Aldeota, Fortaleza - CE");
-        p1.setRating(4.9);
-        p1.setPriceLevel("EXPENSIVE");
-        p1.setSlotBoost(true);
-        p1.setHomeHighlight(true);
-        p1.setActive(true);
-        p1.setSortOrder(0);
-        p1.setBillingModel(BillingModel.SUBSCRIPTION);
-        p1.setPlanTier(PlanTier.GOLD);
-        p1.setMonthlyPrice(BigDecimal.valueOf(299.00));
-        p1.setCreditBalance(BigDecimal.ZERO);
-        p1.setPaymentStatus(PaymentStatus.PAID);
-        p1.setCurrentCycleStart(LocalDate.now());
-        p1.setNextBillingDate(LocalDate.now().plusMonths(1));
-        p1.setContactName("Carlos Eduardo (Sommelier)");
-        p1.setContactPhone("(85) 99888-7711");
-        p1.setContactEmail("contato@bravawine.com.br");
-        repository.save(p1);
-
-        SponsoredInvoice inv1 = new SponsoredInvoice();
-        inv1.setId(UUID.randomUUID().toString());
-        inv1.setSponsoredPlaceId(p1.getId());
-        inv1.setPlaceName(p1.getName());
-        inv1.setAmount(BigDecimal.valueOf(299.00));
-        inv1.setDueDate(LocalDate.now().plusDays(5));
-        inv1.setPaidAt(Instant.now());
-        inv1.setStatus(InvoiceStatus.PAID);
-        inv1.setPaymentMethod(PaymentMethod.PIX);
-        inv1.setReferencePeriod(LocalDate.now().getMonthValue() + "/" + LocalDate.now().getYear());
-        inv1.setPixCopyPaste("00020126580014BR.GOV.BCB.PIX0136" + UUID.randomUUID() + "5204000053039865405299.005802BR5915UNBORA TECH6009FORTALEZA62070503***6304");
-        inv1.setNotes("Assinatura Plano Ouro Mensal (Slot de Ouro + Home)");
-        invoiceRepository.save(inv1);
-
-        SponsoredPlace p2 = new SponsoredPlace();
-        p2.setId(UUID.randomUUID().toString());
-        p2.setName("Café Viriato Aldeota");
-        p2.setCity("Fortaleza");
-        p2.setRegion("Grande Fortaleza");
-        p2.setCountry("Brasil");
-        p2.setType("Café Especial");
-        p2.setDescription("Ambiente sofisticado e acolhedor ideal para encontros, trabalho remoto e confeitaria artesanal.");
-        p2.setBenefitText("Na compra de qualquer sobremesa ou brunch, ganhe 1 café espresso especial.");
-        p2.setCategoryTags("café, cafeteria, relaxar, brunch, comida, doces");
-        p2.setImageUrl("https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&auto=format&fit=crop&q=80");
-        p2.setMapsUrl("https://maps.google.com/?q=Cafe+Viriato+Fortaleza");
-        p2.setAddress("R. Osvaldo Cruz, 2828 - Dionísio Torres, Fortaleza - CE");
-        p2.setRating(4.8);
-        p2.setPriceLevel("MODERATE");
-        p2.setSlotBoost(true);
-        p2.setHomeHighlight(true);
-        p2.setActive(true);
-        p2.setSortOrder(1);
-        p2.setBillingModel(BillingModel.SUBSCRIPTION);
-        p2.setPlanTier(PlanTier.SILVER);
-        p2.setMonthlyPrice(BigDecimal.valueOf(179.00));
-        p2.setCreditBalance(BigDecimal.ZERO);
-        p2.setPaymentStatus(PaymentStatus.PAID);
-        p2.setCurrentCycleStart(LocalDate.now());
-        p2.setNextBillingDate(LocalDate.now().plusMonths(1));
-        p2.setContactName("Mariana Viriato");
-        p2.setContactPhone("(85) 98777-6622");
-        p2.setContactEmail("gerencia@cafeviriato.com.br");
-        repository.save(p2);
-
-        SponsoredInvoice inv2 = new SponsoredInvoice();
-        inv2.setId(UUID.randomUUID().toString());
-        inv2.setSponsoredPlaceId(p2.getId());
-        inv2.setPlaceName(p2.getName());
-        inv2.setAmount(BigDecimal.valueOf(179.00));
-        inv2.setDueDate(LocalDate.now().plusDays(5));
-        inv2.setPaidAt(Instant.now());
-        inv2.setStatus(InvoiceStatus.PAID);
-        inv2.setPaymentMethod(PaymentMethod.PIX);
-        inv2.setReferencePeriod(LocalDate.now().getMonthValue() + "/" + LocalDate.now().getYear());
-        inv2.setPixCopyPaste("00020126580014BR.GOV.BCB.PIX0136" + UUID.randomUUID() + "5204000053039865405179.005802BR5915UNBORA TECH6009FORTALEZA62070503***6304");
-        inv2.setNotes("Assinatura Plano Prata Mensal (Slot de Ouro + Benefício)");
-        invoiceRepository.save(inv2);
+        // Locais patrocinados devem ser adicionados pelo Admin/Business vinculados a um lojista real
     }
 
     public List<SponsoredPlaceDto> listAll() {
@@ -287,7 +197,7 @@ public class SponsoredPlaceService {
             return matching.stream().limit(2).toList();
         }
 
-        return others.stream().limit(1).toList();
+        return List.of();
     }
 
     public List<SponsoredPlace> getActiveHomeHighlights(String city) {
@@ -298,9 +208,17 @@ public class SponsoredPlaceService {
     }
 
     private boolean isEligibleForDelivery(SponsoredPlace p) {
-        if (p == null || !Boolean.TRUE.equals(p.getActive())) return false;
-        if (p.getBillingModel() == BillingModel.COURTESY) return true;
-        if (p.getPaymentStatus() == PaymentStatus.PAID || p.getPaymentStatus() == PaymentStatus.TRIAL) return true;
+        if (p == null || !Boolean.TRUE.equals(p.getActive()) || !Boolean.TRUE.equals(p.getSlotBoost())) {
+            return false;
+        }
+        // Exige vinculo obrigatorio com lojista (Business)
+        if (p.getMerchantId() == null || p.getMerchantId().isBlank()) {
+            return false;
+        }
+        // Exige pagamento ativo confirmado pelo lojista
+        if (p.getPaymentStatus() == PaymentStatus.PAID) {
+            return true;
+        }
         if (p.getBillingModel() == BillingModel.CPC_CREDITS) {
             return p.getCreditBalance() != null && p.getCreditBalance().compareTo(BigDecimal.ZERO) > 0;
         }
@@ -410,6 +328,16 @@ public class SponsoredPlaceService {
         });
 
         return toInvoiceDto(invoiceRepository.save(inv));
+    }
+
+    @Transactional
+    public SponsoredInvoiceDto markInvoicePaidForMerchant(String invoiceId, String merchantId) {
+        SponsoredInvoice inv = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Fatura não encontrada."));
+        if (inv.getMerchantId() != null && !inv.getMerchantId().equals(merchantId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Fatura não pertence a este lojista.");
+        }
+        return markInvoicePaid(invoiceId);
     }
 
     @Transactional

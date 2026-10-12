@@ -4,6 +4,8 @@ export interface PublicUser {
   email: string;
   isGuest: boolean;
   platform?: string;
+  role?: string;
+  businessName?: string;
   createdAt: string;
   lastSeenAt: string;
 }

@@ -2,16 +2,38 @@
 
 import { useState } from 'react';
 import type { BusinessInvoice } from '@/lib/types';
+import { payInvoiceMerchant } from '@/lib/api';
 
 interface PixModalProps {
   invoice: BusinessInvoice | null;
   onClose: () => void;
+  onPaid?: () => void;
+  merchantId?: string;
 }
 
-export function PixModal({ invoice, onClose }: PixModalProps) {
+export function PixModal({ invoice, onClose, onPaid, merchantId }: PixModalProps) {
   const [copied, setCopied] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [paidSuccess, setPaidSuccess] = useState(false);
 
   if (!invoice) return null;
+
+  async function handleConfirmPayment() {
+    if (!invoice || !merchantId) return;
+    setPaying(true);
+    try {
+      await payInvoiceMerchant(invoice.id, merchantId);
+      setPaidSuccess(true);
+      if (onPaid) onPaid();
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (e) {
+      alert('Erro ao confirmar pagamento: ' + (e instanceof Error ? e.message : ''));
+    } finally {
+      setPaying(false);
+    }
+  }
 
   function copyCode() {
     if (!invoice?.pixCopyPaste) return;
@@ -94,6 +116,16 @@ export function PixModal({ invoice, onClose }: PixModalProps) {
             <strong>Ativação Automática:</strong> Assim que a transferência for confirmada pelo seu banco, a campanha do estabelecimento será ativada com destaque máximo nas buscas do Unbora.
           </div>
         </div>
+
+        {invoice.status === 'PENDING' && (
+          <button
+            onClick={handleConfirmPayment}
+            disabled={paying || paidSuccess}
+            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white rounded-none font-bold uppercase tracking-wider text-xs shadow-sm transition"
+          >
+            {paidSuccess ? 'Pagamento Confirmado' : paying ? 'Confirmando...' : 'Confirmar Pagamento Realizado'}
+          </button>
+        )}
       </div>
     </div>
   );

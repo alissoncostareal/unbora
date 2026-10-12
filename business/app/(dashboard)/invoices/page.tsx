@@ -211,7 +211,14 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      <PixModal invoice={selectedInvoice} onClose={() => setSelectedInvoice(null)} />
+      <PixModal
+        invoice={selectedInvoice}
+        merchantId={user?.id}
+        onPaid={() => {
+          if (user?.id) loadInvoices(user.id);
+        }}
+        onClose={() => setSelectedInvoice(null)}
+      />
     </div>
   );
 }

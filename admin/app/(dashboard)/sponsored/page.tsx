@@ -30,12 +30,14 @@ import {
   updateSponsoredPlace,
   getPartnerPageSettings,
   updatePartnerPageSettings,
+  getUsers,
   type BillingModel,
   type CitySuggestion,
   type InvoiceStatus,
   type PaymentMethod,
   type PaymentStatus,
   type PlanTier,
+  type PublicUser,
   type SaveSponsoredPlaceInput,
   type SponsoredFinancialOverview,
   type SponsoredInvoiceItem,
@@ -76,6 +78,9 @@ const emptyForm: SaveSponsoredPlaceInput = {
   paymentStatus: 'PAID',
   currentCycleStart: new Date().toISOString().slice(0, 10),
   nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+  merchantId: '',
+  merchantName: '',
+  merchantEmail: '',
   contactName: '',
   contactPhone: '',
   contactEmail: '',
@@ -89,6 +94,7 @@ export default function SponsoredPlacesPage() {
   const [items, setItems] = useState<SponsoredPlaceItem[]>([]);
   const [invoices, setInvoices] = useState<SponsoredInvoiceItem[]>([]);
   const [financial, setFinancial] = useState<SponsoredFinancialOverview | null>(null);
+  const [users, setUsers] = useState<PublicUser[]>([]);
 
   const [form, setForm] = useState<SaveSponsoredPlaceInput>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -143,17 +149,21 @@ export default function SponsoredPlacesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [placesData, invoicesData, overviewData, partnerSettingsData] = await Promise.all([
+      const [placesData, invoicesData, overviewData, partnerSettingsData, usersData] = await Promise.all([
         getSponsoredPlaces(),
         getSponsoredInvoices(),
         getSponsoredFinancialOverview().catch(() => null),
         getPartnerPageSettings().catch(() => null),
+        getUsers().catch(() => []),
       ]);
       setItems(placesData);
       setInvoices(invoicesData);
       setFinancial(overviewData);
       if (partnerSettingsData) {
         setPartnerSettingsForm(partnerSettingsData);
+      }
+      if (Array.isArray(usersData)) {
+        setUsers(usersData);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar dados de monetização e patrocinados');
@@ -246,6 +256,9 @@ export default function SponsoredPlacesPage() {
       cnpjCpf: item.cnpjCpf ?? '',
       billingNotes: item.billingNotes ?? '',
       autoRenew: item.autoRenew ?? true,
+      merchantId: item.merchantId ?? '',
+      merchantName: item.merchantName ?? '',
+      merchantEmail: item.merchantEmail ?? '',
     });
     setIsFormOpen(true);
     setError(null);
@@ -768,6 +781,60 @@ export default function SponsoredPlacesPage() {
                 </div>
               </div>
 
+              {/* Vínculo Obrigatório com Conta Business do Lojista */}
+              <div className="mt-4 p-3.5 bg-emerald-100/60 border border-emerald-300/80 rounded-none space-y-3">
+                <div>
+                  <h4 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                    Vínculo com Conta de Lojista (Portal Business)
+                  </h4>
+                  <p className="text-[11px] text-emerald-800">
+                    Obrigatório: O estabelecimento só é entregue aos usuários nas pesquisas se estiver vinculado a um lojista e com pagamento ativo (PAID).
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="Selecionar Lojista Cadastrado">
+                    <select
+                      className={`${inputClassName} bg-white`}
+                      value={form.merchantId || ''}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const u = users.find((x) => x.id === selectedId);
+                        if (u) {
+                          setForm({
+                            ...form,
+                            merchantId: u.id,
+                            merchantName: u.businessName || u.name,
+                            merchantEmail: u.email,
+                            contactName: form.contactName || u.name,
+                            contactEmail: form.contactEmail || u.email,
+                          });
+                        } else {
+                          setForm({ ...form, merchantId: selectedId });
+                        }
+                      }}
+                    >
+                      <option value="">-- Nenhum selecionado (digitar manualmente) --</option>
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name} {u.businessName ? `(${u.businessName})` : ''} - {u.email}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="ID do Lojista (merchantId)">
+                    <input
+                      type="text"
+                      placeholder="Ex: test-merchant-01 ou UUID da conta"
+                      value={form.merchantId || ''}
+                      onChange={(e) => setForm({ ...form, merchantId: e.target.value })}
+                      className={`${inputClassName} bg-white font-mono text-xs`}
+                    />
+                  </Field>
+                </div>
+              </div>
+
               {/* Dados de Contato Comercial & Lojista */}
               <div className="mt-4 pt-4 border-t border-emerald-200/80 grid grid-cols-1 gap-3 sm:grid-cols-5">
                 <Field label="Empresa / Lojista">
@@ -1023,9 +1090,13 @@ export default function SponsoredPlacesPage() {
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <p className="font-semibold text-ink">{item.name}</p>
-                            {item.merchantName && (
-                              <span className="px-1.5 py-0.5 rounded-none bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold">
-                                {item.merchantName}
+                            {item.merchantId ? (
+                              <span className="px-1.5 py-0.5 rounded-none bg-emerald-50 text-emerald-900 border border-emerald-300 text-[10px] font-semibold" title={`merchantId: ${item.merchantId}`}>
+                                Lojista: {item.merchantName || item.merchantId}
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded-none bg-rose-50 text-rose-800 border border-rose-300 text-[10px] font-medium" title="Sem lojista vinculado: o local nao sera entregue aos usuarios">
+                                Sem lojista vinculado
                               </span>
                             )}
                           </div>
@@ -1089,15 +1160,22 @@ export default function SponsoredPlacesPage() {
 
                     {/* Veiculação Toggle */}
                     <DataTableCell>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleActive(item.id)}
-                        disabled={!canManage}
-                        className="cursor-pointer transition-opacity hover:opacity-80 disabled:cursor-default"
-                        title="Clique para alternar veiculação"
-                      >
-                        {item.active ? <Badge variant="active">Ativo</Badge> : <Badge variant="inactive">Pausado</Badge>}
-                      </button>
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(item.id)}
+                          disabled={!canManage}
+                          className="cursor-pointer transition-opacity hover:opacity-80 disabled:cursor-default"
+                          title="Clique para alternar veiculação"
+                        >
+                          {item.active ? <Badge variant="active">Ativo</Badge> : <Badge variant="inactive">Pausado</Badge>}
+                        </button>
+                        {(!item.merchantId || item.paymentStatus !== 'PAID') && item.active && (
+                          <p className="text-[9px] text-amber-900 font-semibold mt-1">
+                            {!item.merchantId ? 'Requer lojista' : 'Aguardando pago'}
+                          </p>
+                        )}
+                      </div>
                     </DataTableCell>
 
                     {/* Ações */}

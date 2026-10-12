@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import {
   createPlace,
@@ -216,6 +217,14 @@ export default function PlacesPage() {
                     >
                       Editar
                     </button>
+                    {place.paymentStatus !== 'PAID' && (
+                      <Link
+                        href="/invoices"
+                        className="px-2.5 sm:px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                      >
+                        Pagar PIX
+                      </Link>
+                    )}
                   </div>
 
                   {place.mapsUrl && (

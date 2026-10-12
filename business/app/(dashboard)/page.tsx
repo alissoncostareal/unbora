@@ -290,7 +290,14 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      <PixModal invoice={selectedInvoice} onClose={() => setSelectedInvoice(null)} />
+      <PixModal
+        invoice={selectedInvoice}
+        merchantId={user?.id}
+        onPaid={() => {
+          if (user?.id) loadData(user.id);
+        }}
+        onClose={() => setSelectedInvoice(null)}
+      />
     </div>
   );
 }

@@ -264,6 +264,10 @@ export function ResultPage() {
       return !hidden.includes(place.placeId || '') && !hidden.includes(place.name) && !hidden.includes(name);
     });
     const ranked = [...source].sort((left, right) => {
+      const leftSponsored = left.isSponsored ? 1 : 0;
+      const rightSponsored = right.isSponsored ? 1 : 0;
+      if (rightSponsored !== leftSponsored) return rightSponsored - leftSponsored;
+
       const leftKm = distanceKm(left, journey);
       const rightKm = distanceKm(right, journey);
       const leftIn = journey && leftKm != null ? Number(leftKm <= journey.radiusKm) : 0;
@@ -275,6 +279,7 @@ export function ResultPage() {
     });
     const affordable = journey && journey.budgetReais < 300
       ? ranked.filter((place) => {
+        if (place.isSponsored) return true;
         const ceiling = priceCeiling(place.priceLevel);
         return ceiling == null || ceiling <= journey.budgetReais + 40;
       })
