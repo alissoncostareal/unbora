@@ -147,25 +147,34 @@ export function PlaceCard({
           {score != null ? <p className="text-sm font-semibold text-coral">{score}% combina com você</p> : <div />}
           
           <div className="flex items-center gap-2">
-            {/* Botão de Favorito Compacto */}
-            <button
-              type="button"
-              onClick={handleFavoriteClick}
-              className={`inline-flex items-center gap-1.5 rounded-none px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                isFav
-                  ? 'bg-rose-50 text-rose-700 border border-rose-300'
-                  : 'bg-stone-50 text-stone-600 border border-stone-200 hover:text-rose-700 hover:border-rose-300'
-              }`}
-            >
-              <svg className="size-3.5" viewBox="0 0 24 24" fill={isFav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-              </svg>
-              <span>{isFav ? 'Salvo' : 'Salvar'}</span>
-            </button>
+            {/* Botão de Salvar / Favorito Compacto */}
+            {isFav ? (
+              <button
+                type="button"
+                onClick={handleFavoriteClick}
+                className="inline-flex items-center gap-1.5 rounded-none bg-rose-50 border border-rose-300/80 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-rose-800 transition-all shadow-xs cursor-pointer hover:bg-rose-100"
+              >
+                <svg className="size-3.5 text-rose-600 fill-current" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                </svg>
+                <span>Salvo</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleFavoriteClick}
+                className="inline-flex items-center gap-1.5 rounded-none border border-[#1c1917]/20 bg-stone-50 hover:bg-[#1c1917] hover:text-white px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-[#1c1917] transition-all shadow-xs cursor-pointer group"
+              >
+                <svg className="size-3.5 text-coral group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                </svg>
+                <span>Salvar</span>
+              </button>
+            )}
 
             {/* Botão de Check-in "Estive aqui" */}
             {checkedIn ? (
-              <span className="inline-flex items-center gap-1.5 rounded-none bg-emerald-50 border border-emerald-300/80 px-3 py-1 text-xs font-semibold text-emerald-800 uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1.5 rounded-none bg-emerald-50 border border-emerald-300/80 px-3.5 py-1 text-xs font-semibold text-emerald-800 uppercase tracking-wider">
                 <svg className="size-3.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 6 9 17l-5-5" />
                 </svg>
@@ -175,9 +184,9 @@ export function PlaceCard({
               <button
                 type="button"
                 onClick={handleCheckinTrigger}
-                className="inline-flex items-center gap-1.5 rounded-none border border-[#1c1917]/20 bg-stone-50 hover:bg-[#1c1917] hover:text-white px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-[#1c1917] transition-all shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-none border border-[#1c1917]/20 bg-stone-50 hover:bg-[#1c1917] hover:text-white px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-[#1c1917] transition-all shadow-xs cursor-pointer group"
               >
-                <svg className="size-3.5 text-coral group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="size-3.5 text-coral group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 6 9 17l-5-5" />
                 </svg>
                 <span>Fazer Check-in</span>
