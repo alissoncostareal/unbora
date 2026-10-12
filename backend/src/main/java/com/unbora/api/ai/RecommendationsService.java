@@ -63,11 +63,7 @@ public class RecommendationsService {
     private final ConcurrentHashMap<String, CompletableFuture<RecommendationResult>> inFlightSearch = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, CompletableFuture<DiscoverEventsResult>> inFlightEvents = new ConcurrentHashMap<>();
 
-    private final ExecutorService discoveryExecutor = Executors.newFixedThreadPool(24, r -> {
-        Thread thread = new Thread(r, "places-discovery-pool");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private final ExecutorService discoveryExecutor = Executors.newVirtualThreadPerTaskExecutor();
     private final ExecutorService vectorIndexExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "place-vector-index");
         thread.setDaemon(true);
@@ -113,67 +109,89 @@ public class RecommendationsService {
     }
 
     public RecommendationResult recommend(RecommendDto dto) {
-        String rawCity = InputSanitizer.sanitizeCityOrCountry(dto.city(), 100);
-        final String city = (rawCity == null || rawCity.isBlank()) ? "Brasil" : rawCity;
+        String rawCity = InputSanitizer.sanitizeCityOrCountry(dto != null ? dto.city() : null, 100);
+        final String city = (rawCity == null || rawCity.isBlank()) ? "Fortaleza" : rawCity;
 
-        String rawCountry = InputSanitizer.sanitizeCityOrCountry(dto.country(), 100);
+        String rawCountry = InputSanitizer.sanitizeCityOrCountry(dto != null ? dto.country() : null, 100);
         final String country = (rawCountry == null || rawCountry.isBlank()) ? "Brasil" : rawCountry;
 
-        String region = InputSanitizer.sanitizeCityOrCountry(dto.region(), 100);
-        String humor = InputSanitizer.sanitizeForPrompt(dto.humor(), 100);
-        String sentir = InputSanitizer.sanitizeForPrompt(dto.sentir(), 500);
-        String userId = InputSanitizer.sanitizePlaceId(dto.userId(), 100);
+        String region = InputSanitizer.sanitizeCityOrCountry(dto != null ? dto.region() : null, 100);
+        String humor = InputSanitizer.sanitizeForPrompt(dto != null ? dto.humor() : null, 100);
+        String sentir = InputSanitizer.sanitizeForPrompt(dto != null ? dto.sentir() : null, 500);
+        String userId = InputSanitizer.sanitizePlaceId(dto != null ? dto.userId() : null, 100);
 
-        int maxResults = locationSettingsService != null ? locationSettingsService.getEffectiveMaxResults(city) : 24;
+        List<String> labels = (dto != null && dto.activities() != null)
+                ? dto.activities().stream().map(a -> InputSanitizer.sanitizeText(a.label(), 100)).filter(Objects::nonNull).toList()
+                : List.of();
 
-        final Double radiusKm = dto.radiusKm() != null ? Math.min(Math.max(dto.radiusKm(), 1.0), 100.0) : 8.0;
-        CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
+        int effectiveMaxResults = 24;
+        try {
+            if (locationSettingsService != null) {
+                effectiveMaxResults = locationSettingsService.getEffectiveMaxResults(city);
+            }
+        } catch (Exception e) {
+            log.debug("[Settings] Erro ao carregar maxResults para {}: {}", city, e.getMessage());
+        }
+        final int maxResults = effectiveMaxResults;
+
+        final Double radiusKm = (dto != null && dto.radiusKm() != null) ? Math.min(Math.max(dto.radiusKm(), 1.0), 100.0) : 8.0;
+        CityAnchor.Center resolvedCenter = null;
+        try {
+            resolvedCenter = cityAnchor.resolve(city, region, country, dto != null ? dto.latitude() : null, dto != null ? dto.longitude() : null);
+        } catch (Exception e) {
+            log.debug("[CityAnchor] Erro ao resolver coordenadas para {}: {}", city, e.getMessage());
+        }
+        final CityAnchor.Center center = resolvedCenter;
         final Double lat = center != null ? center.latitude() : (dto != null ? dto.latitude() : null);
         final Double lng = center != null ? center.longitude() : (dto != null ? dto.longitude() : null);
         Set<String> dismissed = loadDismissed(userId);
         Double budgetReais = budgetCeiling(sentir);
 
-        List<String> labels = dto.activities() != null
-                ? dto.activities().stream().map(a -> InputSanitizer.sanitizeText(a.label(), 100)).filter(Objects::nonNull).toList()
-                : List.of();
-
         // 1. Verificacao de cache persistente (L1 em memoria / L2 no PostgreSQL)
-        String cacheKey = recommendationCacheService.computeRecommendKey(
-                city, region, humor, sentir, dto.activities(), radiusKm, budgetReais
-        );
-        Optional<RecommendationResult> cachedOpt = recommendationCacheService.getCachedRecommendation(cacheKey);
-        if (cachedOpt.isPresent()) {
-            RecommendationResult cached = prepareCachedResult(
-                    cachedOpt.get(), dismissed, city, dto.humor(),
-                    labels, null, maxResults
-            );
-            if (cached != null && cached.getLugares() != null && !cached.getLugares().isEmpty()) {
-                String topPlace = cached.getLugares().get(0).getNome();
-                kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
-                        "RECOMMENDATION_GENERATED_CACHE_HIT",
-                        dto.humor(),
-                        dto.sentir(),
-                        labels,
-                        null,
-                        city,
-                        cached.getLugares().size(),
-                        topPlace,
-                        Instant.now()
-                ));
-                return cached;
-            }
-        }
-
-        // 2. Request Coalescing (Singleflight): se outra requisicao idêntica estiver em execucao, aguarda e reutiliza
-        CompletableFuture<RecommendationResult> inFlight = inFlightRecommend.computeIfAbsent(cacheKey, key -> CompletableFuture.supplyAsync(() -> {
-            return executeRecommendWorkflow(dto, city, country, region, humor, sentir, maxResults, radiusKm, center, lat, lng, budgetReais, labels, cacheKey);
-        }, discoveryExecutor));
+        String cacheKey = (recommendationCacheService != null && dto != null)
+                ? recommendationCacheService.computeRecommendKey(city, region, humor, sentir, dto.activities(), radiusKm, budgetReais)
+                : ("rec:" + city + ":" + humor);
 
         try {
-            RecommendationResult raw = inFlight.join();
-            return prepareCachedResult(raw, dismissed, city, dto.humor(), labels, null, maxResults);
-        } finally {
-            inFlightRecommend.remove(cacheKey, inFlight);
+            if (recommendationCacheService != null) {
+                Optional<RecommendationResult> cachedOpt = recommendationCacheService.getCachedRecommendation(cacheKey);
+                if (cachedOpt.isPresent()) {
+                    RecommendationResult cached = prepareCachedResult(
+                            cachedOpt.get(), dismissed, city, dto != null ? dto.humor() : null,
+                            labels, null, maxResults
+                    );
+                    if (cached != null && cached.getLugares() != null && !cached.getLugares().isEmpty()) {
+                        String topPlace = cached.getLugares().get(0).getNome();
+                        kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
+                                "RECOMMENDATION_GENERATED_CACHE_HIT",
+                                dto != null ? dto.humor() : null,
+                                dto != null ? dto.sentir() : null,
+                                labels,
+                                null,
+                                city,
+                                cached.getLugares().size(),
+                                topPlace,
+                                Instant.now()
+                        ));
+                        return cached;
+                    }
+                }
+            }
+
+            // 2. Request Coalescing (Singleflight): se outra requisicao idêntica estiver em execucao, aguarda e reutiliza
+            CompletableFuture<RecommendationResult> inFlight = inFlightRecommend.computeIfAbsent(cacheKey, key -> CompletableFuture.supplyAsync(() -> {
+                return executeRecommendWorkflow(dto, city, country, region, humor, sentir, maxResults, radiusKm, center, lat, lng, budgetReais, labels, cacheKey);
+            }, discoveryExecutor));
+
+            try {
+                RecommendationResult raw = inFlight.join();
+                return prepareCachedResult(raw, dismissed, city, dto != null ? dto.humor() : null, labels, null, maxResults);
+            } finally {
+                inFlightRecommend.remove(cacheKey, inFlight);
+            }
+        } catch (Exception ex) {
+            log.error("[Recommend] Falha no fluxo de recomendacao para '{}': {}", city, ex.getMessage(), ex);
+            return buildResilientFallbackRecommendation(city, humor, labels, maxResults, dismissed);
         }
     }
 
@@ -360,83 +378,108 @@ public class RecommendationsService {
         ensurePhotographedPlaces(enriched, livePlaces, maxResults);
         injectSponsoredPlaces(enriched, city, humor, dto.activities() != null ? dto.activities().stream().map(ActivityItemDto::label).toList() : List.of(), null, maxResults);
 
-        String topPlace = enriched.getLugares() != null && !enriched.getLugares().isEmpty()
-                ? enriched.getLugares().get(0).getNome()
+        String topPlace = (enriched != null && enriched.getLugares() != null && !enriched.getLugares().isEmpty())
+                ? (enriched.getLugares().get(0).getNome() != null ? enriched.getLugares().get(0).getNome() : "none")
                 : "none";
 
         resolveOutgoingPhotos(enriched);
 
-        kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
-                "RECOMMENDATION_GENERATED",
-                humor,
-                sentir,
-                labels,
-                null,
-                city,
-                enriched.getLugares() != null ? enriched.getLugares().size() : 0,
-                topPlace,
-                Instant.now()
-        ));
+        if (enriched != null) {
+            kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
+                    "RECOMMENDATION_GENERATED",
+                    humor,
+                    sentir,
+                    labels,
+                    null,
+                    city,
+                    enriched.getLugares() != null ? enriched.getLugares().size() : 0,
+                    topPlace,
+                    Instant.now()
+            ));
 
-        recommendationCacheService.putRecommendation(cacheKey, "RECOMMEND", city, enriched, Duration.ofHours(6));
+            recommendationCacheService.putRecommendation(cacheKey, "RECOMMEND", city, enriched, Duration.ofHours(6));
+        }
 
         return enriched;
     }
 
     public RecommendationResult search(SearchDto dto) {
-        String query = InputSanitizer.sanitizeForPrompt(dto.query(), 300);
-        String rawCity = InputSanitizer.sanitizeCityOrCountry(dto.city(), 100);
-        final String city = (rawCity == null || rawCity.isBlank()) ? "Brasil" : rawCity;
+        String query = InputSanitizer.sanitizeForPrompt(dto != null ? dto.query() : null, 300);
+        String rawCity = InputSanitizer.sanitizeCityOrCountry(dto != null ? dto.city() : null, 100);
+        final String city = (rawCity == null || rawCity.isBlank()) ? "Fortaleza" : rawCity;
 
-        String rawCountry = InputSanitizer.sanitizeCityOrCountry(dto.country(), 100);
+        String rawCountry = InputSanitizer.sanitizeCityOrCountry(dto != null ? dto.country() : null, 100);
         final String country = (rawCountry == null || rawCountry.isBlank()) ? "Brasil" : rawCountry;
 
-        String region = InputSanitizer.sanitizeCityOrCountry(dto.region(), 100);
-        String userId = InputSanitizer.sanitizePlaceId(dto.userId(), 100);
+        String region = InputSanitizer.sanitizeCityOrCountry(dto != null ? dto.region() : null, 100);
+        String userId = InputSanitizer.sanitizePlaceId(dto != null ? dto.userId() : null, 100);
 
-        int maxResults = locationSettingsService != null ? locationSettingsService.getEffectiveMaxResults(city) : 24;
+        int effectiveMaxResults = 24;
+        try {
+            if (locationSettingsService != null) {
+                effectiveMaxResults = locationSettingsService.getEffectiveMaxResults(city);
+            }
+        } catch (Exception e) {
+            log.debug("[Settings] Erro ao carregar maxResults para {}: {}", city, e.getMessage());
+        }
+        final int maxResults = effectiveMaxResults;
 
-        CityAnchor.Center center = cityAnchor.resolve(city, region, country, dto.latitude(), dto.longitude());
+        CityAnchor.Center resolvedCenter = null;
+        try {
+            resolvedCenter = cityAnchor.resolve(city, region, country, dto != null ? dto.latitude() : null, dto != null ? dto.longitude() : null);
+        } catch (Exception e) {
+            log.debug("[CityAnchor] Erro ao resolver coordenadas para {}: {}", city, e.getMessage());
+        }
+        final CityAnchor.Center center = resolvedCenter;
         final Double lat = center != null ? center.latitude() : (dto != null ? dto.latitude() : null);
         final Double lng = center != null ? center.longitude() : (dto != null ? dto.longitude() : null);
         final double radiusKm = 25.0;
         Set<String> dismissed = loadDismissed(userId);
 
-        // 1. Verificacao de cache persistente para busca (alivia Groq e Google Places)
-        String cacheKey = recommendationCacheService.computeSearchKey(city, region, query);
-        Optional<RecommendationResult> cachedOpt = recommendationCacheService.getCachedRecommendation(cacheKey);
-        if (cachedOpt.isPresent()) {
-            RecommendationResult cached = prepareCachedResult(
-                    cachedOpt.get(), dismissed, city, null,
-                    List.of(), dto.query(), maxResults
-            );
-            if (cached != null && cached.getLugares() != null && !cached.getLugares().isEmpty()) {
-                String topPlace = cached.getLugares().get(0).getNome();
-                kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
-                        "SEARCH_PERFORMED_CACHE_HIT",
-                        null,
-                        null,
-                        List.of(),
-                        dto.query(),
-                        city,
-                        cached.getLugares().size(),
-                        topPlace,
-                        Instant.now()
-                ));
-                return cached;
-            }
-        }
-
-        // 2. Request Coalescing (Singleflight) para buscas simultâneas
-        CompletableFuture<RecommendationResult> inFlight = inFlightSearch.computeIfAbsent(cacheKey, key -> CompletableFuture.supplyAsync(() -> {
-            return executeSearchWorkflow(dto, query, city, country, region, maxResults, radiusKm, center, lat, lng, cacheKey);
-        }, discoveryExecutor));
+        String cacheKey = (recommendationCacheService != null)
+                ? recommendationCacheService.computeSearchKey(city, region, query)
+                : ("search:" + city + ":" + query);
 
         try {
-            RecommendationResult raw = inFlight.join();
-            return prepareCachedResult(raw, dismissed, city, null, List.of(), dto.query(), maxResults);
-        } finally {
-            inFlightSearch.remove(cacheKey, inFlight);
+            if (recommendationCacheService != null) {
+                Optional<RecommendationResult> cachedOpt = recommendationCacheService.getCachedRecommendation(cacheKey);
+                if (cachedOpt.isPresent()) {
+                    RecommendationResult cached = prepareCachedResult(
+                            cachedOpt.get(), dismissed, city, null,
+                            List.of(), query, maxResults
+                    );
+                    if (cached != null && cached.getLugares() != null && !cached.getLugares().isEmpty()) {
+                        String topPlace = cached.getLugares().get(0).getNome();
+                        kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
+                                "SEARCH_PERFORMED_CACHE_HIT",
+                                null,
+                                null,
+                                List.of(),
+                                query,
+                                city,
+                                cached.getLugares().size(),
+                                topPlace,
+                                Instant.now()
+                        ));
+                        return cached;
+                    }
+                }
+            }
+
+            // 2. Request Coalescing (Singleflight) para buscas simultâneas
+            CompletableFuture<RecommendationResult> inFlight = inFlightSearch.computeIfAbsent(cacheKey, key -> CompletableFuture.supplyAsync(() -> {
+                return executeSearchWorkflow(dto, query, city, country, region, maxResults, radiusKm, center, lat, lng, cacheKey);
+            }, discoveryExecutor));
+
+            try {
+                RecommendationResult raw = inFlight.join();
+                return prepareCachedResult(raw, dismissed, city, null, List.of(), query, maxResults);
+            } finally {
+                inFlightSearch.remove(cacheKey, inFlight);
+            }
+        } catch (Exception ex) {
+            log.error("[Search] Falha no fluxo de busca para '{}' em '{}': {}", query, city, ex.getMessage(), ex);
+            return buildResilientFallbackSearch(city, query, maxResults, dismissed);
         }
     }
 
@@ -594,25 +637,27 @@ public class RecommendationsService {
         ensurePhotographedPlaces(enriched, livePlaces, maxResults);
         injectSponsoredPlaces(enriched, city, null, List.of(), query, maxResults);
 
-        String topPlace = enriched.getLugares() != null && !enriched.getLugares().isEmpty()
-                ? enriched.getLugares().get(0).getNome()
+        String topPlace = (enriched != null && enriched.getLugares() != null && !enriched.getLugares().isEmpty())
+                ? (enriched.getLugares().get(0).getNome() != null ? enriched.getLugares().get(0).getNome() : "none")
                 : "none";
 
         resolveOutgoingPhotos(enriched);
 
-        kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
-                "SEARCH_PERFORMED",
-                null,
-                null,
-                List.of(),
-                query,
-                city,
-                enriched.getLugares() != null ? enriched.getLugares().size() : 0,
-                topPlace,
-                Instant.now()
-        ));
+        if (enriched != null) {
+            kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
+                    "SEARCH_PERFORMED",
+                    null,
+                    null,
+                    List.of(),
+                    query,
+                    city,
+                    enriched.getLugares() != null ? enriched.getLugares().size() : 0,
+                    topPlace,
+                    Instant.now()
+            ));
 
-        recommendationCacheService.putRecommendation(cacheKey, "SEARCH", city, enriched, Duration.ofHours(6));
+            recommendationCacheService.putRecommendation(cacheKey, "SEARCH", city, enriched, Duration.ofHours(6));
+        }
 
         return enriched;
     }
@@ -634,6 +679,9 @@ public class RecommendationsService {
 
         try {
             return inFlight.join();
+        } catch (Exception ex) {
+            log.error("[Events] Falha ao descobrir eventos em '{}': {}", city, ex.getMessage(), ex);
+            return new DiscoverEventsResult("Agenda cultural em " + city, "Sugestões de eventos", List.of());
         } finally {
             inFlightEvents.remove(cacheKey, inFlight);
         }
@@ -1643,7 +1691,11 @@ public class RecommendationsService {
         List<PlaceDto> injectedDtos = new ArrayList<>();
 
         for (SponsoredPlace sp : sponsored) {
-            sponsoredPlaceService.trackImpression(sp.getId());
+            try {
+                sponsoredPlaceService.trackImpression(sp.getId());
+            } catch (Exception e) {
+                log.debug("[Sponsored] Erro ao rastrear impressão para {}: {}", sp.getId(), e.getMessage());
+            }
             sponsoredNames.add(imageEnrichmentService.normalizeText(sp.getName()));
 
             PlaceDto dto = new PlaceDto();
@@ -1718,4 +1770,73 @@ public class RecommendationsService {
         resolveOutgoingPhotos(copy);
         return copy;
     }
+
+    private RecommendationResult buildResilientFallbackRecommendation(
+            String city,
+            String humor,
+            List<String> activities,
+            int maxResults,
+            Set<String> dismissed
+    ) {
+        List<PlaceDto> fallbackPlaces = new ArrayList<>();
+        if (placeEmbeddingRepository != null && embeddingService != null) {
+            try {
+                String queryText = (humor != null ? humor : "") + " " + (activities != null ? String.join(" ", activities) : "");
+                String vector = embeddingService.getEmbeddingVectorString(queryText.trim());
+                List<PlaceEmbeddingProjection> projs = placeEmbeddingRepository.findSimilarPlaces(city, vector, maxResults);
+                if (projs != null) {
+                    for (PlaceEmbeddingProjection proj : projs) {
+                        if (isDismissed(dismissed, proj.getPlaceId(), proj.getDisplayName())) continue;
+                        GooglePlacesDiscoveryService.DiscoveredPlace dp = projectionToDiscoveredPlace(proj);
+                        fallbackPlaces.add(toPlaceDto(dp, fallbackPlaces.isEmpty()));
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("[Fallback] Catálogo local indisponível: {}", e.getMessage());
+            }
+        }
+
+        RecommendationResult result = new RecommendationResult(
+                "Sugestões em " + city,
+                "Opções selecionadas para você",
+                fallbackPlaces
+        );
+        injectSponsoredPlaces(result, city, humor, activities != null ? activities : List.of(), null, maxResults);
+        resolveOutgoingPhotos(result);
+        return result;
+    }
+
+    private RecommendationResult buildResilientFallbackSearch(
+            String city,
+            String query,
+            int maxResults,
+            Set<String> dismissed
+    ) {
+        List<PlaceDto> fallbackPlaces = new ArrayList<>();
+        if (placeEmbeddingRepository != null && embeddingService != null) {
+            try {
+                String vector = embeddingService.getEmbeddingVectorString(query + " " + city);
+                List<PlaceEmbeddingProjection> projs = placeEmbeddingRepository.findSimilarPlaces(city, vector, maxResults);
+                if (projs != null) {
+                    for (PlaceEmbeddingProjection proj : projs) {
+                        if (isDismissed(dismissed, proj.getPlaceId(), proj.getDisplayName())) continue;
+                        GooglePlacesDiscoveryService.DiscoveredPlace dp = projectionToDiscoveredPlace(proj);
+                        fallbackPlaces.add(toPlaceDto(dp, fallbackPlaces.isEmpty()));
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("[Fallback] Catálogo local de busca indisponível: {}", e.getMessage());
+            }
+        }
+
+        RecommendationResult result = new RecommendationResult(
+                "Busca: " + query,
+                "Lugares encontrados em " + city,
+                fallbackPlaces
+        );
+        injectSponsoredPlaces(result, city, null, List.of(), query, maxResults);
+        resolveOutgoingPhotos(result);
+        return result;
+    }
 }
+

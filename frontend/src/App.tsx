@@ -45,8 +45,10 @@ export function App() {
   const focused = path === '/home' || path === '/results';
   const bare = path === '/' || path === '/login' || path === '/register' || path === '/reset-password' || path === '/confirm-account';
 
+  const hasQuery = Boolean(search && (search.includes('city=') || search.includes('q=') || search.includes('mood=')));
+
   if (legacy) return <Navigate to={`${legacy}${search}${hash}`} replace />;
-  if (modelCity && path !== '/' && !bare) return <Navigate to="/" replace />;
+  if (modelCity && path !== '/' && !bare && !hasQuery) return <Navigate to="/" replace />;
 
   return (
     <div className="flex min-h-screen flex-col">
