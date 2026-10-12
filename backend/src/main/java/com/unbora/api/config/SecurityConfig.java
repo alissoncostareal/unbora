@@ -99,7 +99,7 @@ public class SecurityConfig {
                         // Everything else
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(aiRateLimitFilter, JwtAuthenticationFilter.class)
+                .addFilterBefore(aiRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
