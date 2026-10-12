@@ -217,28 +217,105 @@ class RecommendationsServiceTest {
     }
 
     @Test
-    @DisplayName("Recommend retorna fallback gracioso quando ocorre excecao no workflow")
-    void shouldFallbackGracefullyWhenWorkflowFails() {
+    @DisplayName("Recommend preserva lugares do cache quando placeId for nulo e usuario anonimo (evita NPE)")
+    void shouldHandleCacheHitWithNullPlaceIdAndAnonymousUser() {
         RecommendDto dto = new RecommendDto(
-                "Animado",
-                "Com amigos. gastar até 80 reais. Tempo disponível: 2 horas. Raio de 8 km.",
-                List.of(new ActivityItemDto("bar", "Bares", "bar")),
+                "Relaxar",
+                "Com família. gastar até 200 reais. Tempo disponível: 3 horas. Raio de 15 km.",
+                List.of(new ActivityItemDto("nature", "Natureza", "natureza"), new ActivityItemDto("culture", "Cultura", "cultura")),
+                "Fortaleza",
+                "Grande Fortaleza",
+                "Brasil",
+                null,
+                null,
+                15.0,
+                null
+        );
+
+        when(locationSettingsService.getEffectiveMaxResults(anyString())).thenReturn(24);
+        when(cityAnchor.resolve(any(), any(), any(), any(), any())).thenReturn(new CityAnchor.Center(-3.73, -38.52));
+        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn("rec_bca5710ee1f603c841d5ca83d8e7ecf9");
+
+        PlaceDto place1 = new PlaceDto();
+        place1.setNome("Parque do Cocó");
+        place1.setTipo("Parque Ecológico");
+        place1.setPlaceId(null); // placeId nulo intencional
+
+        PlaceDto place2 = new PlaceDto();
+        place2.setNome("Cineteatro São Luiz");
+        place2.setTipo("Centro Cultural");
+        place2.setPlaceId("ChIJ123abc");
+
+        RecommendationResult cachedResult = new RecommendationResult(
+                "Paz e Cultura em Família",
+                "Uma manhã serena de segunda-feira explorando a alma de Fortaleza",
+                List.of(place1, place2)
+        );
+
+        when(recommendationCacheService.getCachedRecommendation(anyString())).thenReturn(Optional.of(cachedResult));
+        when(sponsoredPlaceService.getMatchingSponsoredForSearch(any(), any(), any(), any())).thenReturn(List.of());
+
+        RecommendationResult result = recommendationsService.recommend(dto);
+
+        assertNotNull(result);
+        assertEquals("Paz e Cultura em Família", result.getTitulo());
+        assertEquals(2, result.getLugares().size());
+        assertEquals("Parque do Cocó", result.getLugares().get(0).getNome());
+        assertEquals("Cineteatro São Luiz", result.getLugares().get(1).getNome());
+    }
+
+    @Test
+    @DisplayName("Recommend usa Google Places no fallback se catalogo local falhar")
+    void shouldFallbackToGooglePlacesWhenCatalogFails() {
+        RecommendDto dto = new RecommendDto(
+                "Relaxar",
+                "Com família",
+                List.of(new ActivityItemDto("nature", "Natureza")),
                 "Fortaleza",
                 "Ceará",
                 "Brasil",
                 null,
                 null,
-                8.0,
+                15.0,
                 null
         );
 
-        when(locationSettingsService.getEffectiveMaxResults(anyString())).thenThrow(new RuntimeException("Simulated error"));
+        when(locationSettingsService.getEffectiveMaxResults(anyString())).thenReturn(24);
+        when(cityAnchor.resolve(any(), any(), any(), any(), any())).thenReturn(new CityAnchor.Center(-3.73, -38.52));
+        when(cityAnchor.contains(any(), anyDouble(), any(), any(), any(), any())).thenReturn(true);
         when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any(), any()))
-                .thenReturn("rec_test_fail_key");
+                .thenReturn("rec_fail_key");
+        when(recommendationCacheService.getCachedRecommendation(anyString())).thenReturn(Optional.empty());
+        when(groqClient.callGroqJson(any(), any(), eq(RecommendationResult.class), anyDouble(), anyInt(), any(Duration.class), anyInt()))
+                .thenThrow(new RuntimeException("Simulated LLM error"));
+
+        when(googlePlacesDiscoveryService.isConfigured()).thenReturn(true);
+        when(googlePlacesDiscoveryService.searchPlaces(anyString(), any(), any(), any(), anyString(), anyString(), anyInt()))
+                .thenReturn(List.of(
+                        new GooglePlacesDiscoveryService.DiscoveredPlace(
+                                "places/ChIJ_coco",
+                                "Parque Estadual do Cocó",
+                                "Av. Padre Antônio Tomás, Fortaleza",
+                                "ChIJ_coco",
+                                -3.75,
+                                -38.48,
+                                4.8,
+                                1200,
+                                true,
+                                "park",
+                                List.of("park", "tourist_attraction"),
+                                "https://maps.google.com/?q=Coco",
+                                "Grande parque verde urbano",
+                                "https://photo.url/coco",
+                                "FREE"
+                        )
+                ));
+
         RecommendationResult result = recommendationsService.recommend(dto);
 
         assertNotNull(result);
-        assertNotNull(result.getTitulo());
-        assertTrue(result.getSubtitulo().contains("Fortaleza") || result.getTitulo().contains("Fortaleza"));
+        assertFalse(result.getLugares().isEmpty());
+        assertEquals("Parque Estadual do Cocó", result.getLugares().get(0).getNome());
     }
 }

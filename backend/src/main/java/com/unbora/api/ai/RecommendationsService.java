@@ -1002,7 +1002,7 @@ public class RecommendationsService {
     }
 
     private Set<String> loadDismissed(String userId) {
-        if (userId == null || userId.isBlank()) return Set.of();
+        if (userId == null || userId.isBlank()) return new HashSet<>();
         Set<String> keys = new HashSet<>();
         for (DismissedPlace row : dismissedPlaceRepository.findByUserId(userId.trim())) {
             if (row.getPlaceKey() != null && !row.getPlaceKey().isBlank()) keys.add(row.getPlaceKey());
@@ -1132,8 +1132,13 @@ public class RecommendationsService {
 
     private static boolean isDismissed(Set<String> dismissed, String placeId, String name) {
         if (dismissed == null || dismissed.isEmpty()) return false;
-        if (placeId != null && dismissed.contains(placeId)) return true;
-        return name != null && dismissed.contains(name.trim().toLowerCase(Locale.ROOT));
+        if (placeId != null && !placeId.isBlank() && dismissed.contains(placeId.trim())) return true;
+        if (name != null && !name.isBlank()) {
+            String trimmed = name.trim();
+            if (dismissed.contains(trimmed)) return true;
+            if (dismissed.contains(trimmed.toLowerCase(Locale.ROOT))) return true;
+        }
+        return false;
     }
 
     private RecommendationResult enrichPlaces(
@@ -1757,9 +1762,8 @@ public class RecommendationsService {
         List<PlaceDto> places = new ArrayList<>();
         if (cached.getLugares() != null) {
             for (PlaceDto p : cached.getLugares()) {
-                if (p.getNome() == null) continue;
-                String n = p.getNome().trim().toLowerCase(Locale.ROOT);
-                if (dismissed != null && (dismissed.contains(p.getPlaceId()) || dismissed.contains(p.getNome()) || dismissed.contains(n))) {
+                if (p == null || p.getNome() == null) continue;
+                if (isDismissed(dismissed, p.getPlaceId(), p.getNome())) {
                     continue;
                 }
                 places.add(p);
@@ -1796,6 +1800,27 @@ public class RecommendationsService {
             }
         }
 
+        if (fallbackPlaces.isEmpty() && googlePlacesDiscoveryService != null && googlePlacesDiscoveryService.isConfigured()) {
+            try {
+                String term = (humor != null && !humor.isBlank() ? humor : "pontos turísticos")
+                        + (activities != null && !activities.isEmpty() ? " " + String.join(" ", activities) : "");
+                CityAnchor.Center c = cityAnchor != null ? cityAnchor.resolve(city, null, null, null, null) : null;
+                Double lat = c != null ? c.latitude() : null;
+                Double lng = c != null ? c.longitude() : null;
+                List<GooglePlacesDiscoveryService.DiscoveredPlace> places = googlePlacesDiscoveryService.searchPlaces(
+                        term, lat, lng, 15.0, city, "Brasil", maxResults
+                );
+                if (places != null) {
+                    for (GooglePlacesDiscoveryService.DiscoveredPlace dp : places) {
+                        if (isDismissed(dismissed, dp.placeId(), dp.displayName())) continue;
+                        fallbackPlaces.add(toPlaceDto(dp, fallbackPlaces.isEmpty()));
+                    }
+                }
+            } catch (Exception ex) {
+                log.debug("[Fallback] Places API indisponível no fallback de recomendação: {}", ex.getMessage());
+            }
+        }
+
         RecommendationResult result = new RecommendationResult(
                 "Sugestões em " + city,
                 "Opções selecionadas para você",
@@ -1826,6 +1851,25 @@ public class RecommendationsService {
                 }
             } catch (Exception e) {
                 log.debug("[Fallback] Catálogo local de busca indisponível: {}", e.getMessage());
+            }
+        }
+
+        if (fallbackPlaces.isEmpty() && googlePlacesDiscoveryService != null && googlePlacesDiscoveryService.isConfigured()) {
+            try {
+                CityAnchor.Center c = cityAnchor != null ? cityAnchor.resolve(city, null, null, null, null) : null;
+                Double lat = c != null ? c.latitude() : null;
+                Double lng = c != null ? c.longitude() : null;
+                List<GooglePlacesDiscoveryService.DiscoveredPlace> places = googlePlacesDiscoveryService.searchPlaces(
+                        query, lat, lng, 15.0, city, "Brasil", maxResults
+                );
+                if (places != null) {
+                    for (GooglePlacesDiscoveryService.DiscoveredPlace dp : places) {
+                        if (isDismissed(dismissed, dp.placeId(), dp.displayName())) continue;
+                        fallbackPlaces.add(toPlaceDto(dp, fallbackPlaces.isEmpty()));
+                    }
+                }
+            } catch (Exception ex) {
+                log.debug("[Fallback] Places API indisponível no fallback de busca: {}", ex.getMessage());
             }
         }
 
