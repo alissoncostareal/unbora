@@ -390,6 +390,7 @@ public class RecommendationsService {
                 : "none";
 
         resolveOutgoingPhotos(enriched);
+        ensureMapsLinks(enriched, city);
 
         if (enriched != null) {
             kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
@@ -656,6 +657,7 @@ public class RecommendationsService {
                 : "none";
 
         resolveOutgoingPhotos(enriched);
+        ensureMapsLinks(enriched, city);
 
         if (enriched != null) {
             kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
@@ -960,6 +962,7 @@ public class RecommendationsService {
                 : "none";
 
         resolveOutgoingPhotos(enriched);
+        ensureMapsLinks(enriched, city);
 
         kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
                 "PERSONALIZED_RECOMMENDATION_GENERATED",
@@ -1217,6 +1220,13 @@ public class RecommendationsService {
                         if (place.getCategoryTag() == null || place.getCategoryTag().isBlank()) {
                             place.setCategoryTag(categoryForPlaceType(matched.primaryType()));
                         }
+                    }
+
+                    if (place.getGoogleMapsUri() == null || place.getGoogleMapsUri().isBlank()) {
+                        String query = (place.getNome() != null ? place.getNome() : "") + " "
+                                + (place.getEndereco() != null && !place.getEndereco().isBlank() ? place.getEndereco() : effectiveAddressSuffix);
+                        place.setGoogleMapsUri("https://www.google.com/maps/search/?api=1&query="
+                                + URLEncoder.encode(query.trim(), StandardCharsets.UTF_8));
                     }
 
                     if (culturalEvent) {
@@ -1685,6 +1695,29 @@ public class RecommendationsService {
                 place.setImagem(placePhotoLinkService.toAppPath(url));
             }
         }
+        ensureMapsLinks(result);
+    }
+
+    private void ensureMapsLinks(RecommendationResult result) {
+        ensureMapsLinks(result, null);
+    }
+
+    private void ensureMapsLinks(RecommendationResult result, String city) {
+        if (result == null || result.getLugares() == null) return;
+        for (PlaceDto place : result.getLugares()) {
+            if (place == null) continue;
+            if (place.getGoogleMapsUri() == null || place.getGoogleMapsUri().isBlank()) {
+                String name = place.getNome() != null ? place.getNome().trim() : "";
+                String address = place.getEndereco() != null && !place.getEndereco().isBlank()
+                        ? place.getEndereco().trim()
+                        : (city != null && !city.isBlank() ? city.trim() : "");
+                String query = (name + " " + address).trim();
+                if (!query.isBlank()) {
+                    place.setGoogleMapsUri("https://www.google.com/maps/search/?api=1&query="
+                            + URLEncoder.encode(query, StandardCharsets.UTF_8));
+                }
+            }
+        }
     }
 
     private void asyncIndexPlaceVector(GooglePlacesDiscoveryService.DiscoveredPlace p, String city) {
@@ -1828,6 +1861,7 @@ public class RecommendationsService {
         RecommendationResult copy = new RecommendationResult(cached.getTitulo(), cached.getSubtitulo(), places);
         injectSponsoredPlaces(copy, city, humor, activities != null ? activities : List.of(), visualQuery, maxResults);
         resolveOutgoingPhotos(copy);
+        ensureMapsLinks(copy, city);
         return copy;
     }
 

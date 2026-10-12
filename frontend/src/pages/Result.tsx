@@ -7,20 +7,48 @@ import { fetchDismissed, recommend, searchPlaces, sendFeedback, type Place, type
 import { saveRole } from '../lib/savedRoles';
 import { useAuth } from '../lib/auth';
 import { company, durations, interests, JOURNEY_KEY, moods, type JourneyChoice } from '../lib/catalog';
-import { loadGuide } from '../lib/guide';
+import { getGuide, loadGuide } from '../lib/guide';
 import { journeyFromQuery, readResultQuery } from '../lib/resultQuery';
 
+function normalizeKey(value: string | undefined | null) {
+  if (!value) return '';
+  return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
 function recommendFromQuery(spec: ReturnType<typeof readResultQuery>, userId?: string) {
-  const mood = moods.find((item) => item.label === spec.moodLabel);
-  const withWhom = company.find((item) => item.label === spec.social);
-  const time = durations.find((item) => item.id === spec.timeId);
-  const chosen = interests.filter((item) => spec.interestIds.includes(item.id));
-  if (!mood || !withWhom || !time || chosen.length === 0 || !spec.city) return Promise.resolve(null);
+  if (!spec.city) return Promise.resolve(null);
+
+  const guide = getGuide();
+  const guideMoods = guide.moods?.length ? guide.moods : moods;
+  const guideCompany = guide.company?.length ? guide.company : company;
+  const guideDurations = guide.durations?.length ? guide.durations : durations;
+  const guideInterests = guide.interests?.length ? guide.interests : interests;
+
+  const normMood = normalizeKey(spec.moodLabel);
+  const mood = guideMoods.find((item) => normalizeKey(item.label) === normMood || normalizeKey(item.value).includes(normMood))
+    || guideMoods[0];
+
+  const normSocial = normalizeKey(spec.social);
+  const withWhom = guideCompany.find((item) => normalizeKey(item.label) === normSocial || normalizeKey(item.value) === normSocial)
+    || guideCompany[1] || guideCompany[0];
+
+  const normTime = normalizeKey(spec.timeId);
+  const time = guideDurations.find((item) => item.id === spec.timeId || normalizeKey(item.label) === normTime || normalizeKey(item.value).includes(normTime))
+    || guideDurations[2] || guideDurations[0];
+
+  const chosen = guideInterests.filter((item) =>
+    spec.interestIds.some((id) => {
+      const nid = normalizeKey(id);
+      return normalizeKey(item.id) === nid || normalizeKey(item.label) === nid;
+    })
+  );
+  const activitiesToUse = chosen.length > 0 ? chosen : [guideInterests[2] || guideInterests[0]];
+
   const spend = spec.budgetReais >= 300 ? 'sem teto de gasto' : `gastar até ${spec.budgetReais} reais`;
   return recommend({
     humor: mood.value,
     sentir: `${withWhom.value}. ${spend}. Tempo disponível: ${time.value}. Raio de ${spec.radiusKm} km.`,
-    activities: chosen,
+    activities: activitiesToUse,
     city: spec.city,
     region: spec.region,
     country: spec.country,
@@ -325,23 +353,144 @@ export function ResultPage() {
   async function share(place: Place) {
     const km = distanceKm(place, journey);
     const text = why(place, journey, km);
-    const url = place.mapsUrl || window.location.href;
+    const fallbackMapsUrl = place.name
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([place.name, place.address || journey?.city || ''].filter(Boolean).join(' '))}`
+      : undefined;
+    const targetUrl = place.mapsUrl || fallbackMapsUrl || (typeof window !== 'undefined' ? window.location.href : '');
+
+    let safeUrl = targetUrl;
     try {
-      if (navigator.share) {
-        await navigator.share({ title: place.name, text, url });
-      } else {
-        await navigator.clipboard.writeText(`${place.name}\n${text}\n${url}`);
-        setNotice('Link copiado.');
-      }
-      void sendFeedback({
-        placeName: place.name,
-        action: 'SHARE',
-        humor: journey?.moodLabel,
-        placeId: place.placeId,
-        categoryTag: place.type,
-      });
+      safeUrl = new URL(targetUrl, typeof window !== 'undefined' ? window.location.origin : 'https://unbora.com.br').href;
     } catch {
-      /* a pessoa cancelou o compartilhamento */
+      safeUrl = encodeURI(targetUrl);
+    }
+
+    const shareData = {
+      title: place.name,
+      text: text ? `${place.name} — ${text}` : place.name,
+      url: safeUrl,
+    };
+
+    let shared = false;
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        if (!navigator.canShare || navigator.canShare(shareData)) {
+          await navigator.share(shareData);
+          shared = true;
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error && (err.name === 'AbortError' || err.message.toLowerCase().includes('abort') || err.message.toLowerCase().includes('cancel'))) {
+          return;
+        }
+      }
+    }
+
+    if (!shared) {
+      const textToCopy = `${place.name}\n${text ? `${text}\n` : ''}${safeUrl}`;
+      let copied = false;
+      try {
+        if (navigator?.clipboard?.writeText) {
+          await navigator.clipboard.writeText(textToCopy);
+          copied = true;
+        }
+      } catch {
+        copied = false;
+      }
+
+      if (!copied && typeof document !== 'undefined') {
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = textToCopy;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+      }
+
+      if (copied) {
+        setNotice('Link copiado para a área de transferência.');
+        setTimeout(() => setNotice(''), 3500);
+      } else {
+        setNotice('Não foi possível copiar automaticamente.');
+        setTimeout(() => setNotice(''), 3500);
+      }
+    }
+
+    void sendFeedback({
+      placeName: place.name,
+      action: 'SHARE',
+      humor: journey?.moodLabel,
+      placeId: place.placeId,
+      categoryTag: place.type,
+    });
+  }
+
+  async function handleShareJourney() {
+    let safeUrl = typeof window !== 'undefined' ? window.location.href : '';
+    try {
+      safeUrl = new URL(safeUrl).href;
+    } catch {
+      safeUrl = encodeURI(safeUrl);
+    }
+
+    const title = journey?.moodLine || result?.title || `Rolê em ${journey?.city || 'sua cidade'}`;
+    const shareData = {
+      title,
+      text: `Confira este roteiro em ${journey?.city || result?.subtitle || 'sua cidade'} no Unbora:`,
+      url: safeUrl,
+    };
+
+    let shared = false;
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        if (!navigator.canShare || navigator.canShare(shareData)) {
+          await navigator.share(shareData);
+          shared = true;
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error && (err.name === 'AbortError' || err.message.toLowerCase().includes('abort') || err.message.toLowerCase().includes('cancel'))) {
+          return;
+        }
+      }
+    }
+
+    if (!shared) {
+      let copied = false;
+      try {
+        if (navigator?.clipboard?.writeText) {
+          await navigator.clipboard.writeText(safeUrl);
+          copied = true;
+        }
+      } catch {
+        copied = false;
+      }
+
+      if (!copied && typeof document !== 'undefined') {
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = safeUrl;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+      }
+
+      if (copied) {
+        setNotice('Link do rolê copiado para a área de transferência.');
+        setTimeout(() => setNotice(''), 3500);
+      }
     }
   }
 
@@ -390,20 +539,33 @@ export function ResultPage() {
         <p className="text-base text-muted">Encontramos {countLabel}.</p>
         <div className="flex items-center gap-2">
           {places.length > 0 && (
-            <button
-              type="button"
-              onClick={handleSaveRole}
-              className={`inline-flex items-center gap-1.5 rounded-none px-3.5 py-1 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs group ${
-                savedRoleSuccess
-                  ? 'bg-emerald-50 border border-emerald-300/80 text-emerald-800'
-                  : 'border border-[#1c1917]/20 bg-stone-50 hover:bg-[#1c1917] hover:text-white text-[#1c1917]'
-              }`}
-            >
-              <svg className={`h-3.5 w-3.5 shrink-0 transition-colors ${savedRoleSuccess ? 'text-emerald-600' : 'text-coral group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-              <span>{savedRoleSuccess ? 'Rolê Salvo no Perfil' : 'Salvar este Rolê'}</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleShareJourney}
+                aria-label="Compartilhar rolê"
+                className="inline-flex items-center gap-1.5 rounded-none border border-[#1c1917]/20 bg-stone-50 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-[#1c1917] transition-all hover:bg-[#1c1917] hover:text-white cursor-pointer shadow-xs group"
+              >
+                <svg className="h-3.5 w-3.5 shrink-0 text-coral group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                <span>Compartilhar Rolê</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveRole}
+                className={`inline-flex items-center gap-1.5 rounded-none px-3.5 py-1 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs group ${
+                  savedRoleSuccess
+                    ? 'bg-emerald-50 border border-emerald-300/80 text-emerald-800'
+                    : 'border border-[#1c1917]/20 bg-stone-50 hover:bg-[#1c1917] hover:text-white text-[#1c1917]'
+                }`}
+              >
+                <svg className={`h-3.5 w-3.5 shrink-0 transition-colors ${savedRoleSuccess ? 'text-emerald-600' : 'text-coral group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                <span>{savedRoleSuccess ? 'Rolê Salvo no Perfil' : 'Salvar este Rolê'}</span>
+              </button>
+            </>
           )}
           {totalPages > 1 && (
             <span className="inline-flex items-center rounded-full bg-sand px-3 py-1 text-xs font-medium text-muted">

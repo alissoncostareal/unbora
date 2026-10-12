@@ -318,4 +318,54 @@ class RecommendationsServiceTest {
         assertFalse(result.getLugares().isEmpty());
         assertEquals("Parque Estadual do Cocó", result.getLugares().get(0).getNome());
     }
+
+    @Test
+    @DisplayName("Garante link do Google Maps mesmo para locais gerados sem correspondencia exata no Places")
+    void shouldEnsureGoogleMapsUriEvenWithoutPlacesMatch() {
+        RecommendDto dto = new RecommendDto(
+                "Curioso",
+                "a dois. gastar até 100 reais. Tempo disponível: 3 horas ou mais. Raio de 15 km.",
+                List.of(new ActivityItemDto("nature", "Natureza", "parques, trilhas e natureza")),
+                "Caucaia",
+                "Ceará",
+                "Brasil",
+                null,
+                null,
+                15.0,
+                null
+        );
+
+        when(locationSettingsService.getEffectiveMaxResults(anyString())).thenReturn(24);
+        when(cityAnchor.resolve(any(), any(), any(), any(), any())).thenReturn(new CityAnchor.Center(-3.73, -38.65));
+        when(cityAnchor.contains(any(), anyDouble(), any(), any(), any(), any())).thenReturn(true);
+        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn("rec_test_key_caucaia_maps");
+        when(recommendationCacheService.getCachedRecommendation(anyString())).thenReturn(Optional.empty());
+        when(sponsoredPlaceService.getMatchingSponsoredForSearch(any(), any(), any(), any()))
+                .thenReturn(List.of());
+
+        PlaceDto placeSemMaps = new PlaceDto();
+        placeSemMaps.setNome("Parque Ecológico do Açu");
+        placeSemMaps.setTipo("Parque");
+        placeSemMaps.setEndereco("Rodovia BR-020, Km 22, Açu — Caucaia");
+        placeSemMaps.setGoogleMapsUri(null);
+
+        RecommendationResult mockResult = new RecommendationResult(
+                "Natureza em Caucaia",
+                "Passeios ao ar livre",
+                List.of(placeSemMaps)
+        );
+
+        when(groqClient.callGroqJson(any(), any(), eq(RecommendationResult.class), anyDouble(), anyInt(), any(Duration.class), anyInt()))
+                .thenReturn(mockResult);
+
+        RecommendationResult result = recommendationsService.recommend(dto);
+
+        assertNotNull(result);
+        assertFalse(result.getLugares().isEmpty());
+        PlaceDto place = result.getLugares().get(0);
+        assertNotNull(place.getGoogleMapsUri());
+        assertTrue(place.getGoogleMapsUri().contains("google.com/maps/search/?api=1&query="));
+        assertTrue(place.getGoogleMapsUri().contains("Parque+Ecol%C3%B3gico+do+A%C3%A7u"));
+    }
 }

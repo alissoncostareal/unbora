@@ -243,17 +243,20 @@ export function PlaceCard({
         ) : null}
         {place.illustrative ? <p className="mt-3 text-xs text-muted/75 italic">Imagem ilustrativa</p> : null}
         <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm items-center">
-          {place.mapsUrl ? (
+        {(() => {
+          const resolvedMapsUrl = place.mapsUrl || (place.name ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([place.name, place.address || ''].filter(Boolean).join(' '))}` : undefined);
+          return resolvedMapsUrl ? (
             <a
               className="font-medium underline decoration-ink/20 underline-offset-4 hover:decoration-ink"
-              href={place.mapsUrl}
+              href={resolvedMapsUrl}
               target="_blank"
               rel="noreferrer"
               onClick={handleMapsClick}
             >
               Ver no mapa
             </a>
-          ) : null}
+          ) : null;
+        })()}
           <button type="button" className="text-muted underline decoration-ink/15 underline-offset-4 hover:text-ink transition-colors cursor-pointer" onClick={onShare}>
             Compartilhar
           </button>

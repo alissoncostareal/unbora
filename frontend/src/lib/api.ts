@@ -82,6 +82,10 @@ function mediaUrl(url?: string): string | undefined {
 }
 
 function mapPlace(dto: PlaceDto): Place {
+  const mapsFallback = dto.nome
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([dto.nome, dto.endereco || ''].filter(Boolean).join(' '))}`
+    : undefined;
+
   return {
     name: dto.nome ?? '',
     type: dto.tipo ?? '',
@@ -90,7 +94,7 @@ function mapPlace(dto: PlaceDto): Place {
     rating: Math.min(5, Math.max(0, Number(dto.nota ?? 0))),
     description: dto.descricao ?? '',
     tags: dto.tags ?? [],
-    mapsUrl: dto.google_maps_uri,
+    mapsUrl: dto.google_maps_uri?.trim() ? dto.google_maps_uri.trim() : mapsFallback,
     illustrative: dto.imagem_ilustrativa ?? false,
     placeId: dto.place_id,
     latitude: dto.latitude,

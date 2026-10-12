@@ -70,16 +70,40 @@ export function resultPath(input: {
   return query ? `/results?${query}` : '/results';
 }
 
+function normalizeKey(value: string | undefined | null) {
+  if (!value) return '';
+  return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
 export function journeyFromQuery(spec: ResultQuery): JourneyChoice | null {
-  const { moods, company, durations, interests } = getGuide();
-  const mood = moods.find((item) => item.label === spec.moodLabel);
-  const withWhom = company.find((item) => item.label === spec.social);
-  const time = durations.find((item) => item.id === spec.timeId);
-  if (!spec.city || !mood || !withWhom || !time) return null;
+  if (!spec.city) return null;
+  const { moods: gMoods, company: gCompany, durations: gDurations, interests: gInterests } = getGuide();
+  if (!gMoods.length || !gCompany.length || !gDurations.length) return null;
+
+  const normMood = normalizeKey(spec.moodLabel);
+  const mood = gMoods.find((item) => normalizeKey(item.label) === normMood || normalizeKey(item.value).includes(normMood))
+    || gMoods[0];
+
+  const normSocial = normalizeKey(spec.social);
+  const withWhom = gCompany.find((item) => normalizeKey(item.label) === normSocial || normalizeKey(item.value) === normSocial)
+    || gCompany[1] || gCompany[0];
+
+  const normTime = normalizeKey(spec.timeId);
+  const time = gDurations.find((item) => item.id === spec.timeId || normalizeKey(item.label) === normTime || normalizeKey(item.value).includes(normTime))
+    || gDurations[2] || gDurations[0];
+
+  const matchedInterests = gInterests.filter((item) =>
+    spec.interestIds.some((id) => {
+      const nid = normalizeKey(id);
+      return normalizeKey(item.id) === nid || normalizeKey(item.label) === nid;
+    })
+  );
+  const activeInterests = (matchedInterests.length > 0 ? matchedInterests : [gInterests[2] || gInterests[0]]).map((item) => item.label);
+
   return {
     moodLabel: mood.label,
     moodLine: mood.line,
-    interests: interests.filter((item) => spec.interestIds.includes(item.id)).map((item) => item.label),
+    interests: activeInterests,
     social: withWhom.label,
     budgetReais: spec.budgetReais,
     time: time.label,
