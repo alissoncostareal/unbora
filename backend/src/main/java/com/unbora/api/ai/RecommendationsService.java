@@ -1786,7 +1786,7 @@ public class RecommendationsService {
                 List<PlaceEmbeddingProjection> projs = placeEmbeddingRepository.findSimilarPlaces(city, vector, maxResults);
                 if (projs != null) {
                     for (PlaceEmbeddingProjection proj : projs) {
-                        if (isDismissed(dismissed, proj.getPlaceId(), proj.getDisplayName())) continue;
+                        if (isDismissed(dismissed, proj.getId(), proj.getName())) continue;
                         GooglePlacesDiscoveryService.DiscoveredPlace dp = projectionToDiscoveredPlace(proj);
                         fallbackPlaces.add(toPlaceDto(dp, fallbackPlaces.isEmpty()));
                     }
@@ -1819,7 +1819,7 @@ public class RecommendationsService {
                 List<PlaceEmbeddingProjection> projs = placeEmbeddingRepository.findSimilarPlaces(city, vector, maxResults);
                 if (projs != null) {
                     for (PlaceEmbeddingProjection proj : projs) {
-                        if (isDismissed(dismissed, proj.getPlaceId(), proj.getDisplayName())) continue;
+                        if (isDismissed(dismissed, proj.getId(), proj.getName())) continue;
                         GooglePlacesDiscoveryService.DiscoveredPlace dp = projectionToDiscoveredPlace(proj);
                         fallbackPlaces.add(toPlaceDto(dp, fallbackPlaces.isEmpty()));
                     }
