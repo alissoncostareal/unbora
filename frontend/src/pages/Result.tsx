@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 import { PlaceCard } from '../components/PlaceCard';
 import { SEOHead } from '../components/SEOHead';
-import { fetchDismissed, recommend, searchPlaces, sendFeedback, type Place, type Recommendation } from '../lib/api';
+import { fetchDismissed, fetchSnapshot, recommend, searchPlaces, sendFeedback, type Place, type Recommendation } from '../lib/api';
 import { saveRole } from '../lib/savedRoles';
 import { useAuth } from '../lib/auth';
 import { company, durations, interests, JOURNEY_KEY, moods, type JourneyChoice } from '../lib/catalog';
@@ -254,11 +254,24 @@ export function ResultPage() {
 
       setLoading(true);
       setFailed(false);
-      const request = spec.query
-        ? searchPlaces(spec.query, spec, user?.id)
-        : recommendFromQuery(spec, user?.id);
 
-      request.then((next) => {
+      const runFetch = async () => {
+        if (spec.id) {
+          try {
+            const snap = await fetchSnapshot(spec.id);
+            if (snap && snap.places && snap.places.length > 0) {
+              return snap;
+            }
+          } catch {
+            /* snapshot não encontrado ou indisponível, cai para o recálculo padrão */
+          }
+        }
+        return spec.query
+          ? searchPlaces(spec.query, spec, user?.id)
+          : recommendFromQuery(spec, user?.id);
+      };
+
+      runFetch().then((next) => {
         if (cancelled || !next) return;
         sessionStorage.setItem('unbora-result', JSON.stringify(next));
         sessionStorage.setItem('unbora-result-key', queryKey);
@@ -433,6 +446,15 @@ export function ResultPage() {
 
   async function handleShareJourney() {
     let safeUrl = typeof window !== 'undefined' ? window.location.href : '';
+    if (result?.id && typeof window !== 'undefined') {
+      try {
+        const urlObj = new URL(window.location.href);
+        urlObj.searchParams.set('id', result.id);
+        safeUrl = urlObj.href;
+      } catch {
+        // fallback para window.location.href
+      }
+    }
     try {
       safeUrl = new URL(safeUrl).href;
     } catch {

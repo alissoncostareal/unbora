@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -61,6 +62,14 @@ public class RecommendationsController {
     @Operation(summary = "Smart AI search for places and venues")
     public RecommendationResult search(@Valid @RequestBody SearchDto dto) {
         return recommendationsService.search(dto);
+    }
+
+    @GetMapping({"/snapshot/{id}", "/recommendations/snapshot/{id}", "/recommend/snapshot/{id}"})
+    @Operation(summary = "Get immutable snapshot of recommendations/search by ID without LLM recalculation")
+    public ResponseEntity<RecommendationResult> getSnapshot(@PathVariable String id) {
+        return recommendationsService.getSnapshot(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping({"/events/discover", "/events", "/eventos"})

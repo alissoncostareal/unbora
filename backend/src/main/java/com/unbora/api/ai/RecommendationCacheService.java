@@ -59,6 +59,46 @@ public class RecommendationCacheService {
     }
 
     /**
+     * Obtem snapshot imutavel de resultado por ID (mesmo que o TTL de recalculacao tenha expirado).
+     */
+    public Optional<RecommendationResult> getSnapshot(String cacheKey) {
+        if (cacheKey == null || cacheKey.isBlank()) return Optional.empty();
+
+        // 1. Consulta L1 (Memoria)
+        L1CacheEntry entry = l1Cache.get(cacheKey);
+        if (entry != null) {
+            try {
+                RecommendationResult res = objectMapper.readValue(entry.payload(), RecommendationResult.class);
+                if (res != null) {
+                    res.setId(cacheKey);
+                    return Optional.of(res);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 2. Consulta L2 no PostgreSQL sem restricao de expiracao (snapshot permanente)
+        if (jdbcTemplate != null) {
+            try {
+                List<String> rows = jdbcTemplate.query(
+                        "SELECT payload FROM recommendation_cache WHERE cache_key = ?",
+                        (rs, rowNum) -> rs.getString("payload"),
+                        cacheKey
+                );
+                if (!rows.isEmpty()) {
+                    RecommendationResult res = objectMapper.readValue(rows.get(0), RecommendationResult.class);
+                    if (res != null) {
+                        res.setId(cacheKey);
+                        return Optional.of(res);
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("[RecCache] Erro ao buscar snapshot {}: {}", cacheKey, e.getMessage());
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
      * Salva recomendacao no cache persistente e L1.
      */
     public void putRecommendation(String cacheKey, String queryType, String city, RecommendationResult result, Duration ttl) {

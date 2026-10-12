@@ -6,6 +6,7 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RecommendationResult {
+    private String id;
     private String titulo;
     private String subtitulo;
     private List<PlaceDto> lugares = new ArrayList<>();
@@ -16,6 +17,21 @@ public class RecommendationResult {
         this.titulo = titulo;
         this.subtitulo = subtitulo;
         this.lugares = lugares;
+    }
+
+    public RecommendationResult(String id, String titulo, String subtitulo, List<PlaceDto> lugares) {
+        this.id = id;
+        this.titulo = titulo;
+        this.subtitulo = subtitulo;
+        this.lugares = lugares;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getTitulo() {

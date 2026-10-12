@@ -1,8 +1,21 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: unbora-ratelimit
+  namespace: unbora
+spec:
+  rateLimit:
+    average: 30
+    burst: 60
+    period: 1m
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: unbora-ingress
   namespace: unbora
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: unbora-unbora-ratelimit@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:

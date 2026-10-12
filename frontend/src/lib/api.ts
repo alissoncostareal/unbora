@@ -22,6 +22,7 @@ export interface Place {
 }
 
 export interface Recommendation {
+  id?: string;
   title: string;
   subtitle: string;
   places: Place[];
@@ -58,6 +59,7 @@ interface PlaceDto {
 }
 
 interface RecommendationDto {
+  id?: string;
   titulo?: string;
   subtitulo?: string;
   lugares?: PlaceDto[];
@@ -110,6 +112,7 @@ function mapPlace(dto: PlaceDto): Place {
 
 function mapRecommendation(dto: RecommendationDto): Recommendation {
   return {
+    id: dto.id,
     title: dto.titulo?.trim() || 'Para você hoje',
     subtitle: dto.subtitulo?.trim() || 'Na sua cidade',
     places: (dto.lugares ?? []).map(mapPlace),
@@ -292,6 +295,17 @@ export async function fetchPersonalizedRecommendations(input: {
     radiusKm: input.radiusKm || 15.0,
   });
   return mapRecommendation(data);
+}
+
+export async function fetchSnapshot(snapshotId: string): Promise<Recommendation | null> {
+  if (!snapshotId || !snapshotId.trim()) return null;
+  try {
+    const data = await get<RecommendationDto>(`/api/snapshot/${encodeURIComponent(snapshotId.trim())}`);
+    return mapRecommendation(data);
+  } catch (err) {
+    console.debug('[Snapshot] Snapshot not found or error:', err);
+    return null;
+  }
 }
 
 export interface CityNotification {

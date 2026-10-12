@@ -2,6 +2,7 @@ import type { JourneyChoice } from './catalog';
 import { getGuide } from './guide';
 
 export interface ResultQuery {
+  id?: string;
   query: string;
   city: string;
   region: string;
@@ -24,6 +25,7 @@ function numberOrUndefined(value: string | null) {
 
 export function readResultQuery(params: URLSearchParams): ResultQuery {
   return {
+    id: params.get('id')?.trim() || params.get('snapshot')?.trim() || undefined,
     query: params.get('q')?.trim() ?? '',
     city: params.get('city')?.trim() ?? '',
     region: params.get('region')?.trim() ?? '',
@@ -40,6 +42,7 @@ export function readResultQuery(params: URLSearchParams): ResultQuery {
 }
 
 export function resultPath(input: {
+  id?: string;
   query?: string;
   city: string;
   region: string;
@@ -54,6 +57,7 @@ export function resultPath(input: {
   timeId?: string;
 }) {
   const params = new URLSearchParams();
+  if (input.id) params.set('id', input.id);
   if (input.query) params.set('q', input.query);
   if (input.city) params.set('city', input.city);
   if (input.region) params.set('region', input.region);

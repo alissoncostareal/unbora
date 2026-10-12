@@ -161,6 +161,7 @@ public class RecommendationsService {
                             labels, null, maxResults
                     );
                     if (cached != null && cached.getLugares() != null && !cached.getLugares().isEmpty()) {
+                        cached.setId(cacheKey);
                         String topPlace = cached.getLugares().get(0).getNome();
                         kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
                                 "RECOMMENDATION_GENERATED_CACHE_HIT",
@@ -185,7 +186,9 @@ public class RecommendationsService {
 
             try {
                 RecommendationResult raw = inFlight.join();
-                return prepareCachedResult(raw, dismissed, city, dto != null ? dto.humor() : null, labels, null, maxResults);
+                RecommendationResult ready = prepareCachedResult(raw, dismissed, city, dto != null ? dto.humor() : null, labels, null, maxResults);
+                if (ready != null) ready.setId(cacheKey);
+                return ready;
             } finally {
                 inFlightRecommend.remove(cacheKey, inFlight);
             }
@@ -405,7 +408,8 @@ public class RecommendationsService {
                     Instant.now()
             ));
 
-            recommendationCacheService.putRecommendation(cacheKey, "RECOMMEND", city, enriched, Duration.ofHours(6));
+            enriched.setId(cacheKey);
+            recommendationCacheService.putRecommendation(cacheKey, "RECOMMEND", city, enriched, Duration.ofDays(7));
         }
 
         return enriched;
@@ -457,6 +461,7 @@ public class RecommendationsService {
                             List.of(), query, maxResults
                     );
                     if (cached != null && cached.getLugares() != null && !cached.getLugares().isEmpty()) {
+                        cached.setId(cacheKey);
                         String topPlace = cached.getLugares().get(0).getNome();
                         kafkaEventPublisher.publishRecommendation(new RecommendationEvent(
                                 "SEARCH_PERFORMED_CACHE_HIT",
@@ -481,7 +486,9 @@ public class RecommendationsService {
 
             try {
                 RecommendationResult raw = inFlight.join();
-                return prepareCachedResult(raw, dismissed, city, null, List.of(), query, maxResults);
+                RecommendationResult ready = prepareCachedResult(raw, dismissed, city, null, List.of(), query, maxResults);
+                if (ready != null) ready.setId(cacheKey);
+                return ready;
             } finally {
                 inFlightSearch.remove(cacheKey, inFlight);
             }
@@ -672,10 +679,21 @@ public class RecommendationsService {
                     Instant.now()
             ));
 
-            recommendationCacheService.putRecommendation(cacheKey, "SEARCH", city, enriched, Duration.ofHours(6));
+            enriched.setId(cacheKey);
+            recommendationCacheService.putRecommendation(cacheKey, "SEARCH", city, enriched, Duration.ofDays(7));
         }
 
         return enriched;
+    }
+
+    public Optional<RecommendationResult> getSnapshot(String snapshotId) {
+        if (snapshotId == null || snapshotId.isBlank()) return Optional.empty();
+        String sanitized = InputSanitizer.sanitizePlaceId(snapshotId, 120);
+        if (sanitized == null || sanitized.isBlank()) return Optional.empty();
+        if (recommendationCacheService != null) {
+            return recommendationCacheService.getSnapshot(sanitized);
+        }
+        return Optional.empty();
     }
 
     public DiscoverEventsResult discoverEvents(DiscoverEventsDto dto) {

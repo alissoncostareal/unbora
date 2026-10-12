@@ -27,13 +27,16 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final com.unbora.api.common.security.AiRateLimitFilter aiRateLimitFilter;
     private final String allowedOrigin;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
+            com.unbora.api.common.security.AiRateLimitFilter aiRateLimitFilter,
             @Value("${unbora.cors.allowed-origin:*}") String allowedOrigin
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.aiRateLimitFilter = aiRateLimitFilter;
         this.allowedOrigin = allowedOrigin;
     }
 
@@ -96,6 +99,7 @@ public class SecurityConfig {
                         // Everything else
                         .anyRequest().permitAll()
                 )
+                .addFilterBefore(aiRateLimitFilter, JwtAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
