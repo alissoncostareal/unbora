@@ -42,24 +42,24 @@ public class GroqClient {
      * qwen/qwen3.8-27b responde em ~350ms-500ms e openai/gpt-oss-120b em ~1.1s no LPU.
      */
     private static final List<String> FAST_GROQ_MODELS = List.of(
-            "qwen/qwen3.8-27b",
             "openai/gpt-oss-120b",
             "openai/gpt-oss-20b",
+            "qwen/qwen3.8-27b",
             "allam-2-7b"
     );
 
     public GroqClient(
             @Value("${unbora.groq.api-key:}") String groqApiKey,
-            @Value("${unbora.groq.model:qwen/qwen3.8-27b}") String configuredModel,
+            @Value("${unbora.groq.model:openai/gpt-oss-120b}") String configuredModel,
             @Value("${unbora.brave.api-key:}") String braveKey,
             FallbackLlmClient fallbackLlmClient
     ) {
         this.groqApiKey = groqApiKey != null ? groqApiKey.trim() : "";
-        String model = configuredModel != null ? configuredModel.trim() : "qwen/qwen3.8-27b";
+        String model = configuredModel != null ? configuredModel.trim() : "openai/gpt-oss-120b";
         
         // Corrige modelos legados/inexistentes para o modelo ultra-rápido suportado
         if (model.isBlank() || model.contains("llama-3.1") || model.contains("mixtral") || model.contains("compound")) {
-            model = "qwen/qwen3.8-27b";
+            model = "openai/gpt-oss-120b";
         }
         this.configuredModel = model;
         this.braveKey = braveKey != null ? braveKey.trim() : "";
@@ -158,7 +158,7 @@ public class GroqClient {
                 if (model.contains("qwen3.8-27b")) {
                     effectiveMaxTokens = Math.min(effectiveMaxTokens, 950);
                 } else {
-                    effectiveMaxTokens = Math.min(effectiveMaxTokens, 2048);
+                    effectiveMaxTokens = Math.max(effectiveMaxTokens, 2500);
                 }
 
                 Map<String, Object> payload = new HashMap<>();
@@ -172,7 +172,7 @@ public class GroqClient {
                 payload.put("response_format", Map.of("type", "json_object"));
 
                 Duration remaining = Duration.between(Instant.now(), deadline);
-                Duration timeout = remaining.compareTo(Duration.ofSeconds(6)) > 0 ? Duration.ofSeconds(6) : remaining;
+                Duration timeout = remaining.compareTo(Duration.ofSeconds(10)) > 0 ? Duration.ofSeconds(10) : remaining;
                 if (timeout.isNegative() || timeout.isZero()) break;
 
                 log.info("[Groq] Enviando requisicao para modelo {} (maxTokens={}, timeout={}s)...", model, effectiveMaxTokens, timeout.toSeconds());

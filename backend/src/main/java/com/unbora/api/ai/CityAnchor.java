@@ -82,7 +82,7 @@ public class CityAnchor {
 
     public boolean contains(Center center, double radiusKm, Double latitude, Double longitude, String address, String city) {
         if (center != null && center.latitude() != null && center.longitude() != null && latitude != null && longitude != null) {
-            double limit = Math.max(radiusKm > 0 ? radiusKm : 8, 1) * 1.35;
+            double limit = Math.max(radiusKm > 0 ? radiusKm : 35, 1) * 1.35;
             return distanceKm(latitude, longitude, center.latitude(), center.longitude()) <= limit;
         }
         if (address != null && !address.isBlank() && city != null && !city.isBlank()) {

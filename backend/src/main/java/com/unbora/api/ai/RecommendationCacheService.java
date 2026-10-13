@@ -215,15 +215,18 @@ public class RecommendationCacheService {
             String humor,
             String sentir,
             List<ActivityItemDto> activities,
-            Double radiusKm,
             Double budget
     ) {
+        String normalizedSentir = sentir != null
+                ? sentir.replaceAll("(?i)\\.?\\s*raio\\s+de\\s+\\d+\\s*km\\.?", "").trim()
+                : "";
+
         StringBuilder raw = new StringBuilder();
         raw.append("rec|")
                 .append(norm(city)).append("|")
                 .append(norm(region)).append("|")
                 .append(norm(humor)).append("|")
-                .append(norm(sentir)).append("|");
+                .append(norm(normalizedSentir)).append("|");
 
         if (activities != null && !activities.isEmpty()) {
             List<String> sortedLabels = activities.stream()
@@ -234,9 +237,6 @@ public class RecommendationCacheService {
             raw.append(String.join(",", sortedLabels));
         }
         raw.append("|");
-
-        int rad = radiusKm != null ? (int) Math.round(radiusKm) : 8;
-        raw.append("rad:").append(rad).append("|");
 
         int bud = budget != null ? (int) Math.round(budget) : 0;
         raw.append("bud:").append(bud);

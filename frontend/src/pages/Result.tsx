@@ -47,14 +47,13 @@ function recommendFromQuery(spec: ReturnType<typeof readResultQuery>, userId?: s
   const spend = spec.budgetReais >= 300 ? 'sem teto de gasto' : `gastar até ${spec.budgetReais} reais`;
   return recommend({
     humor: mood.value,
-    sentir: `${withWhom.value}. ${spend}. Tempo disponível: ${time.value}. Raio de ${spec.radiusKm} km.`,
+    sentir: `${withWhom.value}. ${spend}. Tempo disponível: ${time.value}.`,
     activities: activitiesToUse,
     city: spec.city,
     region: spec.region,
     country: spec.country,
     latitude: spec.latitude,
     longitude: spec.longitude,
-    radiusKm: spec.radiusKm,
     userId,
   });
 }
@@ -125,7 +124,7 @@ function matchScore(place: Place, journey: JourneyChoice | null, km: number | nu
   let score = place.rating > 0 ? (place.rating / 5) * 70 : 58;
   if (place.openNow) score += 8;
   if (fitsInterest(place, journey)) score += 12;
-  if (km != null && journey && km <= journey.radiusKm) score += 8;
+  if (km != null) score += 4;
   const ceiling = priceCeiling(place.priceLevel);
   if (journey && ceiling != null && (journey.budgetReais >= 300 || ceiling <= journey.budgetReais + 40)) score += 6;
   if (place.rating <= 0 && !place.openNow && !fitsInterest(place, journey)) return null;
@@ -155,7 +154,6 @@ function why(place: Place, journey: JourneyChoice | null, km: number | null) {
   const ceiling = priceCeiling(place.priceLevel);
   const fitsBudget = ceiling != null && (journey.budgetReais >= 300 || ceiling <= journey.budgetReais + 40);
   if (price && fitsBudget) about.push(`está na faixa de ${price}, dentro de ${spend}`);
-  if (km != null && km <= journey.radiusKm) about.push(`dentro do raio de ${journey.radiusKm} km`);
   const sentence = about.length > 1 ? `${about[0]} ${about.slice(1).join(', ')}.` : '';
   return [facts[0], sentence, prose].filter(Boolean).join(' ');
 }
@@ -319,9 +317,6 @@ export function ResultPage() {
 
       const leftKm = distanceKm(left, journey);
       const rightKm = distanceKm(right, journey);
-      const leftIn = journey && leftKm != null ? Number(leftKm <= journey.radiusKm) : 0;
-      const rightIn = journey && rightKm != null ? Number(rightKm <= journey.radiusKm) : 0;
-      if (rightIn !== leftIn) return rightIn - leftIn;
       const photo = Number(Boolean(right.imageUrl)) - Number(Boolean(left.imageUrl));
       if (photo !== 0) return photo;
       return (matchScore(right, journey, rightKm) ?? 0) - (matchScore(left, journey, leftKm) ?? 0);
@@ -601,7 +596,7 @@ export function ResultPage() {
       </div>
 
       {places.length === 0 ? (
-        <p className="mt-12 text-muted">Nenhuma experiência ficou de pé. Vale refazer com outro humor ou um raio maior.</p>
+        <p className="mt-12 text-muted">Nenhuma experiência ficou de pé. Vale refazer com outro humor ou explorar novas categorias.</p>
       ) : (
         <>
           <div className="mt-14 space-y-20">
@@ -696,18 +691,18 @@ export function ResultPage() {
       {notice ? <p className="mt-8 text-center text-sm text-muted">{notice}</p> : null}
 
       <div className="mt-20 border-t border-[#e7e0d8] pt-10 text-center">
-        <p className="text-base font-light text-[#1c1917]">Quer explorar outra vibe ou aumentar o raio?</p>
+        <p className="text-base font-light text-[#1c1917]">Quer explorar outra vibe?</p>
         <p className="mt-1 text-xs text-muted">Ajuste seu momento para descobrir novas sugestões em {journey?.city || 'sua cidade'}.</p>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
           <Link
             to="/home"
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-ink px-6 text-xs font-semibold uppercase tracking-wider text-white hover:bg-coral transition-colors"
+            className="inline-flex h-11 items-center justify-center rounded-none bg-ink px-6 text-xs font-semibold uppercase tracking-wider text-white hover:bg-coral transition-colors"
           >
             Refazer busca
           </Link>
           <Link
             to="/search"
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-line bg-white px-5 text-xs font-semibold uppercase tracking-wider text-ink hover:border-ink transition-colors"
+            className="inline-flex h-11 items-center justify-center rounded-none border border-line bg-white px-5 text-xs font-semibold uppercase tracking-wider text-ink hover:border-ink transition-colors"
           >
             Buscar por nome
           </Link>

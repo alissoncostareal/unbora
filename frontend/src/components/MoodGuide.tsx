@@ -5,7 +5,7 @@ import { HomeGazette } from './HomeGazette';
 import { SEOHead } from './SEOHead';
 import { recommend } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { isBrazilianState, placeArea, readRadiusKm, useCity } from '../lib/city';
+import { isBrazilianState, placeArea, useCity } from '../lib/city';
 import { JOURNEY_KEY, type JourneyChoice } from '../lib/catalog';
 import { getGuide, loadGuide } from '../lib/guide';
 import { resultPath } from '../lib/resultQuery';
@@ -63,7 +63,6 @@ export function MoodGuide() {
   const [social, setSocial] = useState('');
   const [budget, setBudget] = useState(getGuide().budget.defaultValue);
   const [timeId, setTimeId] = useState('');
-  const radiusKm = readRadiusKm();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draftReady, setDraftReady] = useState(false);
@@ -90,7 +89,6 @@ export function MoodGuide() {
             social?: string;
             budget?: number;
             timeId?: string;
-            radiusKm?: number;
           };
           if (draft.step && draft.step > 0) {
             setStep(Math.min(draft.step, steps.length - 1));
@@ -111,9 +109,9 @@ export function MoodGuide() {
   useEffect(() => {
     if (!draftReady || busy) return;
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
-      step, moodLabel, picked, social, budget, timeId, radiusKm,
+      step, moodLabel, picked, social, budget, timeId,
     }));
-  }, [draftReady, busy, step, moodLabel, picked, social, budget, timeId, radiusKm]);
+  }, [draftReady, busy, step, moodLabel, picked, social, budget, timeId]);
 
   useEffect(() => {
     const onSection = (event: Event) => {
@@ -169,7 +167,6 @@ export function MoodGuide() {
       city,
       latitude,
       longitude,
-      radiusKm,
     };
 
     setBusy(true);
@@ -178,14 +175,13 @@ export function MoodGuide() {
       const spend = budget >= budgetMax ? 'sem teto de gasto' : `gastar até ${budget} reais`;
       const result = await recommend({
         humor: mood.value,
-        sentir: `${withWhom.value}. ${spend}. Tempo disponível: ${time.value}. Raio de ${radiusKm} km.`,
+        sentir: `${withWhom.value}. ${spend}. Tempo disponível: ${time.value}.`,
         activities: chosen,
         city,
         region,
         country,
         latitude,
         longitude,
-        radiusKm,
         userId: user?.id,
       });
       const path = resultPath({
@@ -195,7 +191,6 @@ export function MoodGuide() {
         country,
         latitude,
         longitude,
-        radiusKm,
         moodLabel: mood.label,
         interestIds: chosen.map((item) => item.id),
         social: withWhom.label,

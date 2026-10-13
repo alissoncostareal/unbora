@@ -9,7 +9,7 @@ export interface ResultQuery {
   country: string;
   latitude?: number;
   longitude?: number;
-  radiusKm: number;
+  radiusKm?: number;
   moodLabel: string;
   interestIds: string[];
   social: string;
@@ -32,7 +32,7 @@ export function readResultQuery(params: URLSearchParams, routeId?: string): Resu
     country: params.get('country')?.trim() || 'Brasil',
     latitude: numberOrUndefined(params.get('lat')),
     longitude: numberOrUndefined(params.get('lng')),
-    radiusKm: numberOrUndefined(params.get('radius')) ?? 8,
+    radiusKm: numberOrUndefined(params.get('radius')),
     moodLabel: params.get('mood')?.trim() ?? '',
     interestIds: (params.get('interests') ?? '').split(',').map((item) => item.trim()).filter(Boolean),
     social: params.get('social')?.trim() ?? '',
@@ -66,7 +66,6 @@ export function resultPath(input: {
   if (input.country) params.set('country', input.country);
   if (input.latitude != null) params.set('lat', String(input.latitude));
   if (input.longitude != null) params.set('lng', String(input.longitude));
-  if (input.radiusKm != null) params.set('radius', String(input.radiusKm));
   if (input.moodLabel) params.set('mood', input.moodLabel);
   if (input.interestIds?.length) params.set('interests', input.interestIds.join(','));
   if (input.social) params.set('social', input.social);

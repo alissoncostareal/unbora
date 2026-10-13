@@ -292,7 +292,7 @@ export async function fetchPersonalizedRecommendations(input: {
     country: input.country || 'Brasil',
     latitude: input.latitude,
     longitude: input.longitude,
-    radiusKm: input.radiusKm || 15.0,
+    radiusKm: input.radiusKm || 30.0,
   });
   return mapRecommendation(data);
 }

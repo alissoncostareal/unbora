@@ -134,7 +134,7 @@ public class RecommendationsService {
         }
         final int maxResults = effectiveMaxResults;
 
-        final Double radiusKm = (dto != null && dto.radiusKm() != null) ? Math.min(Math.max(dto.radiusKm(), 1.0), 100.0) : 8.0;
+        final Double radiusKm = (dto != null && dto.radiusKm() != null && dto.radiusKm() > 0) ? dto.radiusKm() : 30.0;
         CityAnchor.Center resolvedCenter = null;
         try {
             resolvedCenter = cityAnchor.resolve(city, region, country, dto != null ? dto.latitude() : null, dto != null ? dto.longitude() : null);
@@ -149,7 +149,7 @@ public class RecommendationsService {
 
         // 1. Verificacao de cache persistente (L1 em memoria / L2 no PostgreSQL)
         String cacheKey = (recommendationCacheService != null && dto != null)
-                ? recommendationCacheService.computeRecommendKey(city, region, humor, sentir, dto.activities(), radiusKm, budgetReais)
+                ? recommendationCacheService.computeRecommendKey(city, region, humor, sentir, dto.activities(), budgetReais)
                 : ("rec:" + city + ":" + humor);
 
         try {

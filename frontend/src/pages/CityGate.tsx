@@ -4,18 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { CityAutocomplete } from '../components/CityAutocomplete';
 import { SEOHead } from '../components/SEOHead';
 import type { CityPlace } from '../lib/api';
-import { formatPlace, placeArea, readRadiusKm, saveRadiusKm, useCity } from '../lib/city';
+import { formatPlace, placeArea, useCity } from '../lib/city';
 
 export function CityGate() {
   const navigate = useNavigate();
   const { city, region, country, modelCity, locating, locationError, setCity, locate } = useCity();
-  const [radiusKm, setRadiusKm] = useState(readRadiusKm);
   const area = placeArea(city, region);
   const placeLine = area ? formatPlace(city, region) : [city, country].filter(Boolean).join(', ');
 
   function enter(place: CityPlace = { city, region, country: country || 'Brasil' }) {
     setCity(place);
-    saveRadiusKm(radiusKm);
     navigate('/home');
   }
 
@@ -36,7 +34,7 @@ export function CityGate() {
 
         <div className="step-in mx-auto mt-8 w-full min-w-0 max-w-xl rounded-none border border-[#e7dfd8] bg-white p-4 shadow-sm sm:mt-12 sm:p-8 md:p-12">
           <h1 className="break-words text-center text-2xl font-light tracking-tight sm:text-3xl md:text-4xl">Onde você está?</h1>
-          <p className="mt-2 text-center text-sm text-muted">Cidade e raio.</p>
+          <p className="mt-2 text-center text-sm text-muted">Escolha sua cidade.</p>
 
           <div className="mt-8 text-center">
             <p className="break-words text-3xl font-light tracking-tight sm:text-4xl">{city.trim() || 'Sua cidade'}</p>
@@ -54,18 +52,6 @@ export function CityGate() {
               Escreva qualquer cidade
               <CityAutocomplete onPlace={setCity} />
             </label>
-            <p className="mt-8 text-sm text-muted">Raio</p>
-            <p className="mt-2 text-3xl font-light tracking-tight">{radiusKm} km</p>
-            <input
-              className="range mt-6"
-              type="range"
-              min={1}
-              max={30}
-              step={1}
-              value={radiusKm}
-              aria-label="Raio em quilômetros"
-              onChange={(event) => setRadiusKm(Number(event.target.value))}
-            />
           </div>
         </div>
       </div>

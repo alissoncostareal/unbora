@@ -10,7 +10,7 @@ export interface JourneyChoice {
   city: string;
   latitude?: number;
   longitude?: number;
-  radiusKm: number;
+  radiusKm?: number;
 }
 
 export const moods = [

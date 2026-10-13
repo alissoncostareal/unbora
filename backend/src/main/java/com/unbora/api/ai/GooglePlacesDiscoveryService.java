@@ -101,7 +101,7 @@ public class GooglePlacesDiscoveryService {
             requestBody.put("maxResultCount", Math.min(maxResults > 0 ? maxResults : 20, 20));
 
             if (latitude != null && longitude != null && !latitude.isNaN() && !longitude.isNaN()) {
-                double km = radiusKm != null && radiusKm > 0 ? radiusKm : 8.0;
+                double km = radiusKm != null && radiusKm > 0 ? radiusKm : 30.0;
                 double dLat = km / 111.0;
                 double dLng = km / (111.0 * Math.max(0.2, Math.cos(Math.toRadians(latitude))));
                 requestBody.put("locationRestriction", Map.of(
