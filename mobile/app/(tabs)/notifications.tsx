@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
   locationCard: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.lg,
+    borderRadius: 0,
     padding: spacing.md,
   },
   locationLabel: {

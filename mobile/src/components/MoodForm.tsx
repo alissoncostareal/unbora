@@ -4,61 +4,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ThemeColors } from '@/theme/colors';
 import type { WizardOption } from '@/types';
 
-/** Tons suaves por opção — identidade Unbora, sem arco-íris IG. */
-const OPTION_TINTS: Record<string, { soft: string; ink: string }> = {
-  // Passo 1 - Humor atual
-  Animado: { soft: 'rgba(251, 146, 60, 0.16)', ink: '#EA580C' },
-  Tranquilo: { soft: 'rgba(56, 189, 248, 0.16)', ink: '#0284C7' },
-  Social: { soft: 'rgba(167, 139, 250, 0.18)', ink: '#7C3AED' },
-  Romântico: { soft: 'rgba(244, 63, 94, 0.14)', ink: '#E11D48' },
-  Curioso: { soft: 'rgba(14, 165, 233, 0.14)', ink: '#0EA5E9' },
-  Cansado: { soft: 'rgba(99, 102, 241, 0.14)', ink: '#4F46E5' },
-
-  // Passo 2 - Como quer se sentir
-  Alegre: { soft: 'rgba(250, 204, 21, 0.22)', ink: '#CA8A04' },
-  Alegria: { soft: 'rgba(250, 204, 21, 0.22)', ink: '#CA8A04' },
-  Calmo: { soft: 'rgba(125, 211, 252, 0.22)', ink: '#0284C7' },
-  Calma: { soft: 'rgba(125, 211, 252, 0.22)', ink: '#0284C7' },
-  Energizado: { soft: 'rgba(249, 115, 22, 0.16)', ink: '#EA580C' },
-  Energia: { soft: 'rgba(249, 115, 22, 0.16)', ink: '#EA580C' },
-  Conectado: { soft: 'rgba(192, 132, 252, 0.18)', ink: '#7C3AED' },
-  Conexão: { soft: 'rgba(192, 132, 252, 0.18)', ink: '#7C3AED' },
-  Inspirado: { soft: 'rgba(244, 114, 182, 0.16)', ink: '#DB2777' },
-  Inspiração: { soft: 'rgba(244, 114, 182, 0.16)', ink: '#DB2777' },
-  Encantado: { soft: 'rgba(52, 211, 153, 0.18)', ink: '#059669' },
-  Realização: { soft: 'rgba(52, 211, 153, 0.18)', ink: '#059669' },
-
-  // Passo 3 - Tipos de lugares
-  Restaurantes: { soft: 'rgba(251, 146, 60, 0.16)', ink: '#EA580C' },
-  Gastronomia: { soft: 'rgba(251, 146, 60, 0.16)', ink: '#EA580C' },
-  Comer: { soft: 'rgba(251, 146, 60, 0.16)', ink: '#EA580C' },
-  'Bares & Pubs': { soft: 'rgba(56, 189, 248, 0.16)', ink: '#0284C7' },
-  Cafeterias: { soft: 'rgba(251, 191, 36, 0.2)', ink: '#D97706' },
-  'Cafés & Brunch': { soft: 'rgba(251, 191, 36, 0.2)', ink: '#D97706' },
-  'Praia & Sunset': { soft: 'rgba(14, 165, 233, 0.14)', ink: '#0EA5E9' },
-  Praia: { soft: 'rgba(14, 165, 233, 0.14)', ink: '#0EA5E9' },
-  'Shows & Noite': { soft: 'rgba(99, 102, 241, 0.16)', ink: '#4F46E5' },
-  Noite: { soft: 'rgba(99, 102, 241, 0.16)', ink: '#4F46E5' },
-  'Cultura & Lazer': { soft: 'rgba(167, 139, 250, 0.16)', ink: '#7C3AED' },
-  Cultura: { soft: 'rgba(167, 139, 250, 0.16)', ink: '#7C3AED' },
-};
-
-function getTint(label: string) {
-  return OPTION_TINTS[label] ?? { soft: 'rgba(14, 165, 233, 0.12)', ink: '#0EA5E9' };
-}
-
-/** Fundo opaco. rgba + elevation no Android vira um quadrado branco dentro do card. */
-function solidFill(soft: string): string {
-  const match = soft.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-  if (!match) return '#FFFFFF';
-  const alpha = match[4] != null ? Number(match[4]) : 1;
-  const mix = (channel: number) => Math.round(alpha * channel + (1 - alpha) * 255);
-  const hex = (value: number) => value.toString(16).padStart(2, '0');
-  return `#${hex(mix(Number(match[1])))}${hex(mix(Number(match[2])))}${hex(mix(Number(match[3])))}`;
-}
-
 /**
- * Card de humor — Headspace (calmo) + Fever (descoberta).
+ * Card de humor editorial Unbora — cantos retos, terracota e paleta neutra.
  */
 export function MoodOptionButton({
   colors,
@@ -73,7 +20,6 @@ export function MoodOptionButton({
   onPress: () => void;
   multi?: boolean;
 }) {
-  const tint = getTint(option.label);
   const isDark = colors.scheme === 'dark';
 
   return (
@@ -87,12 +33,12 @@ export function MoodOptionButton({
         {
           backgroundColor: selected
             ? isDark
-              ? tint.soft
-              : solidFill(tint.soft)
+              ? colors.surfaceStrong
+              : colors.primaryLight
             : isDark
               ? colors.surface
               : '#FFFFFF',
-          borderColor: selected ? tint.ink : colors.border,
+          borderColor: selected ? colors.primary : colors.border,
           borderWidth: selected ? 1.5 : StyleSheet.hairlineWidth,
           opacity: pressed ? 0.92 : 1,
           transform: [{ scale: pressed ? 0.97 : 1 }],
@@ -107,17 +53,17 @@ export function MoodOptionButton({
             styles.iconWrap,
             {
               backgroundColor: selected
-                ? tint.ink
+                ? colors.primary
                 : isDark
                   ? colors.surfaceStrong
-                  : tint.soft,
+                  : colors.primaryMuted,
             },
           ]}
         >
           <Ionicons
             name={option.icon}
             size={22}
-            color={selected ? '#FFF' : tint.ink}
+            color={selected ? '#FFFFFF' : colors.primary}
           />
         </View>
         {multi ? (
@@ -125,19 +71,24 @@ export function MoodOptionButton({
             style={[
               styles.dot,
               {
-                borderColor: selected ? tint.ink : colors.border,
-                backgroundColor: selected ? tint.ink : 'transparent',
+                borderColor: selected ? colors.primary : colors.border,
+                backgroundColor: selected ? colors.primary : 'transparent',
               },
             ]}
           >
             {selected ? (
-              <Ionicons name="checkmark" size={13} color="#FFF" />
+              <Ionicons name="checkmark" size={13} color="#FFFFFF" />
             ) : null}
           </View>
         ) : null}
       </View>
       <Text
-        style={[styles.label, { color: colors.textPrimary }]}
+        style={[
+          styles.label,
+          {
+            color: selected && !isDark ? colors.primaryDark : colors.textPrimary,
+          },
+        ]}
         numberOfLines={1}
         adjustsFontSizeToFit
         minimumFontScale={0.85}

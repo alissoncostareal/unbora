@@ -124,7 +124,7 @@ export function AuthScreen({
                 {
                   backgroundColor: variant.isSpotify ? 'transparent' : colors.surface,
                   borderColor: colors.border,
-                  borderRadius: variant.buttonRadius,
+                  borderRadius: 0,
                   marginTop: spacing.md,
                 },
               ]}
@@ -154,7 +154,7 @@ export function AuthScreen({
               styles.secondaryButton,
               {
                 borderColor: colors.border,
-                borderRadius: variant.buttonRadius,
+                borderRadius: 0,
                 backgroundColor: variant.isSpotify ? 'transparent' : colors.surface,
               },
             ]}
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     borderWidth: 1,
-    borderRadius: radius.sm,
+    borderRadius: 0,
     padding: 14,
   },
   errorText: {

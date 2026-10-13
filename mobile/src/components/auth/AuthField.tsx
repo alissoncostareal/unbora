@@ -36,7 +36,6 @@ export function AuthField({
   const isSpotify = colors.useGlass;
 
   const fieldBg = isSpotify ? colors.surfaceStrong : colors.surface;
-  const fieldRadius = isSpotify ? 6 : 12;
 
   return (
     <View style={styles.wrap}>
@@ -69,7 +68,7 @@ export function AuthField({
             {
               color: colors.textPrimary,
               backgroundColor: fieldBg,
-              borderRadius: fieldRadius,
+              borderRadius: 0,
               borderColor: focused ? colors.primary : isSpotify ? 'transparent' : colors.border,
               borderWidth: isSpotify ? (focused ? 1.5 : 0) : 1,
             },

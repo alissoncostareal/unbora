@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   },
   orb: {
     position: 'absolute',
-    borderRadius: 999,
+    borderRadius: 0,
   },
   orbA: {
     width: 170,

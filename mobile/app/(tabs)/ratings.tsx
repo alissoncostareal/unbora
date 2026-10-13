@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   card: {
-    borderRadius: radius.lg,
+    borderRadius: 0,
     overflow: 'hidden',
     marginBottom: 12,
   },

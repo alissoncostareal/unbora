@@ -36,7 +36,7 @@ export function ResultsLoadingSkeleton({ colors }: { colors: ThemeColors }) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radius.lg,
+    borderRadius: 0,
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 14,

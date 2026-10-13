@@ -1018,7 +1018,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: radius.md,
+    borderRadius: 0,
     borderWidth: 1.5,
     minWidth: 180,
     textAlign: 'center',
@@ -1026,7 +1026,7 @@ const styles = StyleSheet.create({
   saveNameBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1048,7 +1048,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: radius.pill,
+    borderRadius: 0,
     borderWidth: StyleSheet.hairlineWidth,
   },
   badgeText: {
@@ -1062,7 +1062,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    borderRadius: radius.lg,
+    borderRadius: 0,
     borderWidth: StyleSheet.hairlineWidth,
     paddingVertical: 14,
     alignItems: 'center',

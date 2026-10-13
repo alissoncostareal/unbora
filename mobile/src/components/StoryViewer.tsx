@@ -274,13 +274,13 @@ const styles = StyleSheet.create({
   progressTrack: {
     flex: 1,
     height: 2,
-    borderRadius: 1,
+    borderRadius: 0,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#FFF',
-    borderRadius: 1,
+    borderRadius: 0,
   },
   metaRow: {
     flexDirection: 'row',

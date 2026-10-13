@@ -53,7 +53,7 @@ export function SearchBar({
         />
         {query.length > 0 ? (
           <Pressable onPress={handleSearch} hitSlop={8}>
-            <Ionicons name="arrow-forward-circle" size={22} color={colors.primary} />
+            <Ionicons name="arrow-forward-sharp" size={20} color={colors.primary} />
           </Pressable>
         ) : null}
       </View>

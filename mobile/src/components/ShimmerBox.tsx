@@ -42,7 +42,7 @@ export function ShimmerBox({
           width,
           height,
           backgroundColor: colors.surfaceStrong,
-          borderRadius: radius.sm,
+          borderRadius: 0,
         },
         style,
       ]}
