@@ -31,6 +31,8 @@ public class PlacePhotoProxyController {
     private static final Logger log = LoggerFactory.getLogger(PlacePhotoProxyController.class);
 
     private static final Set<String> ALLOWED_HOSTS = Set.of(
+            "lh1.googleusercontent.com",
+            "lh2.googleusercontent.com",
             "lh3.googleusercontent.com",
             "lh4.googleusercontent.com",
             "lh5.googleusercontent.com",

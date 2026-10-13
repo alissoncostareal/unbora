@@ -23,9 +23,9 @@ function numberOrUndefined(value: string | null) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-export function readResultQuery(params: URLSearchParams): ResultQuery {
+export function readResultQuery(params: URLSearchParams, routeId?: string): ResultQuery {
   return {
-    id: params.get('id')?.trim() || params.get('snapshot')?.trim() || undefined,
+    id: routeId?.trim() || params.get('id')?.trim() || params.get('snapshot')?.trim() || undefined,
     query: params.get('q')?.trim() ?? '',
     city: params.get('city')?.trim() ?? '',
     region: params.get('region')?.trim() ?? '',
@@ -56,8 +56,10 @@ export function resultPath(input: {
   budgetReais?: number;
   timeId?: string;
 }) {
+  if (input.id && input.id.trim()) {
+    return `/results/${input.id.trim()}`;
+  }
   const params = new URLSearchParams();
-  if (input.id) params.set('id', input.id);
   if (input.query) params.set('q', input.query);
   if (input.city) params.set('city', input.city);
   if (input.region) params.set('region', input.region);

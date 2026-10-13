@@ -21,7 +21,7 @@ export function CoverPlaceholder({
     <View
       style={[
         styles.root,
-        { backgroundColor: isDark ? '#15262C' : '#DCE8EA' },
+        { backgroundColor: isDark ? '#1C1917' : '#F3EFE8' },
         style,
       ]}
     >
@@ -29,7 +29,7 @@ export function CoverPlaceholder({
         style={[
           styles.wash,
           {
-            backgroundColor: isDark ? 'rgba(251, 113, 133, 0.1)' : 'rgba(232, 93, 76, 0.1)',
+            backgroundColor: isDark ? 'rgba(154, 70, 50, 0.15)' : 'rgba(154, 70, 50, 0.06)',
           },
         ]}
       />
@@ -37,21 +37,21 @@ export function CoverPlaceholder({
         style={[
           styles.orb,
           styles.orbA,
-          { backgroundColor: isDark ? 'rgba(251, 113, 133, 0.22)' : 'rgba(232, 93, 76, 0.2)' },
+          { backgroundColor: isDark ? 'rgba(154, 70, 50, 0.2)' : 'rgba(154, 70, 50, 0.1)' },
         ]}
       />
       <View
         style={[
           styles.orb,
           styles.orbB,
-          { backgroundColor: isDark ? 'rgba(45, 212, 191, 0.14)' : 'rgba(15, 118, 110, 0.14)' },
+          { backgroundColor: isDark ? 'rgba(232, 224, 215, 0.08)' : 'rgba(232, 224, 215, 0.4)' },
         ]}
       />
       <View style={styles.content}>
         <Text
           style={[
             styles.brand,
-            { color: isDark ? 'rgba(255,255,255,0.4)' : colors.accent },
+            { color: isDark ? 'rgba(255,255,255,0.4)' : colors.primary },
           ]}
         >
           unbora

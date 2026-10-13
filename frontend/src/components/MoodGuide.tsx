@@ -189,6 +189,7 @@ export function MoodGuide() {
         userId: user?.id,
       });
       const path = resultPath({
+        id: result?.id,
         city,
         region,
         country,
@@ -203,7 +204,7 @@ export function MoodGuide() {
       });
       sessionStorage.setItem(JOURNEY_KEY, JSON.stringify(journey));
       sessionStorage.setItem('unbora-result', JSON.stringify(result));
-      sessionStorage.setItem('unbora-result-key', path.split('?')[1] ?? '');
+      sessionStorage.setItem('unbora-result-key', result?.id || (path.split('?')[1] ?? ''));
       sessionStorage.removeItem('unbora-search-error');
       sessionStorage.removeItem(DRAFT_KEY);
       navigate(path);

@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     overflow: 'hidden',
-    backgroundColor: '#DCE8EA',
+    backgroundColor: '#F3EFE8',
   },
   image: {
     position: 'absolute',

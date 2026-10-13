@@ -184,13 +184,13 @@ const styles = StyleSheet.create({
   card: {
     width: '48.2%',
     height: 102,
-    borderRadius: 20,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 12,
     justifyContent: 'space-between',
     shadowColor: '#000',
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
     elevation: 0,
   },
   cardTop: {
@@ -199,16 +199,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   iconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dot: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 18,
+    height: 18,
+    borderRadius: 0,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
@@ -225,6 +225,7 @@ const styles = StyleSheet.create({
   },
   progressSegment: {
     flex: 1,
-    borderRadius: 3,
+    borderRadius: 0,
+    height: 3,
   },
 });

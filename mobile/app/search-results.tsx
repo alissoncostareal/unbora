@@ -146,8 +146,8 @@ const styles = StyleSheet.create({
   retryButton: {
     marginTop: 24,
     paddingHorizontal: 32,
-    height: 36,
-    borderRadius: 8,
+    height: 40,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },

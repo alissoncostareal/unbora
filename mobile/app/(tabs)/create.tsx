@@ -312,17 +312,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 999,
+    borderWidth: 1,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   input: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.md,
+    borderWidth: 1,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: 15,
   },
   multiline: {
     minHeight: 96,
@@ -342,13 +342,14 @@ const styles = StyleSheet.create({
   },
   submit: {
     marginTop: spacing.xl,
-    borderRadius: radius.md,
-    height: 52,
+    borderRadius: 0,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   submitLabel: {
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 15,
+    letterSpacing: 0.2,
   },
 });

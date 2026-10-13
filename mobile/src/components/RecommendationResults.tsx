@@ -147,8 +147,8 @@ const styles = StyleSheet.create({
   },
   restartButton: {
     marginTop: 24,
-    height: 52,
-    borderRadius: 16,
+    height: 48,
+    borderRadius: 0,
     paddingHorizontal: 28,
     alignItems: 'center',
     justifyContent: 'center',

@@ -78,6 +78,7 @@ export function AppHeader({
             styles.avatar,
             {
               backgroundColor: isFloating ? '#FFFFFF' : colors.surfaceStrong,
+              borderColor: colors.border,
               opacity: pressed ? 0.85 : 1,
             },
           ]}
@@ -97,16 +98,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingBottom: Platform.OS === 'android' ? 2 : 4,
+    paddingBottom: Platform.OS === 'android' ? 6 : 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'transparent',
   },
   brand: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '700',
-    letterSpacing: -0.9,
+    letterSpacing: -0.6,
   },
   brandAndroid: {
     fontSize: 22,
-    letterSpacing: -0.6,
+    letterSpacing: -0.5,
   },
   brandBlock: {
     flexShrink: 1,
@@ -118,8 +121,9 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   locationText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
+    letterSpacing: 0.1,
   },
   brandShadow: {
     textShadowColor: 'rgba(0,0,0,0.35)',
@@ -127,9 +131,10 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 0,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -141,5 +146,6 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 20,
     backgroundColor: 'transparent',
+    borderBottomWidth: 0,
   },
 });

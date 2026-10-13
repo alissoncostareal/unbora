@@ -28,10 +28,18 @@ export function SearchPage() {
     setLoading(true);
     setError(null);
     try {
-      const path = resultPath({ query: query.trim(), city, region, country, latitude, longitude });
       const result = await searchPlaces(query.trim(), { city, region, country, latitude, longitude }, user?.id);
+      const path = resultPath({
+        id: result?.id,
+        query: query.trim(),
+        city,
+        region,
+        country,
+        latitude,
+        longitude,
+      });
       sessionStorage.setItem('unbora-result', JSON.stringify(result));
-      sessionStorage.setItem('unbora-result-key', path.split('?')[1] ?? '');
+      sessionStorage.setItem('unbora-result-key', result?.id || (path.split('?')[1] ?? ''));
       navigate(path);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha na busca');

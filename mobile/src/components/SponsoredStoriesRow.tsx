@@ -185,19 +185,19 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    borderRadius: radius.lg,
+    borderRadius: 0,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   cover: {
     ...StyleSheet.absoluteFill,
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    backgroundColor: '#E4ECEE',
+    backgroundColor: '#F3EFE8',
   },
   scrim: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(10, 20, 28, 0.35)',
+    backgroundColor: 'rgba(28, 25, 23, 0.45)',
   },
   cardBody: {
     flex: 1,
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 0,
     marginBottom: 4,
   },
   badgeText: {

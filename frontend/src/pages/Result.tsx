@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { PlaceCard } from '../components/PlaceCard';
 import { SEOHead } from '../components/SEOHead';
@@ -183,12 +183,15 @@ const PAGE_SIZE = 6;
 
 export function ResultPage() {
   const { user } = useAuth();
+  const { id: routeId } = useParams<{ id?: string }>();
   const [params, setParams] = useSearchParams();
+  const effectiveId = routeId?.trim() || params.get('id')?.trim() || params.get('snapshot')?.trim();
   const queryKey = useMemo(() => {
+    if (routeId) return `route_${routeId}`;
     const clone = new URLSearchParams(params);
     clone.delete('page');
     return clone.toString();
-  }, [params]);
+  }, [params, routeId]);
 
   const [page, setPage] = useState(() => {
     const p = parseInt(params.get('page') || '1', 10);
@@ -197,14 +200,14 @@ export function ResultPage() {
 
   const cachedResult = useMemo(() => readJson<Recommendation>('unbora-result'), []);
   const cachedKey = typeof window !== 'undefined' ? sessionStorage.getItem('unbora-result-key') : null;
-  const isCacheValid = cachedResult != null && cachedKey === queryKey;
+  const isCacheValid = cachedResult != null && (cachedKey === queryKey || (effectiveId && cachedResult.id === effectiveId));
 
   const [result, setResult] = useState<Recommendation | null>(isCacheValid ? cachedResult : null);
   const [journey, setJourney] = useState<JourneyChoice | null>(isCacheValid ? readJson<JourneyChoice>(JOURNEY_KEY) : null);
   const [hidden, setHidden] = useState<string[]>([]);
   const [failed, setFailed] = useState(false);
 
-  const hasQuery = Boolean(params.get('city') || params.get('q') || params.get('mood'));
+  const hasQuery = Boolean(params.get('city') || params.get('q') || params.get('mood') || effectiveId);
   const [loading, setLoading] = useState<boolean>(!isCacheValid && hasQuery);
   const [notice, setNotice] = useState('');
   const [savedRoleSuccess, setSavedRoleSuccess] = useState(false);
@@ -231,12 +234,12 @@ export function ResultPage() {
     let cancelled = false;
     void loadGuide().then(() => {
       if (cancelled) return;
-      const spec = readResultQuery(params);
+      const spec = readResultQuery(params, routeId);
       const cached = readJson<Recommendation>('unbora-result');
       const cachedJourney = readJson<JourneyChoice>(JOURNEY_KEY);
       const cachedKey = sessionStorage.getItem('unbora-result-key');
 
-      if (cached && cachedKey === queryKey) {
+      if (cached && (cachedKey === queryKey || (spec.id && cached.id === spec.id))) {
         setResult(cached);
         setJourney(cachedJourney ?? journeyFromQuery(spec));
         setFailed(false);
@@ -244,7 +247,7 @@ export function ResultPage() {
         return;
       }
 
-      if (!spec.city && !spec.query) {
+      if (!spec.city && !spec.query && !spec.id) {
         setResult(cached);
         setJourney(cachedJourney);
         setFailed(Boolean(sessionStorage.getItem('unbora-search-error')));
@@ -274,11 +277,16 @@ export function ResultPage() {
       runFetch().then((next) => {
         if (cancelled || !next) return;
         sessionStorage.setItem('unbora-result', JSON.stringify(next));
-        sessionStorage.setItem('unbora-result-key', queryKey);
+        sessionStorage.setItem('unbora-result-key', next.id || queryKey);
         const nextJourney = journeyFromQuery(spec);
         if (nextJourney) sessionStorage.setItem(JOURNEY_KEY, JSON.stringify(nextJourney));
         setResult(next);
         setJourney(nextJourney);
+
+        // Se houver shortcode ID, limpa a URL do navegador para /results/:id (mostrando a rota e o shortcode)
+        if (next.id && typeof window !== 'undefined' && !routeId && window.location.pathname !== `/results/${next.id}`) {
+          window.history.replaceState(null, '', `/results/${next.id}`);
+        }
       }).catch(() => {
         if (!cancelled) setFailed(true);
       }).finally(() => {
@@ -289,7 +297,7 @@ export function ResultPage() {
     return () => {
       cancelled = true;
     };
-  }, [queryKey, user?.id, params]);
+  }, [queryKey, user?.id, params, routeId]);
 
   useEffect(() => {
     if (!user) return;
@@ -445,15 +453,10 @@ export function ResultPage() {
   }
 
   async function handleShareJourney() {
-    let safeUrl = typeof window !== 'undefined' ? window.location.href : '';
-    if (result?.id && typeof window !== 'undefined') {
-      try {
-        const urlObj = new URL(window.location.href);
-        urlObj.searchParams.set('id', result.id);
-        safeUrl = urlObj.href;
-      } catch {
-        // fallback para window.location.href
-      }
+    const shareId = result?.id || routeId || params.get('id') || params.get('snapshot');
+    let safeUrl = typeof window !== 'undefined' ? window.location.href : 'https://unbora.com.br/home';
+    if (shareId && typeof window !== 'undefined') {
+      safeUrl = `${window.location.origin}/results/${shareId}`;
     }
     try {
       safeUrl = new URL(safeUrl).href;

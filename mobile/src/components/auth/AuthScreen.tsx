@@ -36,9 +36,9 @@ function getAuthVariant(colors: ThemeColors) {
   const isSpotify = colors.useGlass;
   return {
     isSpotify,
-    buttonRadius: isSpotify ? 28 : 12,
-    inputRadius: isSpotify ? 6 : 12,
-    titleSize: isSpotify ? 32 : 28,
+    buttonRadius: 0,
+    inputRadius: 0,
+    titleSize: 26,
   };
 }
 
@@ -100,8 +100,8 @@ export function AuthScreen({
             style={[
               styles.primaryButton,
               {
-                backgroundColor: colors.buttonInk,
-                borderRadius: radius.md,
+                backgroundColor: colors.buttonPrimary,
+                borderRadius: 0,
                 opacity: loading ? 0.75 : 1,
               },
             ]}

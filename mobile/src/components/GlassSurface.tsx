@@ -18,19 +18,10 @@ export function GlassSurface({
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
 }) {
-  const borderColor = highlighted
-    ? colors.primary
-    : colors.scheme === 'dark'
-    ? 'rgba(255, 255, 255, 0.05)'
-    : 'rgba(0, 0, 0, 0.05)';
+  const borderColor = highlighted ? colors.primary : colors.border;
   const backgroundColor = highlighted ? colors.primaryMuted : colors.surface;
-  const borderWidth = highlighted
-    ? 1.5
-    : colors.scheme === 'dark'
-    ? 0
-    : StyleSheet.hairlineWidth;
+  const borderWidth = highlighted ? 1.5 : 1;
 
-  // expo-blur no Android desenha um retângulo branco por cima do card.
   if (colors.useGlass && Platform.OS !== 'android') {
     return (
       <View
@@ -40,16 +31,16 @@ export function GlassSurface({
           style,
         ]}
       >
-        <BlurView intensity={28} tint={colors.scheme === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <BlurView intensity={20} tint={colors.scheme === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
         <View
           style={[
             styles.content,
             {
               backgroundColor: highlighted
-                ? 'rgba(255, 107, 53, 0.08)'
+                ? colors.primaryMuted
                 : colors.scheme === 'dark'
-                ? 'rgba(28, 28, 30, 0.65)'
-                : 'rgba(255, 255, 255, 0.65)',
+                ? 'rgba(28, 25, 23, 0.75)'
+                : 'rgba(255, 255, 255, 0.75)',
             },
             contentStyle,
           ]}
@@ -81,21 +72,21 @@ export function GlassSurface({
 
 const styles = StyleSheet.create({
   wrapper: {
-    borderRadius: radius.lg,
+    borderRadius: 0,
     overflow: 'hidden',
   },
   lightCard: {
     shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 2,
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
   },
   lightCardDark: {
     shadowOpacity: 0,
     elevation: 0,
   },
   content: {
-    padding: 18,
+    padding: 16,
   },
 });

@@ -1274,7 +1274,7 @@ public class RecommendationsService {
         List<PlaceDto> sourcePlaces = result.getLugares();
         try {
             CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
-                    .get(1800, TimeUnit.MILLISECONDS);
+                    .get(4000, TimeUnit.MILLISECONDS);
         } catch (Exception ignored) {}
 
         for (int i = 0; i < futures.size(); i++) {
@@ -1699,7 +1699,7 @@ public class RecommendationsService {
         }
         if (!jobs.isEmpty()) {
             try {
-                CompletableFuture.allOf(jobs.toArray(CompletableFuture[]::new)).get(1500, TimeUnit.MILLISECONDS);
+                CompletableFuture.allOf(jobs.toArray(CompletableFuture[]::new)).get(3500, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 log.warn("[Photos] Tempo esgotado ao resolver fotos do Google Places: {}", e.getMessage());
             }

@@ -190,8 +190,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderTopWidth: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.xl + 8,
@@ -203,10 +204,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   kicker: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
   title: {
     fontSize: 20,
@@ -230,8 +231,8 @@ const styles = StyleSheet.create({
   },
   comment: {
     minHeight: 88,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
+    borderWidth: 1,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
@@ -239,14 +240,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   primary: {
-    height: 50,
-    borderRadius: 14,
+    height: 46,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
+    letterSpacing: 0.2,
   },
   remove: {
     marginTop: 14,

@@ -33,6 +33,10 @@ export function PlaceCard({
   const [submittingCheckin, setSubmittingCheckin] = useState(false);
 
   useEffect(() => {
+    setImgSrc(place.imageUrl || DEFAULT_FALLBACK_IMAGE);
+  }, [place.imageUrl]);
+
+  useEffect(() => {
     setIsFav(isPlaceFavorite(place));
     const onFavChange = () => setIsFav(isPlaceFavorite(place));
     window.addEventListener('unbora:favorites_changed', onFavChange);
@@ -101,7 +105,7 @@ export function PlaceCard({
           : 'translate-y-0 scale-100 opacity-100'
       }`}
     >
-      <div className="relative aspect-[4/5] bg-[#e7e0d8] sm:aspect-[5/4] overflow-hidden rounded-xl">
+      <div className="relative aspect-[4/5] bg-[#e7e0d8] sm:aspect-[5/4] overflow-hidden rounded-none">
         <img
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           src={imgSrc}

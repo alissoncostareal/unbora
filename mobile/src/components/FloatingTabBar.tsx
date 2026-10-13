@@ -60,9 +60,9 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
       : Math.max(insets.bottom, 8) + FLOATING_TAB_BAR_GAP;
   const isDark = colors.scheme === 'dark';
   const tab = {
-    active: colors.textPrimary,
+    active: colors.primary,
     inactive: colors.textMuted,
-    pill: isDark ? 'rgba(18, 28, 40, 0.82)' : 'rgba(255, 255, 255, 0.88)',
+    pill: isDark ? 'rgba(28, 25, 23, 0.96)' : 'rgba(255, 255, 255, 0.96)',
     pillBorder: colors.border,
     blurTint: (isDark ? 'dark' : 'light') as 'dark' | 'light',
   };
@@ -125,7 +125,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           name={iconName}
           focused={focused}
           color={focused ? tab.active : tab.inactive}
-          size={26}
+          size={24}
         />
       </Pressable>
     );
@@ -157,21 +157,21 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   shadow: {
-    borderRadius: Platform.OS === 'android' ? 24 : 28,
+    borderRadius: 0,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: Platform.OS === 'android' ? 6 : 10,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   shadowDark: {
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.35,
   },
   pill: {
     height: FLOATING_TAB_BAR_HEIGHT,
-    borderRadius: Platform.OS === 'android' ? 24 : 28,
+    borderRadius: 0,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   pillInner: {
     flex: 1,

@@ -193,9 +193,9 @@ export default function ProfileScreen() {
                 y={1.5}
                 width={RING_SIZE - 3}
                 height={RING_SIZE - 3}
-                rx={RING_SIZE / 2}
+                rx={0}
                 stroke="url(#profileRing)"
-                strokeWidth={2.5}
+                strokeWidth={2}
                 fill="none"
               />
             </Svg>
@@ -988,7 +988,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1078,7 +1078,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   guestCard: {
-    borderRadius: radius.lg,
+    borderRadius: 0,
     marginBottom: spacing.md,
   },
   guestContent: {
@@ -1090,7 +1090,7 @@ const styles = StyleSheet.create({
   guestIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1111,7 +1111,7 @@ const styles = StyleSheet.create({
   primaryBtn: {
     flex: 1,
     height: 42,
-    borderRadius: radius.md,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1122,7 +1122,7 @@ const styles = StyleSheet.create({
   secondaryBtn: {
     flex: 1,
     height: 42,
-    borderRadius: radius.md,
+    borderRadius: 0,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1133,9 +1133,9 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    borderRadius: radius.pill,
-    padding: 4,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 0,
+    padding: 3,
+    borderWidth: 1,
     marginBottom: spacing.md,
   },
   tabItem: {
@@ -1145,7 +1145,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 9,
-    borderRadius: radius.pill,
+    borderRadius: 0,
   },
   tabLabel: {
     fontSize: 13,
@@ -1176,13 +1176,14 @@ const styles = StyleSheet.create({
   },
   cityCard: {
     width: 170,
-    borderRadius: radius.lg,
+    borderRadius: 0,
     overflow: 'hidden',
+    borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   cityCover: {
     width: '100%',
@@ -1192,15 +1193,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     left: 8,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: 'rgba(28, 25, 23, 0.85)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 0,
   },
   cityBadgeText: {
     color: '#FFF',
     fontSize: 10,
     fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
   },
   cityInfo: {
     padding: 10,
@@ -1229,7 +1232,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: radius.pill,
+    borderRadius: 0,
   },
   addCheckinBtnText: {
     color: '#FFF',
@@ -1240,8 +1243,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   checkinCard: {
-    borderRadius: radius.lg,
+    borderRadius: 0,
     overflow: 'hidden',
+    borderWidth: 1,
   },
   checkinCardInner: {
     flexDirection: 'row',
@@ -1252,7 +1256,7 @@ const styles = StyleSheet.create({
   checkinThumb: {
     width: 58,
     height: 58,
-    borderRadius: radius.md,
+    borderRadius: 0,
   },
   checkinBody: {
     flex: 1,
@@ -1297,8 +1301,8 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     padding: 24,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 0,
+    borderWidth: 1,
     alignItems: 'center',
     gap: 8,
   },
@@ -1323,8 +1327,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   groupCard: {
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 0,
+    borderWidth: 1,
     overflow: 'hidden',
   },
   themeRow: {
@@ -1334,8 +1338,8 @@ const styles = StyleSheet.create({
   },
   themeChip: {
     flex: 1,
-    borderWidth: 1.5,
-    borderRadius: radius.md,
+    borderWidth: 1,
+    borderRadius: 0,
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1351,7 +1355,7 @@ const styles = StyleSheet.create({
   rowIcon: {
     width: 34,
     height: 34,
-    borderRadius: 10,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1369,15 +1373,15 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 400,
-    borderRadius: 24,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 0,
+    borderWidth: 1,
     padding: spacing.lg,
     gap: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1403,7 +1407,7 @@ const styles = StyleSheet.create({
   },
   modalInput: {
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 9,
     fontSize: 14,
@@ -1416,7 +1420,7 @@ const styles = StyleSheet.create({
   catChip: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: radius.pill,
+    borderRadius: 0,
     borderWidth: 1,
   },
   modalActions: {
@@ -1427,7 +1431,7 @@ const styles = StyleSheet.create({
   modalSecondaryBtn: {
     flex: 1,
     height: 44,
-    borderRadius: radius.md,
+    borderRadius: 0,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1439,7 +1443,7 @@ const styles = StyleSheet.create({
   modalPrimaryBtn: {
     flex: 1.5,
     height: 44,
-    borderRadius: radius.md,
+    borderRadius: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

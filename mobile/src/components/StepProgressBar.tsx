@@ -34,6 +34,6 @@ const styles = StyleSheet.create({
   segment: {
     flex: 1,
     height: 2,
-    borderRadius: 1,
+    borderRadius: 0,
   },
 });

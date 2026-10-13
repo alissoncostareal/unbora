@@ -77,7 +77,7 @@ export async function recordSponsoredClick(id?: string): Promise<void> {
 function mediaUrl(url?: string): string | undefined {
   if (!url) return undefined;
   if (url.startsWith('/api/media/')) return `${API_BASE}${url}`;
-  if (url.includes('places.googleapis.com') || url.includes('googleusercontent.com')) {
+  if (url.includes('places.googleapis.com')) {
     return `${API_BASE}/api/media/photo?src=${encodeURIComponent(url)}`;
   }
   return url;

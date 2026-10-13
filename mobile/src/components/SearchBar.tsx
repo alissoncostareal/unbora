@@ -70,10 +70,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 44,
-    borderRadius: radius.md,
+    borderRadius: 0,
     paddingHorizontal: 14,
     gap: 10,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   input: {
     flex: 1,

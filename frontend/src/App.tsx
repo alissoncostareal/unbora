@@ -42,10 +42,14 @@ export function App() {
   const { pathname: path, search, hash } = useLocation();
   const { modelCity } = useCity();
   const legacy = legacyRoutes[path];
-  const focused = path === '/home' || path === '/results';
+  const focused = path === '/home' || path === '/results' || path.startsWith('/results/') || path.startsWith('/s/');
   const bare = path === '/' || path === '/login' || path === '/register' || path === '/reset-password' || path === '/confirm-account';
 
-  const hasQuery = Boolean(search && (search.includes('city=') || search.includes('q=') || search.includes('mood=')));
+  const hasQuery = Boolean(
+    path.startsWith('/s/') ||
+    path.startsWith('/results/') ||
+    (search && (search.includes('city=') || search.includes('q=') || search.includes('mood=') || search.includes('id=') || search.includes('snapshot=')))
+  );
 
   if (legacy) return <Navigate to={`${legacy}${search}${hash}`} replace />;
   if (modelCity && path !== '/' && !bare && !hasQuery) return <Navigate to="/" replace />;
@@ -58,6 +62,8 @@ export function App() {
           <Route path="/" element={<CityGate />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/results" element={<ResultPage />} />
+          <Route path="/results/:id" element={<ResultPage />} />
+          <Route path="/s/:id" element={<ResultPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />

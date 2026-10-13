@@ -201,9 +201,9 @@ const styles = StyleSheet.create({
   thumb: {
     width: 84,
     height: 84,
-    borderRadius: 12,
+    borderRadius: 0,
     overflow: 'hidden',
-    backgroundColor: '#DCE8EA',
+    backgroundColor: '#F3EFE8',
   },
   body: {
     flex: 1,
@@ -213,12 +213,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
     marginBottom: 2,
   },
   name: {
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: -0.2,
   },
   sub: {
     fontSize: 13,
@@ -247,9 +248,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    height: 30,
+    height: 32,
     paddingHorizontal: 10,
-    borderRadius: 8,
+    borderRadius: 0,
+    borderWidth: 1,
   },
   editLabel: {
     fontSize: 13,

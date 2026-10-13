@@ -197,8 +197,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyCard: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderRadius: 0,
     padding: spacing.lg,
     alignItems: 'center',
     gap: 8,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingHorizontal: 18,
     height: 44,
-    borderRadius: radius.md,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -220,8 +220,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   notificationCard: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderRadius: 0,
     padding: spacing.md,
     gap: 8,
   },
@@ -237,9 +237,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 0,
   },
   notificationMeta: {
     fontSize: 12,

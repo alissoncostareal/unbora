@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   thumbWrap: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 0,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.6)',
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   thumbImage: {
-    borderRadius: 18,
+    borderRadius: 0,
   },
   metaTag: {
     color: 'rgba(255,255,255,0.85)',
@@ -358,14 +358,14 @@ const styles = StyleSheet.create({
   sponsoredBadge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 999,
+    borderRadius: 0,
     backgroundColor: 'rgba(255,255,255,0.18)',
   },
   curatedBadge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: 'rgba(14, 165, 233, 0.45)',
+    borderRadius: 0,
+    backgroundColor: 'rgba(154, 70, 50, 0.65)',
   },
   sponsoredText: {
     color: '#FFF',
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     gap: 6,
     height: 40,
     paddingHorizontal: 14,
-    borderRadius: radius.md,
+    borderRadius: 0,
     backgroundColor: '#FFF',
   },
   ctaLabel: {

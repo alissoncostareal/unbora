@@ -26,7 +26,7 @@ export default function MerchantRegisterScreen() {
         password,
         businessName.trim(),
       );
-      router.replace('/(tabs)/events');
+      router.replace('/(tabs)/create');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao cadastrar lojista');
     } finally {

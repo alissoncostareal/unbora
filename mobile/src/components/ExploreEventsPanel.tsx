@@ -223,7 +223,8 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
     marginBottom: spacing.sm,
     height: 44,
-    borderRadius: radius.pill,
+    borderRadius: 0,
+    borderWidth: 1,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -241,8 +242,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   chip: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 999,
+    borderWidth: 1,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
@@ -251,9 +252,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   card: {
-    borderRadius: radius.lg,
+    borderRadius: 0,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   cover: {
     height: 160,
