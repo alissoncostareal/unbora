@@ -244,6 +244,18 @@ public class RecommendationCacheService {
         return "rec_" + sha256(raw.toString());
     }
 
+    public String computeRecommendKey(
+            String city,
+            String region,
+            String humor,
+            String sentir,
+            List<ActivityItemDto> activities,
+            Double radiusKm,
+            Double budget
+    ) {
+        return computeRecommendKey(city, region, humor, sentir, activities, budget);
+    }
+
     public String computeSearchKey(String city, String region, String query) {
         String raw = "search|" + norm(city) + "|" + norm(region) + "|" + norm(query);
         return "search_" + sha256(raw);

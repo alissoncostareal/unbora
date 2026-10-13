@@ -112,7 +112,7 @@ class RecommendationsServiceTest {
 
         when(locationSettingsService.getEffectiveMaxResults(anyString())).thenReturn(24);
         when(cityAnchor.resolve(any(), any(), any(), any(), any())).thenReturn(new CityAnchor.Center(-3.73, -38.52));
-        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any(), any()))
+        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any()))
                 .thenReturn("rec_test_key");
         when(recommendationCacheService.getCachedRecommendation(anyString())).thenReturn(Optional.empty());
 
@@ -154,7 +154,7 @@ class RecommendationsServiceTest {
 
         when(locationSettingsService.getEffectiveMaxResults(anyString())).thenReturn(24);
         when(cityAnchor.resolve(any(), any(), any(), any(), any())).thenReturn(null);
-        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any(), any()))
+        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any()))
                 .thenReturn("rec_test_key_null_center");
         when(recommendationCacheService.getCachedRecommendation(anyString())).thenReturn(Optional.empty());
 
@@ -234,7 +234,7 @@ class RecommendationsServiceTest {
 
         when(locationSettingsService.getEffectiveMaxResults(anyString())).thenReturn(24);
         when(cityAnchor.resolve(any(), any(), any(), any(), any())).thenReturn(new CityAnchor.Center(-3.73, -38.52));
-        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any(), any()))
+        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any()))
                 .thenReturn("rec_bca5710ee1f603c841d5ca83d8e7ecf9");
 
         PlaceDto place1 = new PlaceDto();
@@ -284,7 +284,7 @@ class RecommendationsServiceTest {
         when(locationSettingsService.getEffectiveMaxResults(anyString())).thenReturn(24);
         when(cityAnchor.resolve(any(), any(), any(), any(), any())).thenReturn(new CityAnchor.Center(-3.73, -38.52));
         when(cityAnchor.contains(any(), anyDouble(), any(), any(), any(), any())).thenReturn(true);
-        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any(), any()))
+        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any()))
                 .thenReturn("rec_fail_key");
         when(recommendationCacheService.getCachedRecommendation(anyString())).thenReturn(Optional.empty());
         when(groqClient.callGroqJson(any(), any(), eq(RecommendationResult.class), anyDouble(), anyInt(), any(Duration.class), anyInt()))
@@ -338,7 +338,7 @@ class RecommendationsServiceTest {
         when(locationSettingsService.getEffectiveMaxResults(anyString())).thenReturn(24);
         when(cityAnchor.resolve(any(), any(), any(), any(), any())).thenReturn(new CityAnchor.Center(-3.73, -38.65));
         when(cityAnchor.contains(any(), anyDouble(), any(), any(), any(), any())).thenReturn(true);
-        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any(), any()))
+        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any()))
                 .thenReturn("rec_test_key_caucaia_maps");
         when(recommendationCacheService.getCachedRecommendation(anyString())).thenReturn(Optional.empty());
         when(sponsoredPlaceService.getMatchingSponsoredForSearch(any(), any(), any(), any()))
