@@ -36,8 +36,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="ratings"
         options={{
-          title: 'Avaliações',
-          tabBarAccessibilityLabel: 'Avaliações',
+          title: 'Passaporte',
+          tabBarAccessibilityLabel: 'Passaporte',
         }}
       />
       <Tabs.Screen

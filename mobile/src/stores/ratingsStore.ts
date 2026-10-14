@@ -14,7 +14,8 @@ export type RatedItem = {
   subtitle?: string;
   type?: string;
   imageUrl?: string;
-  stars: number;
+  liked?: boolean;
+  stars?: number;
   comment?: string;
   ratedAt: string;
   placeId?: string;
@@ -48,10 +49,10 @@ export const useRatingsStore = create<RatingsState>()(
       getById: (id) => get().items.find((item) => item.id === id),
 
       upsert: (item) => {
-        const stars = Math.min(5, Math.max(1, Math.round(item.stars)));
         const next: RatedItem = {
           ...item,
-          stars,
+          liked: item.liked !== undefined ? item.liked : true,
+          stars: item.stars ? Math.min(5, Math.max(1, Math.round(item.stars))) : 5,
           ratedAt: item.ratedAt ?? new Date().toISOString(),
         };
         const without = get().items.filter((entry) => entry.id !== next.id);
@@ -63,7 +64,7 @@ export const useRatingsStore = create<RatingsState>()(
       },
     }),
     {
-      name: 'unbora-ratings',
+      name: 'unbora-ratings-passport',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ items: state.items }),
     },

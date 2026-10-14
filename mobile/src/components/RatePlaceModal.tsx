@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { StarRatingInput, starLabel } from '@/components/StarRatingInput';
 import { sendRecommendationFeedback } from '@/api/recommendations';
 import {
   useRatingsStore,
@@ -45,22 +44,20 @@ export function RatePlaceModal({
   );
   const upsert = useRatingsStore((s) => s.upsert);
   const remove = useRatingsStore((s) => s.remove);
-  const [stars, setStars] = useState(0);
+  const [liked, setLiked] = useState(true);
   const [comment, setComment] = useState('');
 
   useEffect(() => {
     if (!visible || !target) return;
-    setStars(existing?.stars ?? 0);
+    setLiked(existing?.liked !== undefined ? existing.liked : true);
     setComment(existing?.comment ?? '');
-  }, [visible, target, existing?.stars, existing?.comment]);
+  }, [visible, target, existing?.liked, existing?.comment]);
 
   if (!target) return null;
 
-  const canSave = stars >= 1 && stars <= 5;
   const isUpdate = Boolean(existing);
 
   const handleSave = () => {
-    if (!canSave) return;
     const payload: Omit<RatedItem, 'ratedAt'> = {
       id: target.id,
       kind: target.kind,
@@ -70,16 +67,17 @@ export function RatePlaceModal({
       imageUrl: target.imageUrl,
       placeId: target.placeId,
       googleMapsUri: target.googleMapsUri,
-      stars,
+      liked,
+      stars: liked ? 5 : 3,
       comment: comment.trim() || undefined,
     };
     upsert(payload);
     void sendRecommendationFeedback({
       placeName: target.name,
-      action: 'RATE',
+      action: liked ? 'LIKE' : 'RATE',
       categoryTag: target.type,
       comment: comment.trim() || undefined,
-      stars,
+      stars: liked ? 5 : 3,
       placeId: target.placeId,
     });
     onClose();
@@ -104,7 +102,7 @@ export function RatePlaceModal({
         >
           <View style={styles.header}>
             <Text style={[styles.kicker, { color: colors.textMuted }]}>
-              {target.kind === 'event' ? 'Avaliar evento' : 'Avaliar lugar'}
+              {target.kind === 'event' ? 'Passaporte de eventos' : 'Passaporte de visitas'}
             </Text>
             <Pressable
               onPress={onClose}
@@ -125,17 +123,67 @@ export function RatePlaceModal({
             </Text>
           ) : null}
 
-          <View style={styles.starsBlock}>
-            <StarRatingInput colors={colors} value={stars} onChange={setStars} />
-            <Text style={[styles.starHint, { color: colors.textMuted }]}>
-              {stars > 0 ? starLabel(stars) : 'Toque nas estrelas (1 a 5)'}
+          <View style={styles.decisionBlock}>
+            <Text style={[styles.decisionPrompt, { color: colors.textPrimary }]}>
+              Curtiu a experiência?
             </Text>
+            <View style={styles.decisionButtons}>
+              <Pressable
+                onPress={() => setLiked(true)}
+                style={[
+                  styles.choiceBtn,
+                  {
+                    borderColor: liked ? colors.primary : colors.border,
+                    backgroundColor: liked ? colors.surfaceStrong : 'transparent',
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={liked ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                  size={18}
+                  color={liked ? colors.primary : colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.choiceLabel,
+                    { color: liked ? colors.textPrimary : colors.textMuted },
+                  ]}
+                >
+                  Sim, curti
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setLiked(false)}
+                style={[
+                  styles.choiceBtn,
+                  {
+                    borderColor: !liked ? colors.primary : colors.border,
+                    backgroundColor: !liked ? colors.surfaceStrong : 'transparent',
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={!liked ? 'remove-circle' : 'remove-circle-outline'}
+                  size={18}
+                  color={!liked ? colors.primary : colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.choiceLabel,
+                    { color: !liked ? colors.textPrimary : colors.textMuted },
+                  ]}
+                >
+                  Apenas registrando
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
           <TextInput
             value={comment}
             onChangeText={setComment}
-            placeholder="Comentário opcional"
+            placeholder="Anotação pessoal sobre a visita (opcional)"
             placeholderTextColor={colors.textMuted}
             multiline
             maxLength={280}
@@ -151,29 +199,23 @@ export function RatePlaceModal({
 
           <Pressable
             onPress={handleSave}
-            disabled={!canSave}
             style={({ pressed }) => [
               styles.primary,
               {
-                backgroundColor: canSave ? colors.buttonInk : colors.surfaceStrong,
-                opacity: pressed && canSave ? 0.9 : 1,
+                backgroundColor: colors.buttonInk,
+                opacity: pressed ? 0.9 : 1,
               },
             ]}
           >
-            <Text
-              style={[
-                styles.primaryLabel,
-                { color: canSave ? colors.buttonInkText : colors.textMuted },
-              ]}
-            >
-              {isUpdate ? 'Atualizar avaliação' : 'Enviar avaliação'}
+            <Text style={[styles.primaryLabel, { color: colors.buttonInkText }]}>
+              {isUpdate ? 'Atualizar passaporte' : 'Salvar no passaporte'}
             </Text>
           </Pressable>
 
           {isUpdate ? (
             <Pressable onPress={handleRemove} style={styles.remove}>
               <Text style={[styles.removeLabel, { color: colors.textMuted }]}>
-                Remover avaliação
+                Remover do passaporte
               </Text>
             </Pressable>
           ) : null}
@@ -190,8 +232,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
+    borderRadius: 0,
     borderTopWidth: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
@@ -199,64 +240,80 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: spacing.xs,
   },
   kicker: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.3,
+    marginBottom: 4,
   },
   subtitle: {
-    marginTop: 4,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  starsBlock: {
-    marginTop: spacing.lg,
+    fontSize: 13,
+    lineHeight: 18,
     marginBottom: spacing.md,
+  },
+  decisionBlock: {
+    marginVertical: spacing.md,
+  },
+  decisionPrompt: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
+  },
+  decisionButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  choiceBtn: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-  },
-  starHint: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  comment: {
-    minHeight: 88,
+    justifyContent: 'center',
+    gap: 8,
     borderWidth: 1,
     borderRadius: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.sm,
+  },
+  choiceLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  comment: {
+    borderRadius: 0,
+    borderWidth: 1,
+    minHeight: 80,
+    padding: spacing.md,
+    fontSize: 14,
     textAlignVertical: 'top',
     marginBottom: spacing.md,
   },
   primary: {
-    height: 46,
     borderRadius: 0,
+    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   remove: {
-    marginTop: 14,
-    alignItems: 'center',
+    marginTop: spacing.sm,
     paddingVertical: 8,
+    alignItems: 'center',
   },
   removeLabel: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
   },
 });

@@ -85,6 +85,12 @@ public class RecommendationsController {
         return recommendationsService.dismissedKeys(userId);
     }
 
+    @GetMapping({"/recommendations/likes", "/recomendar/likes"})
+    @Operation(summary = "Get list of places liked by user")
+    public List<com.unbora.api.domain.place.UserPlaceLike> likes(@RequestParam @Size(max = 120, message = "Invalid user ID") String userId) {
+        return recommendationsService.getUserLikes(userId);
+    }
+
     @PostMapping({"/recommendations/feedback", "/recomendar/feedback"})
     @Operation(summary = "Register user recommendation feedback (Like, Dislike, Maps) for AI calibration")
     public ResponseEntity<?> feedback(@Valid @RequestBody RecommendationFeedbackDto feedbackDto) {

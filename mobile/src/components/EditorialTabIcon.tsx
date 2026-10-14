@@ -5,7 +5,7 @@ export type TabIconName = 'home' | 'explore' | 'ratings' | 'profile';
 export const TAB_LABELS: Record<TabIconName, string> = {
   home: 'Início',
   explore: 'Explorar',
-  ratings: 'Avaliações',
+  ratings: 'Passaporte',
   profile: 'Perfil',
 };
 
@@ -73,13 +73,27 @@ export function EditorialTabIcon({
     case 'ratings':
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Path
-            d="M12 2.5l2.9 6.2 6.8.9-5 4.7 1.3 6.7-6-3.3-6 3.3 1.3-6.7-5-4.7 6.8-.9L12 2.5z"
-            fill={focused ? color : 'none'}
+          <Rect
+            x="4"
+            y="3"
+            width="16"
+            height="18"
             stroke={color}
             strokeWidth={strokeWidth}
-            strokeLinejoin="round"
-            strokeLinecap="round"
+          />
+          <Circle
+            cx="12"
+            cy="11"
+            r="3.5"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill={focused ? color : 'none'}
+          />
+          <Path
+            d="M8 17h8"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="square"
           />
         </Svg>
       );

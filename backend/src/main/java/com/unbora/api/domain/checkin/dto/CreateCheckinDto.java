@@ -14,6 +14,7 @@ public record CreateCheckinDto(
         String city,
         String imageUrl,
         String mapsUrl,
+        Boolean liked,
         Integer rating,
         String notes,
         Instant visitedAt

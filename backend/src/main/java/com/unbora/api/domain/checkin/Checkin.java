@@ -33,6 +33,9 @@ public class Checkin {
     private String mapsUrl;
 
     @Column
+    private Boolean liked;
+
+    @Column
     private Integer rating;
 
     @Column(length = 1000)
@@ -108,6 +111,14 @@ public class Checkin {
 
     public void setMapsUrl(String mapsUrl) {
         this.mapsUrl = mapsUrl;
+    }
+
+    public Boolean getLiked() {
+        return liked;
+    }
+
+    public void setLiked(Boolean liked) {
+        this.liked = liked;
     }
 
     public Integer getRating() {

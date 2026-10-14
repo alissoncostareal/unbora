@@ -32,6 +32,8 @@ import com.unbora.api.domain.sponsored.SponsoredPlace;
 import com.unbora.api.domain.sponsored.SponsoredPlaceService;
 import com.unbora.api.domain.checkin.Checkin;
 import com.unbora.api.domain.checkin.CheckinRepository;
+import com.unbora.api.domain.place.UserPlaceLike;
+import com.unbora.api.domain.place.UserPlaceLikeRepository;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -57,6 +59,8 @@ public class RecommendationsService {
     private final CheckinRepository checkinRepository;
     private final RecommendationCacheService recommendationCacheService;
     private final PlaceDnaTagExtractor placeDnaTagExtractor;
+    private final UserPlaceLikeRepository userPlaceLikeRepository;
+    private final NasaAtmosphericService nasaAtmosphericService;
 
     // Singleflight: consolida requisicoes simultaneas identicas em um unico processamento
     private final ConcurrentHashMap<String, CompletableFuture<RecommendationResult>> inFlightRecommend = new ConcurrentHashMap<>();
@@ -70,6 +74,7 @@ public class RecommendationsService {
         return thread;
     });
 
+    @Autowired
     public RecommendationsService(
             GroqClient groqClient,
             ImageEnrichmentService imageEnrichmentService,
@@ -87,7 +92,9 @@ public class RecommendationsService {
             SponsoredPlaceService sponsoredPlaceService,
             CheckinRepository checkinRepository,
             RecommendationCacheService recommendationCacheService,
-            @Autowired(required = false) PlaceDnaTagExtractor placeDnaTagExtractor
+            @Autowired(required = false) PlaceDnaTagExtractor placeDnaTagExtractor,
+            @Autowired(required = false) UserPlaceLikeRepository userPlaceLikeRepository,
+            @Autowired(required = false) NasaAtmosphericService nasaAtmosphericService
     ) {
         this.groqClient = groqClient;
         this.imageEnrichmentService = imageEnrichmentService;
@@ -106,6 +113,34 @@ public class RecommendationsService {
         this.checkinRepository = checkinRepository;
         this.recommendationCacheService = recommendationCacheService;
         this.placeDnaTagExtractor = placeDnaTagExtractor != null ? placeDnaTagExtractor : new PlaceDnaTagExtractor();
+        this.userPlaceLikeRepository = userPlaceLikeRepository;
+        this.nasaAtmosphericService = nasaAtmosphericService;
+    }
+
+    public RecommendationsService(
+            GroqClient groqClient,
+            ImageEnrichmentService imageEnrichmentService,
+            KafkaEventPublisher kafkaEventPublisher,
+            GooglePlacesDiscoveryService googlePlacesDiscoveryService,
+            PromptTemplateService promptTemplateService,
+            PlaceEmbeddingRepository placeEmbeddingRepository,
+            EmbeddingService embeddingService,
+            ImageSubjectClassifier imageSubjectClassifier,
+            PlacePhotoLinkService placePhotoLinkService,
+            CityAnchor cityAnchor,
+            DismissedPlaceRepository dismissedPlaceRepository,
+            PlaceBanService placeBanService,
+            LocationSettingsService locationSettingsService,
+            SponsoredPlaceService sponsoredPlaceService,
+            CheckinRepository checkinRepository,
+            RecommendationCacheService recommendationCacheService,
+            PlaceDnaTagExtractor placeDnaTagExtractor
+    ) {
+        this(groqClient, imageEnrichmentService, kafkaEventPublisher, googlePlacesDiscoveryService,
+             promptTemplateService, placeEmbeddingRepository, embeddingService, imageSubjectClassifier,
+             placePhotoLinkService, cityAnchor, dismissedPlaceRepository, placeBanService,
+             locationSettingsService, sponsoredPlaceService, checkinRepository, recommendationCacheService,
+             placeDnaTagExtractor, null, null);
     }
 
     public RecommendationResult recommend(RecommendDto dto) {
@@ -337,20 +372,58 @@ public class RecommendationsService {
             }
         }
 
+        // Contexto atmosférico em tempo real via satélite NASA POWER
+        String atmosphericContext = "";
+        if (nasaAtmosphericService != null) {
+            try {
+                NasaAtmosphericService.AtmosphericSnapshot snap = nasaAtmosphericService.getAtmosphericSnapshot(lat, lng, city);
+                if (snap != null && snap.promptSummary() != null) {
+                    atmosphericContext = snap.promptSummary();
+                }
+            } catch (Exception e) {
+                log.debug("[Atmosphere] Erro ao obter dados da NASA: {}", e.getMessage());
+            }
+        }
+
+        // Perfil de gostos extraído dos lugares que o usuário curtiu
+        String userId = InputSanitizer.sanitizePlaceId(dto != null ? dto.userId() : null, 100);
+        StringBuilder userTasteContext = new StringBuilder();
+        if (userId != null && !userId.isBlank() && userPlaceLikeRepository != null) {
+            try {
+                List<UserPlaceLike> likes = userPlaceLikeRepository.findByUserIdOrderByCreatedAtDesc(userId);
+                if (likes != null && !likes.isEmpty()) {
+                    userTasteContext.append("LUGARES QUE O USUÁRIO CURTIU ANTERIORMENTE:\n");
+                    for (UserPlaceLike l : likes.stream().limit(6).toList()) {
+                        userTasteContext.append("- ").append(l.getPlaceName());
+                        if (l.getPlaceType() != null && !l.getPlaceType().isBlank()) {
+                            userTasteContext.append(" (Tipo: ").append(l.getPlaceType()).append(")");
+                        }
+                        userTasteContext.append("\n");
+                    }
+                    userTasteContext.append("Diretriz de Afinidade: Priorize estabelecimentos com atmosfera, proposta e perfil sensorial semelhantes aos locais que o usuário já curtiu.");
+                }
+            } catch (Exception e) {
+                log.debug("[UserTaste] Erro ao carregar likes: {}", e.getMessage());
+            }
+        }
+
         // 4. Renderização do Prompt desacoplado
         String systemPrompt = promptTemplateService.getTemplate("system-prompt");
-        String userPrompt = promptTemplateService.render("recommendation-user-prompt", Map.of(
-                "city", city,
-                "country", country,
-                "latitude", lat != null ? lat.toString() : "N/A",
-                "longitude", lng != null ? lng.toString() : "N/A",
-                "dateLabel", dateLabel,
-                "humor", humor != null ? humor : "Animado",
-                "sentir", sentir != null ? sentir : "Alegre",
-                "activitiesText", activitiesText.toString(),
-                "groundingContext", groundingContext.toString(),
-                "webContext", webContext != null ? webContext : ""
-        ));
+        Map<String, Object> promptVars = new HashMap<>();
+        promptVars.put("city", city);
+        promptVars.put("country", country);
+        promptVars.put("latitude", lat != null ? lat.toString() : "N/A");
+        promptVars.put("longitude", lng != null ? lng.toString() : "N/A");
+        promptVars.put("dateLabel", dateLabel);
+        promptVars.put("humor", humor != null ? humor : "Animado");
+        promptVars.put("sentir", sentir != null ? sentir : "Alegre");
+        promptVars.put("activitiesText", activitiesText.toString());
+        promptVars.put("groundingContext", groundingContext.toString());
+        promptVars.put("webContext", webContext != null ? webContext : "");
+        promptVars.put("atmosphericContext", atmosphericContext);
+        promptVars.put("userTasteContext", userTasteContext.toString());
+
+        String userPrompt = promptTemplateService.render("recommendation-user-prompt", promptVars);
 
         RecommendationResult result;
         try {
@@ -804,11 +877,16 @@ public class RecommendationsService {
                 ? checkinRepository.findByUserIdOrderByVisitedAtDesc(userId)
                 : Collections.emptyList();
 
+        List<UserPlaceLike> userLikes = (userId != null && !userId.isBlank() && userPlaceLikeRepository != null)
+                ? userPlaceLikeRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                : Collections.emptyList();
+
         Set<String> visitedNames = new HashSet<>();
         StringBuilder historySummary = new StringBuilder();
         List<String> searchKeywords = new ArrayList<>();
 
         if (!checkins.isEmpty()) {
+            historySummary.append("HISTÓRICO DE CHECK-INS E VISITAS:\n");
             for (Checkin c : checkins) {
                 if (c.getPlaceName() != null && !c.getPlaceName().isBlank()) {
                     visitedNames.add(c.getPlaceName().trim().toLowerCase(Locale.ROOT));
@@ -820,14 +898,41 @@ public class RecommendationsService {
                         searchKeywords.add(c.getPlaceType());
                     }
                 }
-                if (c.getRating() != null && c.getRating() > 0) {
-                    historySummary.append(" | Avaliação: ").append(c.getRating()).append("/5");
+                if (Boolean.TRUE.equals(c.getLiked())) {
+                    historySummary.append(" | [Aprovado / Curtiu]");
                 }
                 if (c.getNotes() != null && !c.getNotes().isBlank()) {
                     historySummary.append(" | Anotação: \"").append(c.getNotes()).append("\"");
                 }
                 historySummary.append("\n");
             }
+        }
+
+        if (!userLikes.isEmpty()) {
+            historySummary.append("\nLUGARES CURTIDOS PELO USUÁRIO:\n");
+            for (UserPlaceLike l : userLikes) {
+                if (l.getPlaceName() != null && !l.getPlaceName().isBlank()) {
+                    visitedNames.add(l.getPlaceName().trim().toLowerCase(Locale.ROOT));
+                }
+                historySummary.append("- ").append(l.getPlaceName());
+                if (l.getPlaceType() != null && !l.getPlaceType().isBlank()) {
+                    historySummary.append(" (Tipo: ").append(l.getPlaceType()).append(")");
+                    if (!searchKeywords.contains(l.getPlaceType())) {
+                        searchKeywords.add(l.getPlaceType());
+                    }
+                }
+                historySummary.append(" | [Curtiu]\n");
+            }
+        }
+
+        String atmosphericText = "";
+        if (nasaAtmosphericService != null) {
+            try {
+                NasaAtmosphericService.AtmosphericSnapshot snap = nasaAtmosphericService.getAtmosphericSnapshot(lat, lng, city);
+                if (snap != null && snap.promptSummary() != null) {
+                    atmosphericText = "\n" + snap.promptSummary() + "\n";
+                }
+            } catch (Exception ignored) {}
         }
 
         Map<String, GooglePlacesDiscoveryService.DiscoveredPlace> placeMap = new LinkedHashMap<>();
@@ -904,36 +1009,38 @@ public class RecommendationsService {
 
         String systemPrompt = promptTemplateService.getTemplate("system-prompt");
         String promptInstruction;
-        if (!checkins.isEmpty()) {
+        if (!checkins.isEmpty() || !userLikes.isEmpty()) {
             promptInstruction = """
                 Cidade: %s, %s
-                HISTÓRICO REAL DE VISITAS E CHECK-INS DO USUÁRIO:
+                %s
+                HISTÓRICO REAL DE VISITAS E LUGARES CURTIDOS PELO USUÁRIO:
                 %s
 
                 CANDIDATOS REAIS DO GOOGLE MAPS:
                 %s
 
                 INSTRUÇÃO:
-                Com base nos lugares que o usuário já visitou e gostou, recomende até %d NOVOS lugares INÉDITOS em %s que combinem com a vibe e os gostos dele.
+                Com base nos lugares que o usuário já visitou e curtiu, recomende até %d NOVOS lugares INÉDITOS em %s que combinem com a vibe, o estilo e as condições do momento.
                 É EXPRESSAMENTE PROIBIDO sugerir qualquer lugar que o usuário já visitou (%s).
                 No campo 'titulo', use algo charmoso como 'Descobertas sob medida para você'.
-                No campo 'subtitulo', mencione 'Inspirado nas suas visitas a %s'.
-                No campo 'descricao' de cada lugar, explique em 1 ou 2 frases a conexão sensorial com as preferências dele.
+                No campo 'subtitulo', mencione 'Inspirado nas suas preferências e no clima do momento'.
+                No campo 'descricao' de cada lugar, explique em 1 ou 2 frases a conexão sensorial com o que ele curtiu ou com a atmosfera atual.
                 Retorne estritamente o JSON com 'titulo', 'subtitulo' e lista de 'lugares'.
-                """.formatted(city, country, historySummary.toString(), groundingContext.toString(), maxResults, city, String.join(", ", visitedNames), topVisited);
+                """.formatted(city, country, atmosphericText, historySummary.toString(), groundingContext.toString(), maxResults, city, String.join(", ", visitedNames));
         } else {
             promptInstruction = """
                 Cidade: %s, %s
+                %s
                 CANDIDATOS REAIS DO GOOGLE MAPS:
                 %s
 
                 INSTRUÇÃO:
-                O usuário está iniciando o seu diário e passaporte de experiências no Unbora.
-                Recomende até %d experiências icônicas, charmosas e bem avaliadas em %s (cafés especiais, gastronomia acolhedora, cultura e bares elegantes).
+                O usuário está iniciando o seu passaporte e diário de experiências no Unbora.
+                Recomende até %d experiências icônicas, charmosas e bem avaliadas em %s (cafés especiais, gastronomia acolhedora, cultura e bares elegantes), alinhadas com as condições atmosféricas do momento.
                 No campo 'titulo', use 'Novas Descobertas na Cidade'.
-                No campo 'subtitulo', use 'Curadoria especial para começar o seu diário'.
+                No campo 'subtitulo', use 'Curadoria especial para começar o seu passaporte'.
                 Retorne estritamente o JSON com 'titulo', 'subtitulo' e lista de 'lugares'.
-                """.formatted(city, country, groundingContext.toString(), maxResults, city);
+                """.formatted(city, country, atmosphericText, groundingContext.toString(), maxResults, city);
         }
 
         RecommendationResult result;
@@ -1015,6 +1122,10 @@ public class RecommendationsService {
                 placeName, feedback.action(), stars, humor, sentir, placeId);
         if ("DISLIKE".equalsIgnoreCase(feedback.action())) {
             rememberDismissal(userId, placeId, placeName);
+        } else if ("LIKE".equalsIgnoreCase(feedback.action())) {
+            saveUserLike(userId, placeId, placeName, categoryTag, null, null);
+        } else if ("UNLIKE".equalsIgnoreCase(feedback.action())) {
+            removeUserLike(userId, placeId);
         }
 
         if (stars != null) {
@@ -1037,6 +1148,45 @@ public class RecommendationsService {
                 placeName,
                 Instant.now()
         ));
+    }
+
+    public void saveUserLike(String userId, String placeId, String placeName, String placeType, String city, String imageUrl) {
+        if (userId == null || userId.isBlank() || placeId == null || placeId.isBlank() || userPlaceLikeRepository == null) return;
+        try {
+            if (!userPlaceLikeRepository.existsByUserIdAndPlaceId(userId.trim(), placeId.trim())) {
+                UserPlaceLike like = new UserPlaceLike(
+                        UUID.randomUUID().toString(),
+                        userId.trim(),
+                        placeId.trim(),
+                        placeName != null ? placeName.trim() : "Local",
+                        placeType,
+                        city,
+                        imageUrl
+                );
+                userPlaceLikeRepository.save(like);
+            }
+        } catch (Exception e) {
+            log.debug("[UserLike] Falha ao registrar curtida: {}", e.getMessage());
+        }
+    }
+
+    public void removeUserLike(String userId, String placeId) {
+        if (userId == null || userId.isBlank() || placeId == null || placeId.isBlank() || userPlaceLikeRepository == null) return;
+        try {
+            userPlaceLikeRepository.deleteByUserIdAndPlaceId(userId.trim(), placeId.trim());
+        } catch (Exception e) {
+            log.debug("[UserLike] Falha ao remover curtida: {}", e.getMessage());
+        }
+    }
+
+    public List<UserPlaceLike> getUserLikes(String userId) {
+        if (userId == null || userId.isBlank() || userPlaceLikeRepository == null) return List.of();
+        return userPlaceLikeRepository.findByUserIdOrderByCreatedAtDesc(userId.trim());
+    }
+
+    public boolean isPlaceLiked(String userId, String placeId) {
+        if (userId == null || userId.isBlank() || placeId == null || placeId.isBlank() || userPlaceLikeRepository == null) return false;
+        return userPlaceLikeRepository.existsByUserIdAndPlaceId(userId.trim(), placeId.trim());
     }
 
     public List<String> dismissedKeys(String userId) {

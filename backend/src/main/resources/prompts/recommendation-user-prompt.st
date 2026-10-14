@@ -3,9 +3,14 @@ LOCALIZAÇÃO DO USUÁRIO:
 - Coordenadas: {latitude}, {longitude}
 - Hoje é: {dateLabel}
 
+CONDIÇÕES AMBIENTAIS E SATÉLITE (NASA POWER):
+{atmosphericContext}
+
 PERFIL DO USUÁRIO:
 - Humor atual: {humor}
 - Quer se sentir: {sentir}
+
+{userTasteContext}
 
 TIPOS DE EXPERIÊNCIAS DESEJADAS:
 {activitiesText}
@@ -14,6 +19,7 @@ TIPOS DE EXPERIÊNCIAS DESEJADAS:
 
 SUA TAREFA:
 Retorne lugares reais em {city} que caibam no filtro já escolhido: humor, tipos de experiência, companhia, teto de gasto, tempo e raio.
+Conecte as sugestões com o perfil de gostos e histórico do usuário (quando houver) e leve em consideração as condições de vento, céu e momento solar informadas pela NASA.
 Priorize os "CANDIDATOS VIVOS DO GOOGLE MAPS" listados acima. Quando houver poucos candidatos reais listados (ou para completar a meta de opções solicitadas), complemente com outros estabelecimentos reais, consagrados e bem avaliados de {city} dentro das categorias e filtros informados.
 
 REGRAS DE CONTEÚDO:
@@ -21,7 +27,7 @@ REGRAS DE CONTEÚDO:
 - Cada lugar precisa ser de um dos tipos listados. Café não vira restaurante, praia não vira bar.
 - Respeite companhia, tempo e teto de gasto descritos em "Quer se sentir".
 - Use apenas lugares reais e ativos.
-- "descricao": 1 frase curta (máximo 120 caracteres). Sem hashtags.
+- "descricao": 1 frase curta (máximo 120 caracteres) destacando o motivo ou conexão sensorial. Sem hashtags.
 - "endereco": endereço real com rua/avenida e bairro.
 - "tipo": categoria específica (ex.: Restaurante, Café, Bar, Cultural, Parque, Gelateria).
 - "icone": "" (sempre vazio).

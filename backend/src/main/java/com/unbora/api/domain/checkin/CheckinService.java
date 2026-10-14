@@ -4,6 +4,9 @@ import com.unbora.api.common.exception.ApiException;
 import com.unbora.api.domain.checkin.dto.*;
 import com.unbora.api.kafka.KafkaEventPublisher;
 import com.unbora.api.kafka.event.UserActivityEvent;
+import com.unbora.api.domain.place.UserPlaceLike;
+import com.unbora.api.domain.place.UserPlaceLikeRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +21,16 @@ public class CheckinService {
 
     private final CheckinRepository checkinRepository;
     private final KafkaEventPublisher kafkaEventPublisher;
+    private final UserPlaceLikeRepository userPlaceLikeRepository;
 
-    public CheckinService(CheckinRepository checkinRepository, KafkaEventPublisher kafkaEventPublisher) {
+    public CheckinService(
+            CheckinRepository checkinRepository,
+            KafkaEventPublisher kafkaEventPublisher,
+            @Autowired(required = false) UserPlaceLikeRepository userPlaceLikeRepository
+    ) {
         this.checkinRepository = checkinRepository;
         this.kafkaEventPublisher = kafkaEventPublisher;
+        this.userPlaceLikeRepository = userPlaceLikeRepository;
     }
 
     private CheckinDto toDto(Checkin c) {
@@ -34,6 +43,7 @@ public class CheckinService {
                 c.getCity(),
                 c.getImageUrl(),
                 c.getMapsUrl(),
+                c.getLiked(),
                 c.getRating(),
                 c.getNotes(),
                 c.getVisitedAt(),
@@ -56,12 +66,32 @@ public class CheckinService {
         checkin.setCity(dto.city());
         checkin.setImageUrl(dto.imageUrl());
         checkin.setMapsUrl(dto.mapsUrl());
+        checkin.setLiked(dto.liked() != null ? dto.liked() : Boolean.TRUE);
         checkin.setRating(dto.rating());
         checkin.setNotes(dto.notes());
         checkin.setVisitedAt(dto.visitedAt() != null ? dto.visitedAt() : Instant.now());
         checkin.setCreatedAt(Instant.now());
 
         Checkin saved = checkinRepository.save(checkin);
+
+        if (Boolean.TRUE.equals(saved.getLiked()) && userPlaceLikeRepository != null) {
+            try {
+                if (!userPlaceLikeRepository.existsByUserIdAndPlaceId(userId, saved.getPlaceId())) {
+                    UserPlaceLike like = new UserPlaceLike(
+                            UUID.randomUUID().toString(),
+                            userId,
+                            saved.getPlaceId(),
+                            saved.getPlaceName(),
+                            saved.getPlaceType(),
+                            saved.getCity(),
+                            saved.getImageUrl()
+                    );
+                    userPlaceLikeRepository.save(like);
+                }
+            } catch (Exception e) {
+                // Ignore unique constraint race condition
+            }
+        }
 
         kafkaEventPublisher.publishUserActivity(new UserActivityEvent(
                 "USER_CHECKIN",

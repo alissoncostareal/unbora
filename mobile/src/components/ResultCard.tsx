@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { GlassSurface } from '@/components/GlassSurface';
 import { RatePlaceModal, type RateTarget } from '@/components/RatePlaceModal';
-import { RatingStars } from '@/components/RatingStars';
 import { RemoteCoverImage } from '@/components/RemoteCoverImage';
 import { sendRecommendationFeedback, toAppImageUrl } from '@/api/recommendations';
 import { ratingIdForPlace, useRatingsStore } from '@/stores/ratingsStore';
@@ -125,7 +124,6 @@ export function ResultCard({
             <Text style={[styles.meta, { color: colors.textMuted }]} numberOfLines={2}>
               {address}
             </Text>
-            <RatingStars colors={colors} rating={place.rating} />
           </View>
 
           <Text style={[styles.description, { color: colors.textMuted }]} numberOfLines={3}>
@@ -134,9 +132,9 @@ export function ResultCard({
 
           {myRating ? (
             <View style={styles.myRatingRow}>
-              <Ionicons name="star" size={14} color={colors.gold} />
+              <Ionicons name="checkmark-circle" size={14} color={colors.primary} />
               <Text style={[styles.myRatingText, { color: colors.textPrimary }]}>
-                Sua avaliação: {myRating.stars}/5
+                {myRating.liked ? 'No seu passaporte · Curtiu' : 'No seu passaporte'}
               </Text>
             </View>
           ) : null}
@@ -152,11 +150,11 @@ export function ResultCard({
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel={myRating ? 'Editar avaliação' : 'Avaliar lugar'}
+              accessibilityLabel={myRating ? 'Editar no passaporte' : 'Registrar no passaporte'}
             >
-              <Ionicons name="star-outline" size={15} color={colors.buttonSecondaryText} />
+              <Ionicons name="journal-outline" size={15} color={colors.buttonSecondaryText} />
               <Text style={[styles.actionLabel, { color: colors.buttonSecondaryText }]}>
-                {myRating ? 'Editar nota' : 'Avaliar'}
+                {myRating ? 'Passaporte' : 'Registrar'}
               </Text>
             </Pressable>
 
