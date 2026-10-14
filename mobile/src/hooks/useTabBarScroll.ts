@@ -6,28 +6,16 @@ import { useTabBarStore } from '@/stores/tabBarStore';
 const DEFAULT_THRESHOLD = 6;
 
 /**
- * Esconde o menu flutuante ao rolar para baixo e mostra ao subir (estilo Instagram).
+ * Mantém a barra de navegação editorial sempre acessível e estável.
  */
-export function useTabBarScroll(threshold = DEFAULT_THRESHOLD) {
-  const lastY = useRef(0);
+export function useTabBarScroll(_threshold = DEFAULT_THRESHOLD) {
   const setVisible = useTabBarStore((s) => s.setVisible);
 
   const onScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const y = Math.max(0, event.nativeEvent.contentOffset.y);
-      const delta = y - lastY.current;
-
-      if (y <= 12) {
-        setVisible(true);
-      } else if (delta > threshold) {
-        setVisible(false);
-      } else if (delta < -threshold) {
-        setVisible(true);
-      }
-
-      lastY.current = y;
+    () => {
+      setVisible(true);
     },
-    [setVisible, threshold],
+    [setVisible],
   );
 
   return { onScroll, scrollEventThrottle: 16 as const };

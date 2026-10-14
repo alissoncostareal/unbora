@@ -264,7 +264,7 @@ export async function fetchHomeEventsAiRefresh(
 }> {
   try {
     const ai = await fetchAiEvents(city, region);
-    const items = mergeUnique(ai.items, existing);
+    const items = mergeUnique(existing, ai.items);
     return {
       title: ai.title || `Agenda em ${city}`,
       subtitle: `${items.length} eventos e atrações em ${city}`,

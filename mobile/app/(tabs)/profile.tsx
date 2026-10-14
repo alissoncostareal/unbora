@@ -702,10 +702,10 @@ export default function ProfileScreen() {
                   ) : (
                     <SettingsRow
                       colors={colors}
-                      icon="calendar-outline"
-                      label="Criar evento"
-                      value="Enviar para aprovação"
-                      onPress={() => router.push('/(tabs)/create')}
+                      icon="storefront-outline"
+                      label="Painel do parceiro"
+                      value="Gerenciar local"
+                      onPress={() => router.push('/merchant-register')}
                       last
                     />
                   )}

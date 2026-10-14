@@ -115,7 +115,7 @@ export default function RatingsScreen() {
             Nenhuma avaliação ainda
           </Text>
           <Text style={[styles.emptyBody, { color: colors.textMuted }]}>
-            Nos cards de lugares e eventos, toque em Avaliar e dê de 1 a 5 estrelas.
+            Nos cards de lugares, toque em Avaliar e dê de 1 a 5 estrelas.
           </Text>
         </View>
       ) : (

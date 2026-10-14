@@ -53,14 +53,6 @@ export function SideRail() {
           </li>
         ))}
       </ul>
-      <NavLink
-        to="/create"
-        className={({ isActive }) =>
-          `mt-4 flex h-10 items-center rounded-lg px-3 text-sm font-medium ${isActive ? 'text-coral' : 'text-ink hover:bg-sand'}`
-        }
-      >
-        Criar evento
-      </NavLink>
     </aside>
   );
 }

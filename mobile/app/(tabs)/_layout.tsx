@@ -12,7 +12,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Início',
           tabBarAccessibilityLabel: 'Início',
@@ -28,8 +28,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="create"
         options={{
+          href: null,
           title: 'Criar',
-          tabBarAccessibilityLabel: 'Criar evento',
+          tabBarAccessibilityLabel: 'Criar',
         }}
       />
       <Tabs.Screen

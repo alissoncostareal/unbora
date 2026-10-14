@@ -28,10 +28,10 @@ export const ORGANIC_STORIES: OrganicStory[] = [
     moodKeywords: ['tranquilo', 'relaxado', 'cansado', 'calma', 'exausto'],
   },
   {
-    id: 'organic-eventos-gratis',
-    title: 'Eventos gratuitos desta semana',
-    subtitle: 'Agenda aberta: shows, feiras e cultura sem pagar entrada',
-    tag: 'Comunidade',
+    id: 'organic-espacos-culturais',
+    title: 'Espaços culturais e galerias',
+    subtitle: 'Museus, acervos e arquitetura para se inspirar em Fortaleza',
+    tag: 'Curadoria',
     imageUrl:
       'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=80',
     city: 'Fortaleza',
@@ -41,8 +41,8 @@ export const ORGANIC_STORIES: OrganicStory[] = [
     createdAt: new Date(0).toISOString(),
     updatedAt: new Date(0).toISOString(),
     source: 'organic',
-    activityIds: ['live-music', 'culture', 'nightlife'],
-    moodKeywords: ['social', 'animado', 'alegria', 'conexão', 'energia'],
+    activityIds: ['culture'],
+    moodKeywords: ['curioso', 'inspiração', 'conexão', 'tranquilo'],
   },
   {
     id: 'organic-orla-calma',
@@ -97,11 +97,11 @@ export const ORGANIC_STORIES: OrganicStory[] = [
   },
   {
     id: 'organic-cultura',
-    title: 'Agenda cultural de graça',
-    subtitle: 'Exposições, cinema e espaços abertos para se inspirar',
-    tag: 'Comunidade',
+    title: 'Livrarias e pátios de leitura',
+    subtitle: 'Espaços tranquilos, jardins internos e cafés acolhedores',
+    tag: 'Curadoria',
     imageUrl:
-      'https://images.unsplash.com/photo-1460661419352-bbfddbf26ce5?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&auto=format&fit=crop&q=80',
     city: 'Fortaleza',
     region: 'Grande Fortaleza',
     order: 5,

@@ -1,25 +1,33 @@
-import { BlurView } from 'expo-blur';
 import { useEffect, useRef } from 'react';
 import {
   Animated,
   Platform,
   Pressable,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
-  InstagramTabIcon,
-  TAB_ICON_NAMES,
-} from '@/components/InstagramTabIcon';
+  EditorialTabIcon,
+  TAB_LABELS,
+  type TabIconName,
+} from '@/components/EditorialTabIcon';
 import { useTabBarStore } from '@/stores/tabBarStore';
 import { useDayTheme } from '@/theme/useDayTheme';
 
-/** Altura visual da pill (sem safe area) — use para paddingBottom nas telas */
+/** Altura visual da barra (sem safe area) */
 export const FLOATING_TAB_BAR_HEIGHT = 56;
-/** Gap acima da gesture/nav bar — menor no Android (estilo Instagram) */
-export const FLOATING_TAB_BAR_GAP = Platform.OS === 'android' ? 6 : 12;
+export const FLOATING_TAB_BAR_GAP = 0;
+
+const ROUTE_TAB_MAP: Record<string, TabIconName> = {
+  home: 'home',
+  index: 'home',
+  explore: 'explore',
+  ratings: 'ratings',
+  profile: 'profile',
+};
 
 type FloatingTabBarProps = {
   state: {
@@ -46,27 +54,17 @@ type FloatingTabBarProps = {
 };
 
 /**
- * Menu inferior do guia — cápsula leve, cores Unbora (não Instagram).
+ * Barra inferior editorial do Unbora — ancorada na base, elegante, amigável e limpa.
+ * Afastada da estética de redes sociais / Instagram.
  */
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useDayTheme();
   const visible = useTabBarStore((s) => s.visible);
   const show = useTabBarStore((s) => s.show);
-  // Gesture bar (~16–24) vs 3 botões (~48): respeita inset, sem “flutuar” alto demais
-  const bottom =
-    Platform.OS === 'android'
-      ? Math.max(insets.bottom, 10) + FLOATING_TAB_BAR_GAP
-      : Math.max(insets.bottom, 8) + FLOATING_TAB_BAR_GAP;
-  const isDark = colors.scheme === 'dark';
-  const tab = {
-    active: colors.primary,
-    inactive: colors.textMuted,
-    pill: isDark ? 'rgba(28, 25, 23, 0.96)' : 'rgba(255, 255, 255, 0.96)',
-    pillBorder: colors.border,
-    blurTint: (isDark ? 'dark' : 'light') as 'dark' | 'light',
-  };
-  const hideOffset = FLOATING_TAB_BAR_HEIGHT + bottom + 24;
+
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 6 : 10);
+  const totalBarHeight = FLOATING_TAB_BAR_HEIGHT + bottomInset;
   const translateY = useRef(new Animated.Value(0)).current;
 
   const activeRouteName = state.routes[state.index]?.name;
@@ -77,16 +75,22 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 
   useEffect(() => {
     Animated.timing(translateY, {
-      toValue: visible ? 0 : hideOffset,
+      toValue: visible ? 0 : totalBarHeight + 20,
       duration: 220,
       useNativeDriver: true,
     }).start();
-  }, [visible, hideOffset, translateY]);
+  }, [visible, totalBarHeight, translateY]);
+
   const visibleRoutes = state.routes.filter((route) => {
-    const options = descriptors[route.key]?.options;
-    if (options?.href === null) return false;
-    return Boolean(TAB_ICON_NAMES[route.name]);
+    const options = descriptors[route.key]?.options as any;
+    if (options?.href === null || route.name === 'create') return false;
+    return Boolean(ROUTE_TAB_MAP[route.name]);
   });
+
+  const isDark = colors.scheme === 'dark';
+  const barBg = isDark ? '#1C1917' : '#FFFFFF';
+  const activeColor = colors.primaryDark;
+  const inactiveColor = colors.textMuted;
 
   const tabs = visibleRoutes.map((route) => {
     const { options } = descriptors[route.key];
@@ -94,7 +98,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
       activeRouteName === route.name ||
       (activeRouteName === 'results' && route.name === 'explore');
     const isCurrentRoute = activeRouteName === route.name;
-    const iconName = TAB_ICON_NAMES[route.name] ?? 'home';
+    const tabName = ROUTE_TAB_MAP[route.name] ?? 'home';
+    const label = TAB_LABELS[tabName] ?? route.name;
 
     const onPress = () => {
       const event = navigation.emit({
@@ -116,17 +121,35 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
         key={route.key}
         accessibilityRole="button"
         accessibilityState={focused ? { selected: true } : {}}
-        accessibilityLabel={options.tabBarAccessibilityLabel}
+        accessibilityLabel={options.tabBarAccessibilityLabel || label}
         onPress={onPress}
         onLongPress={onLongPress}
-        style={({ pressed }) => [styles.item, { opacity: pressed ? 0.65 : 1 }]}
+        style={({ pressed }) => [styles.tabItem, { opacity: pressed ? 0.7 : 1 }]}
       >
-        <InstagramTabIcon
-          name={iconName}
-          focused={focused}
-          color={focused ? tab.active : tab.inactive}
-          size={24}
-        />
+        <View style={styles.iconContainer}>
+          {focused ? (
+            <View style={[styles.activeIndicator, { backgroundColor: activeColor }]} />
+          ) : (
+            <View style={styles.indicatorSpacer} />
+          )}
+          <EditorialTabIcon
+            name={tabName}
+            focused={focused}
+            color={focused ? activeColor : inactiveColor}
+            size={20}
+          />
+        </View>
+        <Text
+          style={[
+            styles.tabLabel,
+            {
+              color: focused ? activeColor : inactiveColor,
+              fontWeight: focused ? '700' : '500',
+            },
+          ]}
+        >
+          {label}
+        </Text>
       </Pressable>
     );
   });
@@ -134,54 +157,65 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   return (
     <Animated.View
       pointerEvents={visible ? 'box-none' : 'none'}
-      style={[styles.wrap, { bottom, transform: [{ translateY }] }]}
+      style={[
+        styles.barContainer,
+        {
+          backgroundColor: barBg,
+          borderTopColor: colors.border,
+          paddingBottom: bottomInset,
+          transform: [{ translateY }],
+        },
+      ]}
     >
-      <View style={[styles.shadow, isDark && styles.shadowDark]}>
-        <BlurView
-          intensity={Platform.OS === 'ios' ? (isDark ? 40 : 64) : isDark ? 60 : 80}
-          tint={tab.blurTint}
-          style={[styles.pill, { borderColor: tab.pillBorder }]}
-        >
-          <View style={[styles.pillInner, { backgroundColor: tab.pill }]}>{tabs}</View>
-        </BlurView>
-      </View>
+      <View style={styles.tabRow}>{tabs}</View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
+  barContainer: {
     position: 'absolute',
-    left: Platform.OS === 'android' ? 12 : 18,
-    right: Platform.OS === 'android' ? 12 : 18,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
     zIndex: 100,
-  },
-  shadow: {
-    borderRadius: 0,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
   },
-  shadowDark: {
-    shadowOpacity: 0.35,
-  },
-  pill: {
-    height: FLOATING_TAB_BAR_HEIGHT,
-    borderRadius: 0,
-    overflow: 'hidden',
-    borderWidth: 1,
-  },
-  pillInner: {
-    flex: 1,
+  tabRow: {
     flexDirection: 'row',
+    height: FLOATING_TAB_BAR_HEIGHT,
     alignItems: 'center',
+    justifyContent: 'space-around',
   },
-  item: {
+  tabItem: {
     flex: 1,
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 4,
+  },
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 28,
+  },
+  activeIndicator: {
+    width: 18,
+    height: 2.5,
+    borderRadius: 0,
+    marginBottom: 3,
+  },
+  indicatorSpacer: {
+    height: 5.5,
+  },
+  tabLabel: {
+    fontSize: 10,
+    letterSpacing: 0.2,
+    marginTop: 2,
   },
 });

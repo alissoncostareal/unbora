@@ -156,6 +156,7 @@ function isDarkFill(color: string): string {
 
 export const TAB_ICON_NAMES: Record<string, TabIconName> = {
   index: 'home',
+  home: 'home',
   explore: 'search',
   create: 'create',
   ratings: 'ratings',

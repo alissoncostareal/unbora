@@ -41,7 +41,7 @@
           "position": "absolute",
           "vertical": "inset-swipe",
           "backgroundColor": "#00000000",
-          "barStyle": "dark"
+          "style": "dark"
         }
       ],
       "expo-status-bar"

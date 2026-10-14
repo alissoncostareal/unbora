@@ -11,7 +11,7 @@ import type { UnboraDayPeriod } from '@/types';
 export function AppHeader({
   colors,
   period: _period,
-  subtitle,
+  subtitle: _subtitle,
   title = 'Unbora',
   isFloating,
   hideAvatar,
@@ -28,64 +28,93 @@ export function AppHeader({
   const city = useLocationStore((s) => s.city);
   const region = useLocationStore((s) => s.region);
 
-  const locationText = subtitle ?? `${city}${region && region !== city ? ` · ${region}` : ''}`;
-  const topPad =
-    insets.top + (Platform.OS === 'android' ? spacing.xs : spacing.sm);
+  const topPad = insets.top + (Platform.OS === 'android' ? 6 : 8);
+  const displayCity = city.trim() || 'Fortaleza';
+  const displayRegion = region?.trim() || 'Brasil';
+  const initial = getInitials(user?.name ?? 'U');
 
   return (
     <View
       style={[
         styles.wrap,
-        { paddingTop: topPad },
+        {
+          paddingTop: topPad,
+          backgroundColor: isFloating ? 'transparent' : colors.surface,
+          borderBottomColor: isFloating ? 'transparent' : colors.border,
+        },
         isFloating && styles.floatingWrap,
       ]}
     >
-      <View style={styles.brandBlock}>
+      {/* Brand & City Edition Selector */}
+      <View style={styles.leftCol}>
         <Text
           style={[
             styles.brand,
             { color: isFloating ? '#FFFFFF' : colors.textPrimary },
             isFloating && styles.brandShadow,
-            Platform.OS === 'android' && styles.brandAndroid,
           ]}
         >
           {title}
         </Text>
 
-        <View style={styles.locationRow}>
+        <Pressable
+          onPress={() => router.push('/')}
+          accessibilityRole="button"
+          accessibilityLabel={`Trocar cidade, cidade atual ${displayCity}`}
+          style={({ pressed }) => [
+            styles.cityPill,
+            {
+              backgroundColor: isFloating ? 'rgba(255,255,255,0.2)' : '#FAF2EE',
+              borderColor: isFloating ? 'rgba(255,255,255,0.4)' : colors.border,
+              opacity: pressed ? 0.75 : 1,
+            },
+          ]}
+          hitSlop={6}
+        >
+          <View style={[styles.cityDot, { backgroundColor: colors.primaryDark }]} />
+          <View style={styles.cityTextCol}>
+            <Text
+              style={[
+                styles.cityName,
+                { color: isFloating ? '#FFFFFF' : colors.textPrimary },
+              ]}
+              numberOfLines={1}
+            >
+              {displayCity}
+            </Text>
+            <Text
+              style={[
+                styles.regionName,
+                { color: isFloating ? 'rgba(255,255,255,0.85)' : colors.textMuted },
+              ]}
+              numberOfLines={1}
+            >
+              {displayRegion}
+            </Text>
+          </View>
           <Ionicons
-            name="location-sharp"
+            name="chevron-down"
             size={12}
-            color={isFloating ? 'rgba(255,255,255,0.85)' : colors.primary}
+            color={isFloating ? '#FFFFFF' : colors.textMuted}
           />
-          <Text
-            style={[
-              styles.locationText,
-              { color: isFloating ? 'rgba(255,255,255,0.85)' : colors.textMuted },
-              isFloating && styles.brandShadow,
-            ]}
-            numberOfLines={1}
-          >
-            {locationText}
-          </Text>
-        </View>
+        </Pressable>
       </View>
 
+      {/* User Monogram or Profile */}
       {!hideAvatar ? (
         <Pressable
           onPress={() => router.push('/profile')}
+          accessibilityRole="button"
+          accessibilityLabel="Meu Perfil"
           style={({ pressed }) => [
-            styles.avatar,
+            styles.avatarBadge,
             {
-              backgroundColor: isFloating ? '#FFFFFF' : colors.surfaceStrong,
-              borderColor: colors.border,
-              opacity: pressed ? 0.85 : 1,
+              backgroundColor: colors.primaryDark,
+              opacity: pressed ? 0.8 : 1,
             },
           ]}
         >
-          <Text style={[styles.avatarText, { color: colors.textPrimary }]}>
-            {getInitials(user?.name ?? '?')}
-          </Text>
+          <Text style={styles.avatarInitial}>{initial}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -98,47 +127,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingBottom: Platform.OS === 'android' ? 6 : 8,
+    paddingBottom: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'transparent',
+  },
+  leftCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
   },
   brand: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: '300',
     letterSpacing: -0.6,
   },
-  brandAndroid: {
-    fontSize: 22,
-    letterSpacing: -0.5,
-  },
-  brandBlock: {
-    flexShrink: 1,
-    gap: 2,
-  },
-  locationRow: {
+  cityPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderRadius: 0,
+    maxWidth: 190,
   },
-  locationText: {
-    fontSize: 12,
-    fontWeight: '500',
+  cityDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 0,
+  },
+  cityTextCol: {
+    maxWidth: 130,
+  },
+  cityName: {
+    fontSize: 11,
+    fontWeight: '700',
     letterSpacing: 0.1,
+    lineHeight: 13,
+  },
+  regionName: {
+    fontSize: 9,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    lineHeight: 11,
+  },
+  avatarBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 12,
   },
   brandShadow: {
     textShadowColor: 'rgba(0,0,0,0.35)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 0,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { fontWeight: '700', fontSize: 11 },
   floatingWrap: {
     position: 'absolute',
     top: 0,

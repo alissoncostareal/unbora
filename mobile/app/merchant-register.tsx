@@ -38,7 +38,7 @@ export default function MerchantRegisterScreen() {
     <AuthScreen
       colors={colors}
       title="Conta de lojista"
-      subtitle="Cadastre seu negócio e publique eventos para a comunidade Unbora."
+      subtitle="Cadastre seu negócio e divulgue seu espaço para a comunidade Unbora."
       submitLabel="Criar conta de lojista"
       loading={loading}
       onSubmit={onSubmit}

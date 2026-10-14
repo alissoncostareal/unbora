@@ -34,7 +34,7 @@ export function SiteFooter() {
           <div>
             <p className="text-sm font-medium">Site</p>
             <ul className="mt-4 space-y-2">
-              <li><Link to="/create" className="text-sm text-muted hover:text-ink">Criar evento</Link></li>
+              <li><Link to="/merchant" className="text-sm text-muted hover:text-ink">Anuncie seu local</Link></li>
               <li><Link to="/login" className="text-sm text-muted hover:text-ink">Entrar</Link></li>
             </ul>
           </div>

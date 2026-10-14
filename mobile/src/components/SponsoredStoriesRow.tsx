@@ -21,8 +21,8 @@ import type { StoryItem } from '@/utils/stories';
 export function CityHighlightsRow({
   colors,
   items,
-  title = 'Em destaque',
-  subtitle = 'Parceiros e dicas da cidade',
+  title = 'Coleções da cidade',
+  subtitle = 'Roteiros e cadernos selecionados',
 }: {
   colors: ThemeColors;
   items: StoryItem[] | CarouselItem[];
@@ -82,7 +82,7 @@ export function CityHighlightsRow({
 
             return (
               <Pressable
-                key={item.id}
+                key={`${item.id}-${index}`}
                 onPress={() => openHighlight(index)}
                 android_ripple={{ color: 'rgba(255,255,255,0.18)', foreground: true }}
                 style={({ pressed }) => [
@@ -157,8 +157,8 @@ export function CityHighlightsRow({
 /** @deprecated use CityHighlightsRow — mantido para imports antigos */
 export const SponsoredStoriesRow = CityHighlightsRow;
 
-const CARD_WIDTH = 168;
-const CARD_HEIGHT = 220;
+const CARD_WIDTH = 250;
+const CARD_HEIGHT = 145;
 
 const styles = StyleSheet.create({
   wrap: {
@@ -167,16 +167,17 @@ const styles = StyleSheet.create({
   sectionHeader: {
     paddingHorizontal: spacing.md,
     marginBottom: 12,
-    gap: 2,
+    gap: 3,
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 13,
     fontWeight: '500',
+    lineHeight: 18,
   },
   row: {
     paddingHorizontal: spacing.md,
@@ -197,13 +198,13 @@ const styles = StyleSheet.create({
   },
   scrim: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(28, 25, 23, 0.45)',
+    backgroundColor: 'rgba(28, 25, 23, 0.52)',
   },
   cardBody: {
     flex: 1,
     justifyContent: 'flex-end',
-    padding: 12,
-    gap: 4,
+    padding: 14,
+    gap: 3,
   },
   badge: {
     alignSelf: 'flex-start',
@@ -216,18 +217,20 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 0.2,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   cardTitle: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
-    letterSpacing: -0.2,
-    lineHeight: 19,
+    letterSpacing: -0.3,
+    lineHeight: 20,
   },
   cardMeta: {
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '400',
+    lineHeight: 16,
   },
 });
