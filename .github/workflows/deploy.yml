@@ -12,13 +12,14 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-production
+  group: unbora-deploy-prod
   cancel-in-progress: true
 
 jobs:
   backend-ci:
     name: Backend CI (Maven)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: backend
@@ -39,6 +40,7 @@ jobs:
     name: Deploy production
     needs: [backend-ci]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: production
 
     steps:
@@ -67,6 +69,9 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H 173.212.242.9 >> ~/.ssh/known_hosts
           ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes \
+            -o ConnectTimeout=15 \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=5 \
             "root@173.212.242.9" \
             "GROQ_API_KEY_B64='$(b64 "${GROQ_API_KEY:-}")' BRAVE_API_KEY_B64='$(b64 "${BRAVE_API_KEY:-}")' GOOGLE_PLACES_API_KEY_B64='$(b64 "${GOOGLE_PLACES_API_KEY:-}")' VITE_GOOGLE_MAPS_API_KEY_B64='$(b64 "${VITE_GOOGLE_MAPS_API_KEY:-}")' VITE_GOOGLE_CLIENT_ID_B64='$(b64 "${VITE_GOOGLE_CLIENT_ID:-}")' SUPERADMIN_EMAIL_B64='$(b64 "${SUPERADMIN_EMAIL:-}")' SUPERADMIN_PASSWORD_B64='$(b64 "${SUPERADMIN_PASSWORD:-}")' ADMIN_JWT_SECRET_B64='$(b64 "${ADMIN_JWT_SECRET:-}")' bash -s" \
             < deploy/vps/deploy.sh
