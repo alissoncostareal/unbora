@@ -350,6 +350,9 @@ export function ResultPage() {
   const availableBairros = useMemo(() => {
     const found = new Set<string>();
     const cityNeighborhoods = getNeighborhoodsForCity(journey?.city || result?.subtitle || 'Fortaleza');
+    (journey?.neighborhoods ?? []).forEach((b) => {
+      if (b && b !== 'indiferente') found.add(b);
+    });
     (result?.places ?? []).forEach((p) => {
       const text = `${p.address || ''} ${(p.tags || []).join(' ')} ${p.description || ''}`;
       for (const bn of cityNeighborhoods) {
@@ -358,7 +361,10 @@ export function ResultPage() {
         }
       }
     });
-    return found.size > 0 ? Array.from(found) : cityNeighborhoods.slice(0, 10);
+    if (found.size === 0) {
+      cityNeighborhoods.slice(0, 10).forEach((b) => found.add(b));
+    }
+    return Array.from(found);
   }, [result, journey]);
 
   const filteredPlaces = useMemo(() => {

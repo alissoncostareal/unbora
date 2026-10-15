@@ -71,8 +71,48 @@ export function MoodGuide() {
   const pendingSection = useRef<string | null>(null);
   const area = placeArea(city, region);
   const placeLine = isBrazilianState(area) ? `${city.trim()}, ${area}` : city.trim();
-
+  const [neighborhoodQuery, setNeighborhoodQuery] = useState('');
   const availableNeighborhoods = useMemo(() => getNeighborhoodsForCity(city), [city]);
+
+  const allNeighborhoods = useMemo(() => {
+    const list: string[] = [...availableNeighborhoods];
+    selectedNeighborhoods.forEach((b) => {
+      if (b && b !== 'indiferente' && !list.includes(b)) {
+        list.push(b);
+      }
+    });
+    return list;
+  }, [availableNeighborhoods, selectedNeighborhoods]);
+
+  const filteredNeighborhoods = useMemo(() => {
+    const q = neighborhoodQuery
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+    if (!q) return allNeighborhoods;
+    return allNeighborhoods.filter((b) =>
+      b
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [allNeighborhoods, neighborhoodQuery]);
+
+  const trimmedQuery = neighborhoodQuery.trim();
+  const queryNormalized = trimmedQuery
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const queryAlreadyExists = allNeighborhoods.some(
+    (b) =>
+      b
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase() === queryNormalized
+  );
+  const showAddCustomOption = trimmedQuery.length >= 2 && !queryAlreadyExists;
 
   useEffect(() => {
     void loadGuide().then(setGuide);
@@ -389,35 +429,142 @@ export function MoodGuide() {
           ) : null}
 
           {step === 2 ? (
-            <div className="mt-6 grid min-w-0 grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-3" role="group" aria-label={current.question}>
-              <Choice
-                selected={isIndiferente}
-                onClick={() => toggleNeighborhood('indiferente')}
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 3a9 9 0 0 1 0 18v-18z" fill="currentColor" fillOpacity="0.18" />
-                </svg>
-                <span className="font-medium">Indiferente</span>
-                <span className="text-[11px] opacity-75">Toda a cidade</span>
-              </Choice>
-              {availableNeighborhoods.map((bairro) => {
-                const selected = !isIndiferente && selectedNeighborhoods.includes(bairro);
-                return (
-                  <Choice
-                    key={bairro}
-                    selected={selected}
-                    onClick={() => toggleNeighborhood(bairro)}
+            <div className="mt-6 sm:mt-8">
+              {/* Campo de Pesquisa / Filtro de Bairro */}
+              <div className="relative mb-4">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#8a8178]">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  value={neighborhoodQuery}
+                  onChange={(e) => setNeighborhoodQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (trimmedQuery) {
+                        const exactMatch = allNeighborhoods.find(
+                          (b) =>
+                            b
+                              .normalize('NFD')
+                              .replace(/[\u0300-\u036f]/g, '')
+                              .toLowerCase() === queryNormalized
+                        );
+                        toggleNeighborhood(exactMatch || trimmedQuery);
+                        setNeighborhoodQuery('');
+                      }
+                    }
+                  }}
+                  placeholder={`Buscar bairro em ${cityName} ou digitar outro...`}
+                  className="w-full rounded-none border border-[#dedcd6] bg-white py-3 pl-10 pr-9 text-sm text-[#1c1917] placeholder:text-[#a89f91] focus:border-[#7c2f1d] focus:outline-none transition-colors"
+                />
+                {neighborhoodQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => setNeighborhoodQuery('')}
+                    aria-label="Limpar busca"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#8a8178] hover:text-[#1c1917] cursor-pointer"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
-                      <path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z" />
-                      <circle cx="12" cy="10" r="2.5" />
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="18" x2="18" y2="6" />
                     </svg>
-                    <span>{bairro}</span>
+                  </button>
+                ) : null}
+              </div>
+
+              {/* Bairros Selecionados Resumo */}
+              {!isIndiferente && selectedNeighborhoods.length > 0 && (
+                <div className="mb-4 flex flex-wrap items-center gap-1.5 text-xs">
+                  <span className="font-semibold text-[#7c2f1d] uppercase tracking-wider text-[11px]">Selecionados ({selectedNeighborhoods.length}):</span>
+                  {selectedNeighborhoods.map((b) => (
+                    <span
+                      key={b}
+                      className="inline-flex items-center gap-1 bg-[#f4ece8] text-[#1c1917] border border-[#dedcd6] px-2.5 py-0.5 text-xs"
+                    >
+                      <span>{b}</span>
+                      <button
+                        type="button"
+                        onClick={() => toggleNeighborhood(b)}
+                        className="text-[#7c2f1d] hover:text-[#1c1917] cursor-pointer font-bold ml-0.5"
+                        aria-label={`Remover ${b}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedNeighborhoods([])}
+                    className="ml-1 text-[11px] underline text-[#8a8178] hover:text-[#1c1917] cursor-pointer"
+                  >
+                    Limpar
+                  </button>
+                </div>
+              )}
+
+              {/* Grade de Escolhas */}
+              <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3" role="group" aria-label={current.question}>
+                {!neighborhoodQuery && (
+                  <Choice
+                    selected={isIndiferente}
+                    onClick={() => toggleNeighborhood('indiferente')}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 3a9 9 0 0 1 0 18v-18z" fill="currentColor" fillOpacity="0.18" />
+                    </svg>
+                    <span className="font-medium">Indiferente</span>
+                    <span className="text-[11px] opacity-75">Toda a cidade</span>
                   </Choice>
-                );
-              })}
-              <ContinueSlot className="col-span-2 sm:col-span-1" label={continueLabel} disabled={!ready || busy} onClick={next} />
+                )}
+
+                {/* Card para adicionar bairro digitado que não esteja no catálogo padrão */}
+                {showAddCustomOption && (
+                  <Choice
+                    selected={!isIndiferente && selectedNeighborhoods.includes(trimmedQuery)}
+                    onClick={() => {
+                      toggleNeighborhood(trimmedQuery);
+                      setNeighborhoodQuery('');
+                    }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c2f1d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    <span className="font-semibold text-[#7c2f1d] break-words">+ &ldquo;{trimmedQuery}&rdquo;</span>
+                    <span className="text-[11px] opacity-75">Adicionar bairro</span>
+                  </Choice>
+                )}
+
+                {filteredNeighborhoods.map((bairro) => {
+                  const selected = !isIndiferente && selectedNeighborhoods.includes(bairro);
+                  return (
+                    <Choice
+                      key={bairro}
+                      selected={selected}
+                      onClick={() => toggleNeighborhood(bairro)}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+                        <path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z" />
+                        <circle cx="12" cy="10" r="2.5" />
+                      </svg>
+                      <span>{bairro}</span>
+                    </Choice>
+                  );
+                })}
+
+                {filteredNeighborhoods.length === 0 && !showAddCustomOption && (
+                  <div className="col-span-2 sm:col-span-3 border border-dashed border-[#dedcd6] p-6 text-center text-sm text-[#8a8178]">
+                    Nenhum bairro pré-cadastrado encontrado. Digite o nome do seu bairro e pressione Enter para selecionar.
+                  </div>
+                )}
+
+                <ContinueSlot className="col-span-2 sm:col-span-1" label={continueLabel} disabled={!ready || busy} onClick={next} />
+              </div>
             </div>
           ) : null}
 
