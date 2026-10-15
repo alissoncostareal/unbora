@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { searchPlaces } from '../lib/api';
@@ -18,6 +18,7 @@ export function SiteMenu() {
   const [searching, setSearching] = useState(false);
   const [active, setActive] = useState<string>('intencao');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hasPerspectivas, setHasPerspectivas] = useState(false);
   const initial = user?.name.trim().charAt(0).toUpperCase() || 'U';
 
   // Fecha o menu mobile quando a rota mudar
@@ -59,6 +60,7 @@ export function SiteMenu() {
   useEffect(() => {
     if (!home) return undefined;
     const mark = () => {
+      setHasPerspectivas(Boolean(document.getElementById('perspectivas')));
       const line = window.innerHeight * 0.45;
       let current: string = homeSections[0].id;
       for (const section of homeSections) {
@@ -69,9 +71,17 @@ export function SiteMenu() {
       setActive(current);
     };
     mark();
+    const timer = setTimeout(mark, 400);
     window.addEventListener('scroll', mark, { passive: true });
-    return () => window.removeEventListener('scroll', mark);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', mark);
+    };
   }, [home]);
+
+  const visibleSections = useMemo(() => {
+    return homeSections.filter((section) => section.id !== 'perspectivas' || hasPerspectivas);
+  }, [hasPerspectivas]);
 
   const place = modelCity ? `${city} · cidade modelo` : formatPlace(city, region);
 
@@ -121,7 +131,7 @@ export function SiteMenu() {
         {/* Menu Desktop Central (Apenas seções editoriais, sem duplicar botões de ação) */}
         {home ? (
           <nav className="hidden xl:flex items-center justify-center gap-4 2xl:gap-6">
-            {homeSections.map((section) => {
+            {visibleSections.map((section) => {
               const isActive = active === section.id;
               return (
                 <a
@@ -280,7 +290,7 @@ export function SiteMenu() {
               <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#88726d] mb-1">
                 Cadernos & Navegação
               </span>
-              {homeSections.map((section) => {
+              {visibleSections.map((section) => {
                 const isActive = active === section.id;
                 return (
                   <a

@@ -85,6 +85,14 @@ export const DASHBOARD_NAV_SECTIONS: NavSection[] = [
         readFor: 'viewUsers',
         description: 'Slot de ouro, benefícios exclusivos e destaques',
       },
+      {
+        href: '/depoimentos',
+        label: 'Depoimentos',
+        icon: 'quote',
+        permission: 'manageEvents',
+        readFor: 'viewUsers',
+        description: 'Textos e depoimentos da página inicial',
+      },
     ],
   },
   {
@@ -139,6 +147,7 @@ export const PAGE_TITLES: Record<string, string> = {
   '/destaques': 'Destaques do App',
   '/sponsored': 'Locais Patrocinados',
   '/patrocinados': 'Locais Patrocinados',
+  '/depoimentos': 'Depoimentos da Página Inicial',
   '/users': 'Usuários Cadastrados',
   '/team': 'Equipe do Portal',
   '/locations': 'Regiões e Cidades',

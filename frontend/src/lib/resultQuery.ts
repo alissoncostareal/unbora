@@ -12,6 +12,7 @@ export interface ResultQuery {
   radiusKm?: number;
   moodLabel: string;
   interestIds: string[];
+  neighborhoods?: string[];
   social: string;
   budgetReais: number;
   timeId: string;
@@ -35,6 +36,7 @@ export function readResultQuery(params: URLSearchParams, routeId?: string): Resu
     radiusKm: numberOrUndefined(params.get('radius')),
     moodLabel: params.get('mood')?.trim() ?? '',
     interestIds: (params.get('interests') ?? '').split(',').map((item) => item.trim()).filter(Boolean),
+    neighborhoods: (params.get('bairros') ?? params.get('neighborhoods') ?? '').split(',').map((item) => item.trim()).filter(Boolean),
     social: params.get('social')?.trim() ?? '',
     budgetReais: numberOrUndefined(params.get('budget')) ?? 80,
     timeId: params.get('time')?.trim() ?? '',
@@ -52,6 +54,7 @@ export function resultPath(input: {
   radiusKm?: number;
   moodLabel?: string;
   interestIds?: string[];
+  neighborhoods?: string[];
   social?: string;
   budgetReais?: number;
   timeId?: string;
@@ -68,6 +71,7 @@ export function resultPath(input: {
   if (input.longitude != null) params.set('lng', String(input.longitude));
   if (input.moodLabel) params.set('mood', input.moodLabel);
   if (input.interestIds?.length) params.set('interests', input.interestIds.join(','));
+  if (input.neighborhoods?.length) params.set('bairros', input.neighborhoods.join(','));
   if (input.social) params.set('social', input.social);
   if (input.budgetReais != null) params.set('budget', String(input.budgetReais));
   if (input.timeId) params.set('time', input.timeId);
@@ -109,6 +113,7 @@ export function journeyFromQuery(spec: ResultQuery): JourneyChoice | null {
     moodLabel: mood.label,
     moodLine: mood.line,
     interests: activeInterests,
+    neighborhoods: spec.neighborhoods,
     social: withWhom.label,
     budgetReais: spec.budgetReais,
     time: time.label,

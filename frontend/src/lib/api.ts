@@ -591,5 +591,29 @@ export function confirmAccount(token: string): Promise<{ message: string; succes
   return post<{ message: string; success: boolean }>('/users/confirm-account', { token });
 }
 
+export interface TestimonialItem {
+  id: string;
+  name: string;
+  role: string;
+  city: string;
+  text: string;
+  mark: string;
+  rating: number;
+  active: boolean;
+}
+
+export interface TestimonialSettings {
+  id: string;
+  enabled: boolean;
+  kicker: string;
+  headline: string;
+  description: string;
+  items: TestimonialItem[];
+}
+
+export function fetchTestimonialSettings(): Promise<TestimonialSettings> {
+  return get<TestimonialSettings>('/testimonials');
+}
+
 
 

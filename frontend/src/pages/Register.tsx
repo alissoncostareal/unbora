@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { GoogleAuthButton } from '../components/GoogleAuthButton';
@@ -10,6 +10,10 @@ const fieldClass = 'h-12 w-full bg-white px-4 text-[15px] text-[#1e1b19] shadow-
 export function RegisterPage() {
   const navigate = useNavigate();
   const { register, loginGoogle } = useAuth();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

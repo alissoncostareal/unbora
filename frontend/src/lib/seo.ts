@@ -22,9 +22,9 @@ export interface SEOProps {
   customJsonLd?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
-const DEFAULT_TITLE = 'Unbora · Guia de Lugares, Onde Comer, Bares e Rolês com IA';
-const DEFAULT_DESCRIPTION = 'O guia de lugares, gastronomia e rolês inteligente: descubra onde comer, beber e passear na sua cidade. Restaurantes, bares, cafeterias e eventos com notas, fotos reais e IA instantânea.';
-const DEFAULT_KEYWORDS = 'unbora, guia de lugares fortaleza, onde comer em fortaleza, melhores restaurantes fortaleza, bares fortaleza, cafeterias aldeota, o que fazer em fortaleza, gastronomia cearense, rolês em fortaleza, recomendacoes com ia';
+const DEFAULT_TITLE = 'Unbora · Guia de Lugares, Gastronomia e Experiências';
+const DEFAULT_DESCRIPTION = 'O guia que lê o seu momento: descubra onde comer, beber e passear na sua cidade. Restaurantes, bares, cafeterias e passeios com curadoria autêntica, fotos reais e o motivo da escolha.';
+const DEFAULT_KEYWORDS = 'unbora, guia de lugares fortaleza, onde comer em fortaleza, melhores restaurantes fortaleza, bares fortaleza, cafeterias aldeota, o que fazer em fortaleza, gastronomia cearense, rolês em fortaleza, curadoria urbana';
 const DEFAULT_OG_IMAGE = 'https://unbora.com.br/og-image.jpg';
 const BASE_URL = 'https://unbora.com.br';
 
@@ -98,7 +98,7 @@ export function updateSEO(props: SEOProps) {
       url: `${BASE_URL}/`,
       name: 'Unbora',
       alternateName: 'Unbora Guia de Lugares',
-      description: 'Guia gastronômico, turístico e de entretenimento urbano com curadoria sensorial e inteligência artificial',
+      description: 'Guia gastronômico, turístico e de entretenimento urbano com curadoria autêntica e fotos reais',
       inLanguage: 'pt-BR',
       potentialAction: {
         '@type': 'SearchAction',

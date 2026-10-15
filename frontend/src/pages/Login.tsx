@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { GoogleAuthButton } from '../components/GoogleAuthButton';
@@ -9,6 +9,10 @@ import { useAuth } from '../lib/auth';
 export function LoginPage() {
   const navigate = useNavigate();
   const { login, loginGoogle } = useAuth();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

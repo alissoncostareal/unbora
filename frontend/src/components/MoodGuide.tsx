@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { HomeGazette } from './HomeGazette';
@@ -6,7 +6,7 @@ import { SEOHead } from './SEOHead';
 import { recommend } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { isBrazilianState, placeArea, useCity } from '../lib/city';
-import { JOURNEY_KEY, type JourneyChoice } from '../lib/catalog';
+import { getNeighborhoodsForCity, JOURNEY_KEY, type JourneyChoice } from '../lib/catalog';
 import { getGuide, loadGuide } from '../lib/guide';
 import { resultPath } from '../lib/resultQuery';
 import { scrollToSection } from '../lib/scrollSection';
@@ -45,9 +45,10 @@ function slideCopy(label: string) {
 const steps = [
   { key: 'mood', kicker: '01', question: 'Como você quer se sentir depois de sair?', hint: 'Uma escolha.' },
   { key: 'interests', kicker: '02', question: 'O que combina com você hoje?', hint: 'Pode marcar mais de um.' },
-  { key: 'social', kicker: '03', question: 'Como você quer passar esse tempo?', hint: 'Uma escolha.' },
-  { key: 'budget', kicker: '04', question: 'Quanto quer gastar?', hint: 'Arraste até o valor.' },
-  { key: 'time', kicker: '05', question: 'Quanto tempo você tem?', hint: 'Uma escolha.' },
+  { key: 'neighborhoods', kicker: '03', question: 'Em quais bairros você quer procurar?', hint: 'Marque os bairros que você quer ou se é indiferente.' },
+  { key: 'social', kicker: '04', question: 'Como você quer passar esse tempo?', hint: 'Uma escolha.' },
+  { key: 'budget', kicker: '05', question: 'Quanto quer gastar?', hint: 'Arraste até o valor.' },
+  { key: 'time', kicker: '06', question: 'Quanto tempo você tem?', hint: 'Uma escolha.' },
 ] as const;
 
 export function MoodGuide() {
@@ -60,6 +61,7 @@ export function MoodGuide() {
   const [step, setStep] = useState(0);
   const [moodLabel, setMoodLabel] = useState(preset?.label ?? '');
   const [picked, setPicked] = useState<string[]>([]);
+  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>([]);
   const [social, setSocial] = useState('');
   const [budget, setBudget] = useState(getGuide().budget.defaultValue);
   const [timeId, setTimeId] = useState('');
@@ -69,6 +71,8 @@ export function MoodGuide() {
   const pendingSection = useRef<string | null>(null);
   const area = placeArea(city, region);
   const placeLine = isBrazilianState(area) ? `${city.trim()}, ${area}` : city.trim();
+
+  const availableNeighborhoods = useMemo(() => getNeighborhoodsForCity(city), [city]);
 
   useEffect(() => {
     void loadGuide().then(setGuide);
@@ -86,6 +90,7 @@ export function MoodGuide() {
             step?: number;
             moodLabel?: string;
             picked?: string[];
+            selectedNeighborhoods?: string[];
             social?: string;
             budget?: number;
             timeId?: string;
@@ -94,6 +99,7 @@ export function MoodGuide() {
             setStep(Math.min(draft.step, steps.length - 1));
             if (draft.moodLabel) setMoodLabel(draft.moodLabel);
             if (draft.picked) setPicked(draft.picked);
+            if (draft.selectedNeighborhoods) setSelectedNeighborhoods(draft.selectedNeighborhoods);
             if (draft.social) setSocial(draft.social);
             if (typeof draft.budget === 'number') setBudget(draft.budget);
             if (draft.timeId) setTimeId(draft.timeId);
@@ -109,9 +115,9 @@ export function MoodGuide() {
   useEffect(() => {
     if (!draftReady || busy) return;
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
-      step, moodLabel, picked, social, budget, timeId,
+      step, moodLabel, picked, selectedNeighborhoods, social, budget, timeId,
     }));
-  }, [draftReady, busy, step, moodLabel, picked, social, budget, timeId]);
+  }, [draftReady, busy, step, moodLabel, picked, selectedNeighborhoods, social, budget, timeId]);
 
   useEffect(() => {
     const onSection = (event: Event) => {
@@ -138,9 +144,26 @@ export function MoodGuide() {
     window.scrollTo(0, 0);
   }, [step, busy]);
 
+  const isIndiferente = selectedNeighborhoods.length === 0 || selectedNeighborhoods.includes('indiferente');
+
+  function toggleNeighborhood(bairro: string) {
+    if (bairro === 'indiferente') {
+      setSelectedNeighborhoods([]);
+      return;
+    }
+    setSelectedNeighborhoods((current) => {
+      const withoutIndiferente = current.filter((b) => b !== 'indiferente');
+      if (withoutIndiferente.includes(bairro)) {
+        return withoutIndiferente.filter((b) => b !== bairro);
+      }
+      return [...withoutIndiferente, bairro];
+    });
+  }
+
   const ready = [
     Boolean(moodLabel),
     picked.length > 0,
+    true,
     Boolean(social),
     true,
     Boolean(timeId),
@@ -157,10 +180,13 @@ export function MoodGuide() {
     const time = durations.find((item) => item.id === chosenTimeId);
     if (busy || !mood || chosen.length === 0 || !withWhom || !time) return;
 
+    const effectiveNeighborhoods = selectedNeighborhoods.filter((b) => b !== 'indiferente');
+
     const journey: JourneyChoice = {
       moodLabel: mood.label,
       moodLine: mood.line,
       interests: chosen.map((item) => item.label),
+      neighborhoods: effectiveNeighborhoods,
       social: withWhom.label,
       budgetReais: budget,
       time: time.label,
@@ -173,9 +199,12 @@ export function MoodGuide() {
     setError(null);
     try {
       const spend = budget >= budgetMax ? 'sem teto de gasto' : `gastar até ${budget} reais`;
+      const neighborhoodClause = effectiveNeighborhoods.length > 0
+        ? `Bairros preferidos: ${effectiveNeighborhoods.join(', ')}.`
+        : '';
       const result = await recommend({
         humor: mood.value,
-        sentir: `${withWhom.value}. ${spend}. Tempo disponível: ${time.value}.`,
+        sentir: `${withWhom.value}. ${neighborhoodClause} ${spend}. Tempo disponível: ${time.value}.`.trim(),
         activities: chosen,
         city,
         region,
@@ -193,6 +222,7 @@ export function MoodGuide() {
         longitude,
         moodLabel: mood.label,
         interestIds: chosen.map((item) => item.id),
+        neighborhoods: effectiveNeighborhoods,
         social: withWhom.label,
         budgetReais: budget,
         timeId: time.id,
@@ -240,11 +270,11 @@ export function MoodGuide() {
   const homeFaqs = [
     {
       question: `Como o Unbora recomenda lugares e restaurantes em ${cityName}?`,
-      answer: `O Unbora utiliza inteligência artificial para cruzar seu humor, interesses, companhia, tempo disponível e orçamento com os melhores estabelecimentos em ${cityName}, entregando fotos reais, endereço e o motivo da recomendação.`,
+      answer: `O Unbora cruza seu humor, interesses, bairros de preferência, companhia, tempo disponível e orçamento com os melhores estabelecimentos em ${cityName}, entregando fotos reais, endereço e o motivo da recomendação.`,
     },
     {
       question: 'O Unbora é gratuito para os usuários?',
-      answer: 'Sim, o acesso ao guia de lugares, recomendações inteligentes com IA, roteiros urbanos e benefícios Unbora Perks é 100% gratuito.',
+      answer: 'Sim, o acesso ao guia de lugares, recomendações sob medida, roteiros urbanos e benefícios Unbora Perks é 100% gratuito.',
     },
     {
       question: `Como encontrar cafeterias, bares e restaurantes para trabalhar ou relaxar em ${cityName}?`,
@@ -261,7 +291,7 @@ export function MoodGuide() {
       <div className="flex flex-1 flex-col bg-white">
         <SEOHead
           title={`Guia de Lugares, Onde Comer, Bares e Rolês em ${cityName} · Unbora`}
-          description={`Descubra o que fazer hoje em ${cityName}: restaurantes, bares, cafeterias e eventos culturais com fotos reais, notas e recomendações inteligentes por IA.`}
+          description={`Descubra o que fazer hoje em ${cityName}: restaurantes, bares, cafeterias e eventos culturais com fotos reais, notas e curadoria autêntica.`}
           keywords={`guia gastronômico ${cityName}, onde comer em ${cityName}, bares ${cityName}, restaurantes ${cityName}, o que fazer hoje ${cityName}, cafeterias ${cityName}, rolês em ${cityName}, turismo urbano`}
           canonical="https://unbora.com.br/home"
           city={cityName}
@@ -360,6 +390,39 @@ export function MoodGuide() {
 
           {step === 2 ? (
             <div className="mt-6 grid min-w-0 grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-3" role="group" aria-label={current.question}>
+              <Choice
+                selected={isIndiferente}
+                onClick={() => toggleNeighborhood('indiferente')}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 3a9 9 0 0 1 0 18v-18z" fill="currentColor" fillOpacity="0.18" />
+                </svg>
+                <span className="font-medium">Indiferente</span>
+                <span className="text-[11px] opacity-75">Toda a cidade</span>
+              </Choice>
+              {availableNeighborhoods.map((bairro) => {
+                const selected = !isIndiferente && selectedNeighborhoods.includes(bairro);
+                return (
+                  <Choice
+                    key={bairro}
+                    selected={selected}
+                    onClick={() => toggleNeighborhood(bairro)}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+                      <path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z" />
+                      <circle cx="12" cy="10" r="2.5" />
+                    </svg>
+                    <span>{bairro}</span>
+                  </Choice>
+                );
+              })}
+              <ContinueSlot className="col-span-2 sm:col-span-1" label={continueLabel} disabled={!ready || busy} onClick={next} />
+            </div>
+          ) : null}
+
+          {step === 3 ? (
+            <div className="mt-6 grid min-w-0 grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-3" role="group" aria-label={current.question}>
               {company.map((item) => (
                 <Choice key={item.label} selected={social === item.label} onClick={() => setSocial(item.label)}>
                   {item.label}
@@ -369,7 +432,7 @@ export function MoodGuide() {
             </div>
           ) : null}
 
-          {step === 3 ? (
+          {step === 4 ? (
             <div className="mt-8">
               <p className="break-words text-center text-5xl font-light tracking-tight sm:text-6xl md:text-7xl">{budget >= budgetMax ? `R$ ${budgetMax}+` : `R$ ${budget}`}</p>
               <input
@@ -395,7 +458,7 @@ export function MoodGuide() {
             </div>
           ) : null}
 
-          {step === 4 ? (
+          {step === 5 ? (
             <div className="mt-6 grid min-w-0 grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-3" role="group" aria-label={current.question}>
               {durations.map((item) => (
                 <Choice key={item.id} selected={timeId === item.id} onClick={() => setTimeId(item.id)}>

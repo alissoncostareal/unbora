@@ -8,4 +8,5 @@ export type NavIconName =
   | 'shield'
   | 'calendar'
   | 'form'
-  | 'ban';
+  | 'ban'
+  | 'quote';

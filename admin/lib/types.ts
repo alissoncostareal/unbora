@@ -299,5 +299,25 @@ export interface PartnerPageSettings {
   updatedAt?: string;
 }
 
+export interface TestimonialItem {
+  id: string;
+  name: string;
+  role: string;
+  city: string;
+  text: string;
+  mark: string;
+  rating: number;
+  active: boolean;
+}
+
+export interface TestimonialSettings {
+  id: string;
+  enabled: boolean;
+  kicker: string;
+  headline: string;
+  description: string;
+  items: TestimonialItem[];
+}
+
 
 

@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { fetchTestimonialSettings, type TestimonialSettings } from '../lib/api';
 import { goToSection, homeSections } from '../lib/scrollSection';
 
 const atmospheres = [
@@ -41,32 +43,66 @@ const atmospheres = [
   },
 ];
 
-const voices = [
-  {
-    mark: 'L',
-    name: 'Lívia Vasconcelos',
-    role: 'Arquiteta',
-    text: 'Cansada de guias patrocinados que sempre me mandavam para os mesmos lounges barulhentos. No Unbora encontrei cafés com acústica perfeita para debater projetos sem disputar volume com caixas de som.',
-  },
-  {
-    mark: 'M',
-    name: 'Matheus Alencar',
-    role: 'Designer gráfico',
-    text: 'O filtro por intenção mudou minhas terças-feiras à noite. Quando saio do escritório querendo apenas vinho gelado e conversa sem pressa, basta abrir o app e a primeira sugestão é tiro e queda.',
-  },
-  {
-    mark: 'C',
-    name: 'Dra. Clara Mendes',
-    role: 'Médica',
-    text: 'Trabalho sob altíssima pressão em plantões hospitalares. Ter um guia que respeita o silêncio, a iluminação baixa e a comida feita com carinho é como receber uma receita de autocuidado para a alma.',
-  },
-];
+const DEFAULT_TESTIMONIALS: TestimonialSettings = {
+  id: 'default',
+  enabled: true,
+  kicker: 'Perspectivas reais',
+  headline: 'A cidade redigida por quem caminha nela',
+  description: 'Nossos correspondentes e leitores ativos compartilham a percepção sensorial de suas rotinas semanais por Fortaleza.',
+  items: [
+    {
+      id: 'default-1',
+      name: 'Lívia Vasconcelos',
+      role: 'Arquiteta',
+      city: 'Fortaleza',
+      mark: 'L',
+      rating: 5,
+      active: true,
+      text: 'No Unbora encontrei cafés e refúgios com acústica e iluminação perfeitas para debater projetos sem disputar volume.',
+    },
+    {
+      id: 'default-2',
+      name: 'Matheus Alencar',
+      role: 'Designer gráfico',
+      city: 'Fortaleza',
+      mark: 'M',
+      rating: 5,
+      active: true,
+      text: 'O filtro por intenção mudou minhas noites. Quando quero apenas vinho e conversa sem pressa, a curadoria é certeira.',
+    },
+    {
+      id: 'default-3',
+      name: 'Dra. Clara Mendes',
+      role: 'Pesquisadora',
+      city: 'Fortaleza',
+      mark: 'C',
+      rating: 5,
+      active: true,
+      text: 'O ritmo das recomendações foge do óbvio comercial. É uma curadoria editorial com alma e contexto local.',
+    },
+  ],
+};
 
 export function HomeGazette({ city }: { city: string }) {
   const placeName = city.trim() || 'sua cidade';
-  const voicePlaces = ['São Paulo', 'Rio de Janeiro', 'Belo Horizonte', 'Recife']
-    .filter((name) => name.localeCompare(placeName, 'pt-BR', { sensitivity: 'base' }) !== 0)
-    .slice(0, 3);
+  const [testimonialSettings, setTestimonialSettings] = useState<TestimonialSettings | null>(DEFAULT_TESTIMONIALS);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchTestimonialSettings()
+      .then((data) => {
+        if (!cancelled && data) {
+          setTestimonialSettings(data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const activeItems = testimonialSettings?.items?.filter((item) => item.active !== false) ?? [];
+  const showTestimonials = Boolean(testimonialSettings?.enabled !== false && activeItems.length > 0);
 
   return (
     <div>
@@ -150,39 +186,49 @@ export function HomeGazette({ city }: { city: string }) {
         </div>
       </section>
 
-      <section id="perspectivas" className="bg-[#f2e3dd] px-6 py-24 lg:py-32">
-        <div className="mx-auto grid max-w-7xl items-baseline gap-8 lg:grid-cols-12">
-          <div className="lg:col-span-8">
-            <p className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.16em] text-[#7c2f1d] uppercase">
-              <span className="grid h-4 w-4 place-items-center rounded bg-[#7c2f1d] text-[10px] text-white">”</span>
-              Perspectivas reais
-            </p>
-            <h2 className="mt-2 text-4xl font-light tracking-tight sm:text-5xl">A cidade redigida por quem caminha nela</h2>
+      {showTestimonials ? (
+        <section id="perspectivas" className="bg-[#f2e3dd] px-6 py-24 lg:py-32">
+          <div className="mx-auto grid max-w-7xl items-baseline gap-8 lg:grid-cols-12">
+            <div className="lg:col-span-8">
+              <p className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.16em] text-[#7c2f1d] uppercase">
+                <span className="grid h-4 w-4 place-items-center rounded-none bg-[#7c2f1d] text-[10px] text-white">”</span>
+                {testimonialSettings?.kicker || 'Perspectivas reais'}
+              </p>
+              <h2 className="mt-2 text-4xl font-light tracking-tight sm:text-5xl">
+                {testimonialSettings?.headline || 'A cidade redigida por quem caminha nela'}
+              </h2>
+            </div>
+            {testimonialSettings?.description ? (
+              <p className="text-sm leading-6 text-[#55433e] lg:col-span-4">
+                {testimonialSettings.description}
+              </p>
+            ) : null}
           </div>
-          <p className="text-sm leading-6 text-[#55433e] lg:col-span-4">
-            Nossos correspondentes e leitores ativos compartilham a percepção sensorial de suas rotinas semanais por {placeName}.
-          </p>
-        </div>
-        <div className="mx-auto mt-12 grid max-w-7xl gap-6 md:grid-cols-3">
-          {voices.map((voice, index) => (
-            <article key={voice.name} className="flex flex-col justify-between rounded-xl bg-[#fff8f5] p-6 shadow-sm">
-              <div>
-                <p className="mb-4 flex gap-1 text-[#7c2f1d]" aria-label="Cinco estrelas">
-                  {Array.from({ length: 5 }, (_, index) => <Star key={index} />)}
-                </p>
-                <p className="text-[15px] leading-7 text-[#1e1b19] italic">“{voice.text}”</p>
-              </div>
-              <div className="mt-8 flex items-center gap-3 border-t border-[#eee7e3] pt-4">
-                <span className="grid h-10 w-10 place-items-center rounded-full bg-[#e8d2c8] font-medium text-[#7c2f1d]">{voice.mark}</span>
-                <span>
-                  <span className="block text-[18px] leading-6">{voice.name}</span>
-                  <span className="text-[11px] font-semibold tracking-[0.1em] text-[#55433e] uppercase">{voice.role} · {voicePlaces[index] ?? 'São Paulo'}</span>
-                </span>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+          <div className="mx-auto mt-12 grid max-w-7xl gap-6 md:grid-cols-3">
+            {activeItems.map((voice, index) => (
+              <article key={voice.id || voice.name || index} className="flex flex-col justify-between rounded-none border border-[#e8e0d7] bg-[#fff8f5] p-6 shadow-xs">
+                <div>
+                  <p className="mb-4 flex gap-1 text-[#7c2f1d]" aria-label="Avaliação cinco estrelas">
+                    {Array.from({ length: voice.rating || 5 }, (_, i) => <Star key={i} />)}
+                  </p>
+                  <p className="text-[15px] leading-7 text-[#1e1b19] italic">“{voice.text}”</p>
+                </div>
+                <div className="mt-8 flex items-center gap-3 border-t border-[#eee7e3] pt-4">
+                  <span className="grid h-10 w-10 place-items-center rounded-none bg-[#e8d2c8] font-medium text-[#7c2f1d]">
+                    {voice.mark || (voice.name ? voice.name.charAt(0).toUpperCase() : 'U')}
+                  </span>
+                  <span>
+                    <span className="block text-[18px] leading-6">{voice.name}</span>
+                    <span className="text-[11px] font-semibold tracking-[0.1em] text-[#55433e] uppercase">
+                      {[voice.role, voice.city || 'Fortaleza'].filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section id="numeros" className="bg-[#faf2ee] px-6 py-24 lg:py-32">
         <div className="mx-auto max-w-7xl text-center">
@@ -233,7 +279,7 @@ export function HomeGazette({ city }: { city: string }) {
           </div>
           <div className="flex flex-col gap-2 text-sm md:col-span-3">
             <p className="mb-1 text-[11px] font-semibold tracking-[0.14em] text-[#55433e] uppercase">Cadernos</p>
-            {homeSections.map((section) => (
+            {homeSections.filter((s) => s.id !== 'perspectivas' || showTestimonials).map((section) => (
               <a
                 key={section.id}
                 href={`#${section.id}`}

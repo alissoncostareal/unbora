@@ -57,7 +57,7 @@ public class PlaceVectorSeederService {
     public void seedIconicPlaces() {
         try {
             long existingCount = placeEmbeddingRepository.countByCityIgnoreCase("Fortaleza");
-            if (existingCount >= 10) {
+            if (existingCount >= 22) {
                 log.info("[pgvector Seeder] Base vetorial de Fortaleza já possui {} locais indexados.", existingCount);
                 return;
             }
@@ -244,6 +244,156 @@ public class PlaceVectorSeederService {
                             "https://maps.google.com/?cid=6898162225586776608",
                             "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80",
                             "Sal e Brasa é uma das churrascarias mais tradicionais da Aldeota. Carnes nobres servidas no espeto corrido, buffet completo de sushi, queijos e frutos do mar, salão amplo para grupos grandes e celebrações."
+                    ),
+                    new SeedPlace(
+                            "cervejaria-turatti-varjota",
+                            "Cervejaria Turatti Varjota",
+                            "Fortaleza",
+                            "bar",
+                            "Cervejaria Artesanal e Gastropub",
+                            "R. Ana Bilhar, 1178 - Varjota, Fortaleza - CE",
+                            -3.731234,
+                            -38.491234,
+                            4.7,
+                            8400,
+                            "https://maps.google.com/?cid=1234567896",
+                            "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=1200&auto=format&fit=crop&q=80",
+                            "Cervejaria Turatti no polo gastronômico da Varjota produz chopps artesanais premiados no local. Cardápio com parrilla de carnes nobres, petiscos autorais, música ao vivo e fábrica de cerveja com vista panorâmica."
+                    ),
+                    new SeedPlace(
+                            "caravaggio-varjota",
+                            "Caravaggio Cucina Italiana",
+                            "Fortaleza",
+                            "gastronomia",
+                            "Restaurante Italiano e Carta de Vinhos",
+                            "R. Ana Bilhar, 1146 - Varjota, Fortaleza - CE",
+                            -3.731456,
+                            -38.491567,
+                            4.8,
+                            3100,
+                            "https://maps.google.com/?cid=1234567897",
+                            "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80",
+                            "Caravaggio é um clássico italiano refinado na Varjota. Massas frescas artesanais preparadas na casa, risotos cremosos, carnes e adega climatizada com rótulos internacionais em ambiente romântico à luz de velas."
+                    ),
+                    new SeedPlace(
+                            "moleskine-gastrobar",
+                            "Moleskine Gastrobar",
+                            "Fortaleza",
+                            "bar",
+                            "Gastrobar, Rooftop e Coquetelaria",
+                            "R. Prof. Dias da Rocha, 578 - Meireles, Fortaleza - CE",
+                            -3.733123,
+                            -38.498456,
+                            4.6,
+                            6200,
+                            "https://maps.google.com/?cid=1234567898",
+                            "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=1200&auto=format&fit=crop&q=80",
+                            "Moleskine Gastrobar no Meireles oferece múltiplos ambientes modernos, incluindo rooftop ao ar livre, carta autoral de coquetéis premiados, pratos contemporâneos elaborados e iluminação indireta aconchegante."
+                    ),
+                    new SeedPlace(
+                            "amika-coffeehouse",
+                            "Amika Coffeehouse",
+                            "Fortaleza",
+                            "gastronomia",
+                            "Café Especial e Microtorrefação",
+                            "R. Ana Bilhar, 1136 - Varjota, Fortaleza - CE",
+                            -3.731678,
+                            -38.491890,
+                            4.8,
+                            2400,
+                            "https://maps.google.com/?cid=1234567899",
+                            "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&auto=format&fit=crop&q=80",
+                            "Amika é pioneira em cafés especiais na Varjota. Grãos selecionados de produtores artesanais brasileiros, métodos variados de extração filtrada, espressos perfeitos, bolos caseiros e ambiente sereno com mesas para leitura e trabalho."
+                    ),
+                    new SeedPlace(
+                            "parque-do-coco",
+                            "Parque Estadual do Cocó",
+                            "Fortaleza",
+                            "natureza",
+                            "Parque Ecológico, Trilhas e Área Verde",
+                            "Av. Padre Antônio Tomás, s/n - Cocó, Fortaleza - CE",
+                            -3.754321,
+                            -38.485678,
+                            4.8,
+                            14200,
+                            "https://maps.google.com/?cid=1234567900",
+                            "https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&auto=format&fit=crop&q=80",
+                            "Parque Estadual do Cocó é um dos maiores parques naturais urbanos da América Latina, no bairro Cocó. Trilhas ecológicas sob manguezais, passeios de barco pelo rio Cocó, ar puro e piqueniques em meio à natureza preservada."
+                    ),
+                    new SeedPlace(
+                            "theatro-jose-de-alencar",
+                            "Theatro José de Alencar",
+                            "Fortaleza",
+                            "cultura",
+                            "Patrimônio Histórico e Arquitetura",
+                            "R. Liberato Barroso, 525 - Centro, Fortaleza - CE",
+                            -3.728901,
+                            -38.532345,
+                            4.9,
+                            11300,
+                            "https://maps.google.com/?cid=1234567901",
+                            "https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=1200&auto=format&fit=crop&q=80",
+                            "Theatro José de Alencar no Centro Histórico de Fortaleza é uma obra-prima da arquitetura art nouveau com estrutura de ferro fundido escocês, vitrais coloridos, jardim projetado por Burle Marx e programação cultural rica."
+                    ),
+                    new SeedPlace(
+                            "passeio-publico-fortaleza",
+                            "Passeio Público e Café das Artes",
+                            "Fortaleza",
+                            "cultura",
+                            "Praça Histórica e Gastronomia ao Ar Livre",
+                            "Praça dos Mártires, s/n - Centro, Fortaleza - CE",
+                            -3.722345,
+                            -38.528765,
+                            4.7,
+                            8900,
+                            "https://maps.google.com/?cid=1234567902",
+                            "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80",
+                            "Passeio Público é a praça mais antiga de Fortaleza, com árvores centenárias, vista para o mar da orla central, feijoada aos sábados com chorinho ao vivo e um café charmoso sob as copas das árvores."
+                    ),
+                    new SeedPlace(
+                            "boteco-praia-meireles",
+                            "Boteco Praia Beira Mar",
+                            "Fortaleza",
+                            "bar",
+                            "Boteco com Vista Mar e Música ao Vivo",
+                            "Av. Beira Mar, 1680 - Meireles, Fortaleza - CE",
+                            -3.725678,
+                            -38.502345,
+                            4.5,
+                            9100,
+                            "https://maps.google.com/?cid=1234567903",
+                            "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=1200&auto=format&fit=crop&q=80",
+                            "Boteco Praia na Beira Mar do Meireles é ponto de encontro imperdível para o fim de tarde. Chope gelado, petiscos tradicionais de boteco, mesas na calçada de frente para o mar e programação de samba e pop rock."
+                    ),
+                    new SeedPlace(
+                            "vignoli-meireles",
+                            "Pizzaria Vignoli Meireles",
+                            "Fortaleza",
+                            "gastronomia",
+                            "Pizzas Gourmet com Massa Crocante",
+                            "R. Silva Jatahy, 529 - Meireles, Fortaleza - CE",
+                            -3.727890,
+                            -38.497654,
+                            4.7,
+                            5400,
+                            "https://maps.google.com/?cid=1234567904",
+                            "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200&auto=format&fit=crop&q=80",
+                            "Pizzaria Vignoli no Meireles é famosa pela massa finíssima e crocante premiada que se come com as mãos, usando luvinhas plásticas. Ingredientes selecionados, carta de vinhos e ambiente arborizado romântico."
+                    ),
+                    new SeedPlace(
+                            "bulls-beer-house-aldeota",
+                            "Bulls Beer House Aldeota",
+                            "Fortaleza",
+                            "bar",
+                            "Pub de Rock e Chopes Artesanais",
+                            "R. Cel. Jucá, 700 - Aldeota, Fortaleza - CE",
+                            -3.738901,
+                            -38.493456,
+                            4.7,
+                            4200,
+                            "https://maps.google.com/?cid=1234567905",
+                            "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=1200&auto=format&fit=crop&q=80",
+                            "Bulls Beer House na Aldeota é o principal pub de rock e cervejas artesanais de Fortaleza. Burgers generosos grelhados na brasa, dezenas de torneiras de chopp artesanal e apresentações de bandas de classic rock."
                     )
             );
 

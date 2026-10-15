@@ -6,7 +6,7 @@ import { SEOHead } from '../components/SEOHead';
 import { fetchDismissed, fetchSnapshot, recommend, searchPlaces, sendFeedback, type Place, type Recommendation } from '../lib/api';
 import { saveRole } from '../lib/savedRoles';
 import { useAuth } from '../lib/auth';
-import { company, durations, interests, JOURNEY_KEY, moods, type JourneyChoice } from '../lib/catalog';
+import { company, durations, getNeighborhoodsForCity, interests, JOURNEY_KEY, moods, type JourneyChoice } from '../lib/catalog';
 import { getGuide, loadGuide } from '../lib/guide';
 import { journeyFromQuery, readResultQuery } from '../lib/resultQuery';
 
@@ -45,9 +45,12 @@ function recommendFromQuery(spec: ReturnType<typeof readResultQuery>, userId?: s
   const activitiesToUse = chosen.length > 0 ? chosen : [guideInterests[2] || guideInterests[0]];
 
   const spend = spec.budgetReais >= 300 ? 'sem teto de gasto' : `gastar até ${spec.budgetReais} reais`;
+  const neighborhoodClause = spec.neighborhoods && spec.neighborhoods.length > 0
+    ? `Bairros preferidos: ${spec.neighborhoods.join(', ')}.`
+    : '';
   return recommend({
     humor: mood.value,
-    sentir: `${withWhom.value}. ${spend}. Tempo disponível: ${time.value}.`,
+    sentir: `${withWhom.value}. ${neighborhoodClause} ${spend}. Tempo disponível: ${time.value}.`.trim(),
     activities: activitiesToUse,
     city: spec.city,
     region: spec.region,
@@ -177,7 +180,7 @@ function getPaginationRange(current: number, total: number): (number | string)[]
   return [1, '...', current - 1, current, current + 1, '...', total];
 }
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 12;
 
 export function ResultPage() {
   const { user } = useAuth();
@@ -194,6 +197,15 @@ export function ResultPage() {
   const [page, setPage] = useState(() => {
     const p = parseInt(params.get('page') || '1', 10);
     return Number.isFinite(p) && p > 0 ? p : 1;
+  });
+
+  const [selectedBairro, setSelectedBairro] = useState<string>(() => {
+    const b = params.get('bairro') || params.get('bairros') || params.get('neighborhood') || params.get('neighborhoods');
+    if (b) {
+      const parts = b.split(',').map((s) => s.trim()).filter(Boolean);
+      if (parts.length === 1 && parts[0].toLowerCase() !== 'indiferente') return parts[0];
+    }
+    return '';
   });
 
   const cachedResult = useMemo(() => readJson<Recommendation>('unbora-result'), []);
@@ -225,7 +237,11 @@ export function ResultPage() {
 
   useEffect(() => {
     const p = parseInt(params.get('page') || '1', 10);
-    setPage(Number.isFinite(p) && p > 0 ? p : 1);
+    const nextPage = Number.isFinite(p) && p > 0 ? p : 1;
+    setPage(nextPage);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, [params]);
 
   useEffect(() => {
@@ -331,10 +347,32 @@ export function ResultPage() {
     return affordable.length > 0 ? affordable : ranked;
   }, [result, journey, hidden]);
 
-  const totalPages = Math.max(1, Math.ceil(places.length / PAGE_SIZE));
+  const availableBairros = useMemo(() => {
+    const found = new Set<string>();
+    const cityNeighborhoods = getNeighborhoodsForCity(journey?.city || result?.subtitle || 'Fortaleza');
+    (result?.places ?? []).forEach((p) => {
+      const text = `${p.address || ''} ${(p.tags || []).join(' ')} ${p.description || ''}`;
+      for (const bn of cityNeighborhoods) {
+        if (new RegExp(`\\b${bn}\\b`, 'i').test(text)) {
+          found.add(bn);
+        }
+      }
+    });
+    return found.size > 0 ? Array.from(found) : cityNeighborhoods.slice(0, 10);
+  }, [result, journey]);
+
+  const filteredPlaces = useMemo(() => {
+    if (!selectedBairro) return places;
+    return places.filter((p) => {
+      const text = `${p.address || ''} ${(p.tags || []).join(' ')} ${p.description || ''}`;
+      return new RegExp(`\\b${selectedBairro}\\b`, 'i').test(text);
+    });
+  }, [places, selectedBairro]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPlaces.length / PAGE_SIZE));
   const currentPage = Math.min(Math.max(1, page), totalPages);
   const startIndex = (currentPage - 1) * PAGE_SIZE;
-  const paginatedPlaces = places.slice(startIndex, startIndex + PAGE_SIZE);
+  const paginatedPlaces = filteredPlaces.slice(startIndex, startIndex + PAGE_SIZE);
 
   function handlePageChange(newPage: number) {
     const targetPage = Math.min(Math.max(1, newPage), totalPages);
@@ -538,7 +576,7 @@ export function ResultPage() {
   }
 
   const headline = journey?.moodLine || result.title;
-  const countLabel = places.length === 1 ? '1 experiência que combina com você' : `${places.length} experiências que combinam com você`;
+  const countLabel = filteredPlaces.length === 1 ? '1 experiência que combina com você' : `${filteredPlaces.length} experiências que combinam com você`;
 
   return (
     <main className="mx-auto w-full max-w-xl px-6 py-12 sm:py-16">
@@ -558,7 +596,7 @@ export function ResultPage() {
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-base text-muted">Encontramos {countLabel}.</p>
         <div className="flex items-center gap-2">
-          {places.length > 0 && (
+          {filteredPlaces.length > 0 && (
             <>
               <button
                 type="button"
@@ -588,15 +626,61 @@ export function ResultPage() {
             </>
           )}
           {totalPages > 1 && (
-            <span className="inline-flex items-center rounded-full bg-sand px-3 py-1 text-xs font-medium text-muted">
+            <span className="inline-flex items-center rounded-none bg-sand px-3 py-1 text-xs font-medium text-muted">
               Página {currentPage} de {totalPages}
             </span>
           )}
         </div>
       </div>
 
-      {places.length === 0 ? (
-        <p className="mt-12 text-muted">Nenhuma experiência ficou de pé. Vale refazer com outro humor ou explorar novas categorias.</p>
+      {availableBairros.length > 0 && (
+        <div className="mt-8 border-y border-[#dedcd6] py-3.5">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-[#7c2f1d]">Bairro:</span>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBairro('');
+                setPage(1);
+              }}
+              className={`shrink-0 px-3 py-1 font-medium transition cursor-pointer border rounded-none ${
+                !selectedBairro
+                  ? 'bg-[#1c1917] text-white border-[#1c1917]'
+                  : 'bg-white text-[#1c1917] border-[#dedcd6] hover:border-[#1c1917]'
+              }`}
+            >
+              Indiferente / Todos
+            </button>
+            {availableBairros.map((bairro) => {
+              const active = selectedBairro.toLowerCase() === bairro.toLowerCase();
+              return (
+                <button
+                  key={bairro}
+                  type="button"
+                  onClick={() => {
+                    setSelectedBairro(active ? '' : bairro);
+                    setPage(1);
+                  }}
+                  className={`shrink-0 px-3 py-1 font-medium transition cursor-pointer border rounded-none ${
+                    active
+                      ? 'bg-[#1c1917] text-white border-[#1c1917]'
+                      : 'bg-white text-[#1c1917] border-[#dedcd6] hover:border-[#1c1917]'
+                  }`}
+                >
+                  {bairro}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {filteredPlaces.length === 0 ? (
+        <p className="mt-12 text-muted">
+          {selectedBairro
+            ? `Nenhuma experiência encontrada em ${selectedBairro}. Tente selecionar "Indiferente / Todos" ou refazer a busca.`
+            : 'Nenhuma experiência ficou de pé. Vale refazer com outro humor ou explorar novas categorias.'}
+        </p>
       ) : (
         <>
           <div className="mt-14 space-y-20">

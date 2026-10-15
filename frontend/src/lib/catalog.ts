@@ -4,6 +4,7 @@ export interface JourneyChoice {
   moodLabel: string;
   moodLine: string;
   interests: string[];
+  neighborhoods?: string[];
   social: string;
   budgetReais: number;
   time: string;
@@ -11,6 +12,62 @@ export interface JourneyChoice {
   latitude?: number;
   longitude?: number;
   radiusKm?: number;
+}
+
+export const CITY_NEIGHBORHOODS: Record<string, string[]> = {
+  Fortaleza: [
+    'Aldeota',
+    'Meireles',
+    'Varjota',
+    'Praia de Iracema',
+    'Cocó',
+    'Centro',
+    'Parquelândia',
+    'Dionísio Torres',
+    'Mucuripe',
+    'Praia do Futuro',
+    'Papicu',
+    'Sul / Cambeba',
+  ],
+  Curitiba: [
+    'Batel',
+    'Centro',
+    'Bigorrilho',
+    'Juvevê',
+    'Cabral',
+    'Água Verde',
+    'Santa Felicidade',
+    'São Francisco',
+  ],
+  'São Paulo': [
+    'Pinheiros',
+    'Vila Madalena',
+    'Itaim Bibi',
+    'Jardins',
+    'Centro',
+    'Bela Vista',
+    'Moema',
+    'Perdizes',
+  ],
+  'Rio de Janeiro': [
+    'Ipanema',
+    'Leblon',
+    'Copacabana',
+    'Botafogo',
+    'Flamengo',
+    'Lapa',
+    'Santa Teresa',
+    'Barra da Tijuca',
+  ],
+};
+
+export function getNeighborhoodsForCity(cityName: string): string[] {
+  const normalized = (cityName || '').trim();
+  const direct = Object.keys(CITY_NEIGHBORHOODS).find(
+    (k) => k.localeCompare(normalized, 'pt-BR', { sensitivity: 'base' }) === 0
+  );
+  if (direct) return CITY_NEIGHBORHOODS[direct];
+  return CITY_NEIGHBORHOODS.Fortaleza;
 }
 
 export const moods = [

@@ -25,6 +25,8 @@ import type {
   RechargeCreditsInput,
   SponsoredFinancialOverview,
   PartnerPageSettings,
+  TestimonialSettings,
+  TestimonialItem,
 } from '@/lib/types';
 
 export type {
@@ -56,6 +58,8 @@ export type {
   RechargeCreditsInput,
   SponsoredFinancialOverview,
   PartnerPageSettings,
+  TestimonialSettings,
+  TestimonialItem,
 } from '@/lib/types';
 
 const API_BASE_URL =
@@ -386,6 +390,17 @@ export function getPartnerPageSettings(token?: string) {
 
 export function updatePartnerPageSettings(body: Partial<PartnerPageSettings>, token?: string) {
   return fetchJson<PartnerPageSettings>('/admin/partner-settings', {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  }, token);
+}
+
+export function getTestimonials(token?: string) {
+  return fetchJson<TestimonialSettings>('/admin/testimonials', undefined, token);
+}
+
+export function updateTestimonials(body: Partial<TestimonialSettings>, token?: string) {
+  return fetchJson<TestimonialSettings>('/admin/testimonials', {
     method: 'PUT',
     body: JSON.stringify(body),
   }, token);

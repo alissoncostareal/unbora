@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { GuideShell } from './components/GuideShell';
+import { ScrollToTop } from './components/ScrollToTop';
 import { useCity } from './lib/city';
 import { SiteFooter } from './components/SiteFooter';
 import { SiteMenu } from './components/SiteMenu';
@@ -56,6 +57,7 @@ export function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <ScrollToTop />
       {bare ? null : <SiteMenu />}
       <div className="flex-1">
         <Routes>
