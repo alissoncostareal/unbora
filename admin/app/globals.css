@@ -51,6 +51,7 @@
   html {
     @apply antialiased;
     color-scheme: light;
+    scroll-behavior: auto !important;
   }
 
   body {

@@ -20,6 +20,8 @@ function LoginForm() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, []);
 
   async function onSubmit(event: FormEvent) {
@@ -55,8 +57,8 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen w-full items-center justify-center bg-white px-4 py-8 sm:px-6 lg:px-12">
-      <div className="grid w-full max-w-6xl overflow-hidden bg-white shadow-sm lg:grid-cols-12">
+    <main className="flex min-h-screen w-full items-start justify-center bg-white px-4 py-6 sm:px-6 sm:py-10 lg:items-center lg:px-12">
+      <div className="my-auto grid w-full max-w-6xl overflow-hidden bg-white shadow-sm lg:grid-cols-12">
         <section className="flex flex-col justify-between bg-[#faf2ee] p-6 pb-4 sm:p-8 sm:pb-6 lg:col-span-5 lg:p-10">
           <div className="flex flex-col gap-3">
             <div className="h-0.5 w-8 bg-[#7c2f1d]" />

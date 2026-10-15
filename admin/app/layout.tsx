@@ -3,6 +3,7 @@ import localFont from 'next/font/local';
 import type { Metadata } from 'next';
 
 import './globals.css';
+import { ScrollToTop } from '@/components/ScrollToTop';
 
 const dmSans = localFont({
   src: '../fonts/dm-sans-latin.woff2',
@@ -40,7 +41,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <ScrollToTop />
+        {children}
+      </body>
     </html>
   );
 }

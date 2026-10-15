@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth';
+import { ScrollToTop } from '@/components/ScrollToTop';
 
 export const viewport: Viewport = {
   themeColor: '#7c2f1d',
@@ -108,6 +109,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <ScrollToTop />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
