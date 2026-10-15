@@ -119,7 +119,7 @@ export function RegisterPage() {
                   autoComplete="name"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
-                  placeholder="Marina Alencar"
+                  placeholder="Nome"
                   className={fieldClass}
                 />
               </div>
