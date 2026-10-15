@@ -559,7 +559,9 @@ export function MoodGuide() {
 
                 {filteredNeighborhoods.length === 0 && !showAddCustomOption && (
                   <div className="col-span-2 sm:col-span-3 border border-dashed border-[#dedcd6] p-6 text-center text-sm text-[#8a8178]">
-                    Nenhum bairro pré-cadastrado encontrado. Digite o nome do seu bairro e pressione Enter para selecionar.
+                    {availableNeighborhoods.length === 0
+                      ? `Digite no campo acima o nome de qualquer bairro em ${cityName} ou escolha "Indiferente" para ver toda a cidade.`
+                      : 'Nenhum bairro encontrado para esta busca. Digite o nome do bairro e adicione pelo campo acima.'}
                   </div>
                 )}
 
