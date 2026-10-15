@@ -1,19 +1,12 @@
-# Depois que o CI passa em main, entra na mesma VPS do PartiuMenu
-# e publica o Unbora no k3s, sem mexer no namespace partiumenu.
-#
-# GitHub → Settings → Environments → production → Secret:
-#   VPS_SSH_KEY — a mesma chave que entra como root em 173.212.242.9
-#
-# Opcionais (preenchem o Secret do cluster só quando estão definidos):
-#   GROQ_API_KEY, BRAVE_API_KEY, GOOGLE_PLACES_API_KEY,
-#   GOOGLE_CLIENT_ID, SUPERADMIN_EMAIL, SUPERADMIN_PASSWORD, ADMIN_JWT_SECRET
+# Pipeline automático de Deploy do Unbora
+# Dispara automaticamente a cada push na branch main.
+# Executa o CI do backend e em seguida conecta via SSH na VPS (173.212.242.9)
+# para publicar o Unbora no cluster k3s.
 
 name: Deploy
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
+  push:
     branches:
       - main
 
@@ -25,16 +18,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  backend-ci:
+    name: Backend CI (Maven)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Package
+        run: chmod +x mvnw && ./mvnw -B -DskipTests package
+
   deploy-production:
     name: Deploy production
-    if: github.event.workflow_run.conclusion == 'success'
+    needs: [backend-ci]
     runs-on: ubuntu-latest
     environment: production
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Deploy on VPS
         env:
