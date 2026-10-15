@@ -18,11 +18,13 @@ TIPOS DE EXPERIÊNCIAS DESEJADAS:
 {webContext}
 
 SUA TAREFA:
-Retorne lugares reais em {city} que caibam no filtro já escolhido: humor, tipos de experiência, companhia, teto de gasto, tempo e raio.
+Retorne até 24 lugares reais em {city} que caibam no filtro já escolhido: humor, tipos de experiência, companhia, teto de gasto, tempo e raio.
+Meta: até 24 opções reais e completas. Nunca resuma para apenas 3 a 6 opções — o usuário quer a curadoria ampla e completa com até 24 lugares.
 Conecte as sugestões com o perfil de gostos e histórico do usuário (quando houver) e leve em consideração as condições de vento, céu e momento solar informadas pela NASA.
-Priorize os "CANDIDATOS VIVOS DO GOOGLE MAPS" listados acima. Quando houver poucos candidatos reais listados (ou para completar a meta de opções solicitadas), complemente com outros estabelecimentos reais, consagrados e bem avaliados de {city} dentro das categorias e filtros informados.
+Priorize os "CANDIDATOS VIVOS DO GOOGLE MAPS" listados acima. Complete a meta de até 24 lugares usando esses candidatos e complementando com outros estabelecimentos reais, consagrados, famosos e bem avaliados de {city} dentro das categorias e filtros informados até preencher até 24 lugares.
 
 REGRAS DE CONTEÚDO:
+- Forneça a lista completa com até 24 lugares reais (nunca resuma para poucos destaques).
 - Cada lugar precisa estar em {city} e dentro do raio informado em "Quer se sentir".
 - Cada lugar precisa ser de um dos tipos listados. Café não vira restaurante, praia não vira bar.
 - Respeite companhia, tempo e teto de gasto descritos em "Quer se sentir".

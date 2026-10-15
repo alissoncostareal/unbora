@@ -302,7 +302,7 @@ public class RecommendationsService {
 
             try {
                 CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
-                        .get(3500, TimeUnit.MILLISECONDS);
+                        .get(5000, TimeUnit.MILLISECONDS);
             } catch (Exception ignored) {}
 
             for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
@@ -422,12 +422,13 @@ public class RecommendationsService {
         promptVars.put("webContext", webContext != null ? webContext : "");
         promptVars.put("atmosphericContext", atmosphericContext);
         promptVars.put("userTasteContext", userTasteContext.toString());
+        promptVars.put("maxResults", maxResults);
 
         String userPrompt = promptTemplateService.render("recommendation-user-prompt", promptVars);
 
         RecommendationResult result;
         try {
-            int maxTokens = Math.max(900, Math.min(1800, maxResults * 75));
+            int maxTokens = Math.max(1600, Math.min(4000, maxResults * 140));
             result = groqClient.callGroqJson(
                     systemPrompt,
                     userPrompt,
@@ -457,6 +458,7 @@ public class RecommendationsService {
         RecommendationResult enriched = enrichPlaces(result, city, country, lat, lng, livePlaces);
         enriched = appendMissingLivePlaces(enriched, livePlaces, city, maxResults);
         retainInCity(enriched, center, radiusKm, city, Set.of(), dto.activities(), budgetReais);
+        supplementMissingPlaces(enriched, livePlaces, city, country, lat, lng, maxResults, center, radiusKm, budgetReais, dto.activities());
         fillMissingMapsPhotos(enriched, city, lat, lng);
         ensurePhotographedPlaces(enriched, livePlaces, maxResults);
         injectSponsoredPlaces(enriched, city, humor, dto.activities() != null ? dto.activities().stream().map(ActivityItemDto::label).toList() : List.of(), null, maxResults);
@@ -633,7 +635,7 @@ public class RecommendationsService {
 
             try {
                 CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
-                        .get(3500, TimeUnit.MILLISECONDS);
+                        .get(5000, TimeUnit.MILLISECONDS);
             } catch (Exception ignored) {}
 
             for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
@@ -698,7 +700,7 @@ public class RecommendationsService {
 
         RecommendationResult result;
         try {
-            int maxTokens = Math.max(900, Math.min(1800, maxResults * 75));
+            int maxTokens = Math.max(1600, Math.min(4000, maxResults * 140));
             result = groqClient.callGroqJson(
                     systemPrompt,
                     userPrompt,
@@ -728,6 +730,7 @@ public class RecommendationsService {
         RecommendationResult enriched = enrichPlaces(result, city, country, lat, lng, livePlaces);
         enriched = appendMissingLivePlaces(enriched, livePlaces, city, maxResults);
         retainInCity(enriched, center, radiusKm, city, Set.of(), null, null);
+        supplementMissingPlaces(enriched, livePlaces, city, country, lat, lng, maxResults, center, radiusKm, null, null);
         fillMissingMapsPhotos(enriched, city, lat, lng);
         ensurePhotographedPlaces(enriched, livePlaces, maxResults);
         injectSponsoredPlaces(enriched, city, null, List.of(), query, maxResults);
@@ -764,7 +767,14 @@ public class RecommendationsService {
         String sanitized = InputSanitizer.sanitizePlaceId(snapshotId, 120);
         if (sanitized == null || sanitized.isBlank()) return Optional.empty();
         if (recommendationCacheService != null) {
-            return recommendationCacheService.getSnapshot(sanitized);
+            Optional<RecommendationResult> opt = recommendationCacheService.getSnapshot(sanitized);
+            if (opt.isPresent()) {
+                RecommendationResult res = opt.get();
+                if (res != null && res.getLugares() != null && res.getLugares().size() < 24) {
+                    supplementSnapshot(res, sanitized);
+                }
+                return Optional.ofNullable(res);
+            }
         }
         return Optional.empty();
     }
@@ -1046,7 +1056,7 @@ public class RecommendationsService {
         RecommendationResult result;
         try {
             boolean hasLive = !livePlaces.isEmpty();
-            int maxTokens = Math.max(900, Math.min(1800, maxResults * 75));
+            int maxTokens = Math.max(1600, Math.min(4000, maxResults * 140));
             result = groqClient.callGroqJson(
                     systemPrompt,
                     promptInstruction,
@@ -1078,6 +1088,7 @@ public class RecommendationsService {
         RecommendationResult enriched = enrichPlaces(result, city, country, lat, lng, livePlaces);
         enriched = appendMissingLivePlaces(enriched, livePlaces, city, maxResults);
         retainInCity(enriched, center, radiusKm, city, dismissed, null, null);
+        supplementMissingPlaces(enriched, livePlaces, city, country, lat, lng, maxResults, center, radiusKm, null, null);
         fillMissingMapsPhotos(enriched, city, lat, lng);
         ensurePhotographedPlaces(enriched, livePlaces, maxResults);
         injectSponsoredPlaces(enriched, city, null, List.of(), "personalizado", maxResults);
@@ -1766,11 +1777,193 @@ public class RecommendationsService {
         return result;
     }
 
+    /**
+     * Se a lista ainda tiver menos que maxResults, complementa com candidatos de livePlaces,
+     * catalogo local pgvector ou busca direta no Google Places para atingir o total configurado.
+     */
+    private void supplementMissingPlaces(
+            RecommendationResult result,
+            List<GooglePlacesDiscoveryService.DiscoveredPlace> livePlaces,
+            String city,
+            String country,
+            Double lat,
+            Double lng,
+            int maxResults,
+            CityAnchor.Center center,
+            Double radiusKm,
+            Double budgetReais,
+            List<ActivityItemDto> activities
+    ) {
+        if (result == null || result.getLugares() == null) return;
+        List<PlaceDto> current = result.getLugares();
+        int targetMax = maxResults > 0 ? maxResults : 24;
+        if (current.size() >= targetMax) return;
+
+        // 1. Tenta usar os livePlaces coletados que ainda nao entraram
+        if (livePlaces != null) {
+            for (GooglePlacesDiscoveryService.DiscoveredPlace lp : livePlaces) {
+                if (current.size() >= targetMax) break;
+                boolean already = current.stream().anyMatch(p ->
+                        imageEnrichmentService.calculateNameSimilarity(p.getNome(), lp.displayName()) >= 0.45);
+                if (!already) {
+                    current.add(toPlaceDto(lp, false));
+                }
+            }
+        }
+
+        // 2. Se ainda faltar, busca do catalogo local pgvector se disponivel
+        if (current.size() < targetMax && placeEmbeddingRepository != null && embeddingService != null) {
+            try {
+                String vector = embeddingService.getEmbeddingVectorString("melhores lugares " + city);
+                List<PlaceEmbeddingProjection> projs = placeEmbeddingRepository.findSimilarPlaces(city, vector, targetMax);
+                if (projs != null) {
+                    for (PlaceEmbeddingProjection proj : projs) {
+                        if (current.size() >= targetMax) break;
+                        boolean already = current.stream().anyMatch(p ->
+                                imageEnrichmentService.calculateNameSimilarity(p.getNome(), proj.getName()) >= 0.45);
+                        if (!already) {
+                            GooglePlacesDiscoveryService.DiscoveredPlace dp = projectionToDiscoveredPlace(proj);
+                            current.add(toPlaceDto(dp, false));
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 3. Se ainda faltar e Google Places estiver configurado, faz busca complementar direcionada
+        if (current.size() < targetMax && googlePlacesDiscoveryService != null && googlePlacesDiscoveryService.isConfigured()) {
+            try {
+                List<String> extraQueries = List.of(
+                        "melhores restaurantes em " + city,
+                        "cafes e bistros em " + city,
+                        "lugares para sair em " + city
+                );
+                for (String q : extraQueries) {
+                    if (current.size() >= targetMax) break;
+                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found =
+                            googlePlacesDiscoveryService.searchPlaces(q, lat, lng, radiusKm != null ? radiusKm : 30.0, city, country, 20);
+                    if (found != null) {
+                        for (GooglePlacesDiscoveryService.DiscoveredPlace dp : found) {
+                            if (current.size() >= targetMax) break;
+                            boolean already = current.stream().anyMatch(p ->
+                                    imageEnrichmentService.calculateNameSimilarity(p.getNome(), dp.displayName()) >= 0.45);
+                            if (!already) {
+                                current.add(toPlaceDto(dp, false));
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                log.debug("[Recommend] Falha na busca complementar do Places: {}", ex.getMessage());
+            }
+        }
+
+        if (current.size() > targetMax) {
+            result.setLugares(new ArrayList<>(current.subList(0, targetMax)));
+        } else {
+            result.setLugares(current);
+        }
+    }
+
+    /**
+     * Suplementa snapshots legados (salvos com poucos lugares) para atingir ate 24 opcoes reais.
+     */
+    private void supplementSnapshot(RecommendationResult res, String snapshotId) {
+        if (res == null || res.getLugares() == null) return;
+        List<PlaceDto> places = new ArrayList<>(res.getLugares());
+        int targetMax = 24;
+        if (places.size() >= targetMax) return;
+
+        String city = "São Paulo";
+        if (!places.isEmpty()) {
+            for (PlaceDto p : places) {
+                if (p.getEndereco() != null && !p.getEndereco().isBlank()) {
+                    String addr = p.getEndereco();
+                    if (addr.contains("—")) {
+                        String after = addr.substring(addr.lastIndexOf("—") + 1).trim();
+                        if (!after.isBlank()) {
+                            city = after.split(",")[0].trim();
+                            break;
+                        }
+                    } else if (addr.contains(",")) {
+                        String[] parts = addr.split(",");
+                        if (parts.length >= 2) {
+                            city = parts[parts.length - 1].trim();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (res.getSubtitulo() != null && res.getSubtitulo().contains(" em ")) {
+            String sub = res.getSubtitulo();
+            city = sub.substring(sub.lastIndexOf(" em ") + 4).trim();
+        }
+
+        log.info("[Snapshot] Suplementando snapshot '{}' (atual={} lugares, meta={}) para cidade '{}'",
+                snapshotId, places.size(), targetMax, city);
+
+        CityAnchor.Center center = null;
+        try {
+            center = cityAnchor.resolve(city, null, null, null, null);
+        } catch (Exception ignored) {}
+        Double lat = center != null ? center.latitude() : null;
+        Double lng = center != null ? center.longitude() : null;
+
+        List<GooglePlacesDiscoveryService.DiscoveredPlace> extra = new ArrayList<>();
+        if (googlePlacesDiscoveryService != null && googlePlacesDiscoveryService.isConfigured()) {
+            try {
+                List<String> queries = List.of(
+                        "melhores restaurantes em " + city,
+                        "cafes especiais em " + city,
+                        "bares e bistros em " + city,
+                        "pontos turisticos e cultura em " + city
+                );
+                for (String q : queries) {
+                    if (places.size() + extra.size() >= targetMax) break;
+                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found =
+                            googlePlacesDiscoveryService.searchPlaces(q, lat, lng, 35.0, city, "Brasil", 20);
+                    if (found != null) {
+                        for (GooglePlacesDiscoveryService.DiscoveredPlace dp : found) {
+                            if (places.size() + extra.size() >= targetMax) break;
+                            boolean exists = places.stream().anyMatch(existing ->
+                                    imageEnrichmentService.calculateNameSimilarity(existing.getNome(), dp.displayName()) >= 0.45);
+                            boolean inExtra = extra.stream().anyMatch(ex ->
+                                    imageEnrichmentService.calculateNameSimilarity(ex.displayName(), dp.displayName()) >= 0.45);
+                            if (!exists && !inExtra) {
+                                extra.add(dp);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("[Snapshot] Erro ao buscar complementos no Google Places: {}", ex.getMessage());
+            }
+        }
+
+        for (GooglePlacesDiscoveryService.DiscoveredPlace dp : extra) {
+            if (places.size() >= targetMax) break;
+            places.add(toPlaceDto(dp, false));
+        }
+
+        res.setLugares(places);
+        resolveOutgoingPhotos(res);
+        ensureMapsLinks(res, city);
+
+        try {
+            if (recommendationCacheService != null) {
+                recommendationCacheService.putRecommendation(snapshotId, "RECOMMEND", city, res, Duration.ofDays(7));
+            }
+        } catch (Exception ex) {
+            log.warn("[Snapshot] Erro ao atualizar snapshot persistente: {}", ex.getMessage());
+        }
+    }
+
     private PlaceDto toPlaceDto(GooglePlacesDiscoveryService.DiscoveredPlace p, boolean destaque) {
         PlaceDto place = new PlaceDto();
         place.setNome(p.displayName());
         place.setTipo(humanizePlaceType(p.primaryType()));
-        place.setIcone(emojiForPlaceType(p.primaryType()));
+        place.setIcone("");
         place.setEndereco(p.formattedAddress());
         place.setNota(p.rating() != null && p.rating() > 0 ? p.rating() : 4.5);
         place.setDescricao(p.editorialSummary() != null && !p.editorialSummary().isBlank()

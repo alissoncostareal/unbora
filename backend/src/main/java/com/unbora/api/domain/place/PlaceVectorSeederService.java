@@ -54,6 +54,11 @@ public class PlaceVectorSeederService {
             String vibeDna
     ) {}
 
+    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        java.util.concurrent.CompletableFuture.runAsync(this::seedIconicPlaces);
+    }
+
     public void seedIconicPlaces() {
         try {
             long existingCount = placeEmbeddingRepository.countByCityIgnoreCase("Fortaleza");
