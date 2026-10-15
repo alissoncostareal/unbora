@@ -169,25 +169,8 @@ export function SiteMenu() {
           </form>
         )}
 
-        {/* Ações Direitas no Desktop (Anuncie seu Local + Auth) */}
+        {/* Ações Direitas no Desktop (Auth) */}
         <div className="hidden xl:flex shrink-0 items-center gap-3">
-          {user?.role === 'merchant' ? (
-            <NavLink
-              to="/merchant"
-              className="px-3 py-1.5 bg-[#faf2ee] border border-[#dbc1bb] text-[#7c2f1d] rounded-none text-[11px] font-bold tracking-[0.08em] uppercase hover:bg-[#f5e8e2] flex items-center transition whitespace-nowrap"
-            >
-              Painel do Parceiro
-            </NavLink>
-          ) : (
-            <NavLink
-              to="/merchant"
-              className="px-2.5 py-1 text-[12px] font-bold tracking-[0.06em] text-[#7c2f1d] hover:text-[#5c2114] uppercase transition whitespace-nowrap"
-            >
-              Anuncie seu Local
-            </NavLink>
-          )}
-
-          <div className="h-4 w-px bg-[#e7dfd8]" aria-hidden />
 
           {user ? (
             <div className="flex items-center gap-2">
@@ -311,17 +294,6 @@ export function SiteMenu() {
                   </a>
                 );
               })}
-
-              <NavLink
-                to="/merchant"
-                onClick={() => setMobileOpen(false)}
-                className="mt-2 flex items-center justify-between rounded-none bg-[#faf2ee] px-4 py-3 text-sm font-bold text-[#7c2f1d] hover:bg-[#f5e8e2] border border-[#dbc1bb] transition"
-              >
-                <span>Anuncie seu Local</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-[#7c2f1d] text-white px-2 py-0.5 rounded-none">
-                  Parceiros
-                </span>
-              </NavLink>
             </div>
 
             {/* Ações de Conta */}
