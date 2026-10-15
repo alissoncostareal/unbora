@@ -17,5 +17,15 @@ Disallow: /create
 Disallow: /reset-password
 Disallow: /confirm-account
 
-# Sitemap Oficial Unbora
+# Bloqueio de scrapers de IA agressivos para economizar CPU e banda do servidor
+User-agent: Bytespider
+User-agent: CCBot
+User-agent: GPTBot
+User-agent: anthropic-ai
+User-agent: ClaudeBot
+Disallow: /
+
+# Sitemap & Segurança Oficial Unbora
 Sitemap: https://unbora.com.br/sitemap.xml
+# RFC 9116
+# Security policy: https://unbora.com.br/.well-known/security.txt

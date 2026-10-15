@@ -1,0 +1,5 @@
+Contact: mailto:security@unbora.com.br
+Contact: https://business.unbora.com.br
+Expires: 2028-01-01T00:00:00.000Z
+Preferred-Languages: pt-BR, en
+Canonical: https://business.unbora.com.br/.well-known/security.txt
