@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { GuideShell } from './components/GuideShell';
+import { PassportAuthModal } from './components/PassportAuthModal';
 import { ScrollToTop } from './components/ScrollToTop';
 import { useCity } from './lib/city';
 import { SiteFooter } from './components/SiteFooter';
@@ -58,6 +59,7 @@ export function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <ScrollToTop />
+      <PassportAuthModal />
       {bare ? null : <SiteMenu />}
       <div className="flex-1">
         <Routes>

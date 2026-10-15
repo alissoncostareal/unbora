@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { createCheckin, recordSponsoredClick, type Place } from '../lib/api';
 import { isPlaceFavorite, togglePlaceFavorite } from '../lib/favorites';
 import { useAuth } from '../lib/auth';
+import { openPassportModal } from '../lib/passportModal';
 
 const DEFAULT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80';
 
@@ -27,7 +29,6 @@ export function PlaceCard({
   const [checkedIn, setCheckedIn] = useState(false);
   const [isFav, setIsFav] = useState(false);
   const [showCheckinModal, setShowCheckinModal] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [rating, setRating] = useState<number>(5);
   const [notes, setNotes] = useState('');
   const [submittingCheckin, setSubmittingCheckin] = useState(false);
@@ -43,7 +44,20 @@ export function PlaceCard({
     return () => window.removeEventListener('unbora:favorites_changed', onFavChange);
   }, [place]);
 
+  useEffect(() => {
+    if (!showCheckinModal) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [showCheckinModal]);
+
   function handleFavoriteClick() {
+    if (!user) {
+      openPassportModal();
+      return;
+    }
     const updated = togglePlaceFavorite(place);
     setIsFav(updated);
   }
@@ -64,7 +78,7 @@ export function PlaceCard({
 
   function handleCheckinTrigger() {
     if (!user) {
-      setShowAuthModal(true);
+      openPassportModal();
       return;
     }
     setShowCheckinModal(true);
@@ -275,10 +289,17 @@ export function PlaceCard({
         </div>
       </div>
 
-      {/* Modal de Confirmação de Check-in e Avaliação */}
-      {showCheckinModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-none bg-white p-6 sm:p-8 shadow-2xl border border-stone-200">
+      {/* Modal de Confirmação de Check-in e Avaliação (portal de tela cheia) */}
+      {showCheckinModal && typeof document !== 'undefined' && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCheckinModal(false);
+          }}
+        >
+          <div className="relative w-full max-w-md rounded-none bg-white p-6 sm:p-8 shadow-2xl border border-stone-200 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div className="flex items-center gap-2">
                 <svg className="size-5 text-[#7c2f1d]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -290,7 +311,7 @@ export function PlaceCard({
               <button
                 type="button"
                 onClick={() => setShowCheckinModal(false)}
-                className="text-stone-400 hover:text-stone-700 p-1 text-sm font-bold uppercase tracking-wider"
+                className="text-stone-400 hover:text-stone-700 p-1 text-sm font-bold uppercase tracking-wider cursor-pointer"
               >
                 Fechar
               </button>
@@ -356,46 +377,8 @@ export function PlaceCard({
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Modal de Autenticação Rápida para Check-in */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-none bg-white p-6 sm:p-8 shadow-2xl border border-stone-200 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-none bg-[#7c2f1d]/10 text-[#7c2f1d]">
-              <svg className="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-xl font-bold text-[#1c1917]">Crie seu Passaporte Urbano</h3>
-            <p className="mt-2 text-xs sm:text-sm text-stone-600 leading-relaxed">
-              Faça login ou cadastre-se no Unbora para registrar onde você esteve, ver locais visitados no mês passado e receber convites para revisitar seus favoritos.
-            </p>
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <Link
-                to="/login"
-                className="flex-1 rounded-none bg-[#7c2f1d] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition"
-              >
-                Entrar
-              </Link>
-              <Link
-                to="/register"
-                className="flex-1 rounded-none border border-stone-300 py-3 text-xs font-bold uppercase tracking-wider text-stone-800 hover:bg-stone-50 transition"
-              >
-                Criar Conta
-              </Link>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowAuthModal(false)}
-              className="mt-4 text-xs font-medium text-stone-400 hover:text-stone-600 underline cursor-pointer"
-            >
-              Continuar navegando sem salvar
-            </button>
-          </div>
-        </div>
+        </div>,
+        document.body
       )}
     </article>
   );

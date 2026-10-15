@@ -6,6 +6,7 @@ import { SEOHead } from '../components/SEOHead';
 import { fetchDismissed, fetchSnapshot, recommend, searchPlaces, sendFeedback, type Place, type Recommendation } from '../lib/api';
 import { saveRole } from '../lib/savedRoles';
 import { useAuth } from '../lib/auth';
+import { openPassportModal } from '../lib/passportModal';
 import { company, durations, getNeighborhoodsForCity, interests, JOURNEY_KEY, moods, type JourneyChoice } from '../lib/catalog';
 import { getGuide, loadGuide } from '../lib/guide';
 import { journeyFromQuery, readResultQuery } from '../lib/resultQuery';
@@ -223,6 +224,10 @@ export function ResultPage() {
   const [savedRoleSuccess, setSavedRoleSuccess] = useState(false);
 
   function handleSaveRole() {
+    if (!user) {
+      openPassportModal();
+      return;
+    }
     if (!result || !places || places.length === 0) return;
     const title = journey?.moodLine || result.title || `Rolê em ${journey?.city || 'sua cidade'}`;
     saveRole({
