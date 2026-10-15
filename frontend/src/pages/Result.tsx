@@ -10,6 +10,7 @@ import { openPassportModal } from '../lib/passportModal';
 import { company, durations, getNeighborhoodsForCity, interests, JOURNEY_KEY, moods, type JourneyChoice } from '../lib/catalog';
 import { getGuide, loadGuide } from '../lib/guide';
 import { journeyFromQuery, readResultQuery } from '../lib/resultQuery';
+import { preloadPageImages } from '../lib/imagePrefetcher';
 
 function normalizeKey(value: string | undefined | null) {
   if (!value) return '';
@@ -384,6 +385,21 @@ export function ResultPage() {
   const currentPage = Math.min(Math.max(1, page), totalPages);
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const paginatedPlaces = filteredPlaces.slice(startIndex, startIndex + PAGE_SIZE);
+
+  useEffect(() => {
+    if (!filteredPlaces.length) return;
+    const currentUrls = paginatedPlaces
+      .map((p) => p.imageUrl)
+      .filter((u): u is string => Boolean(u));
+
+    const nextStartIndex = currentPage * PAGE_SIZE;
+    const nextPagePlaces = filteredPlaces.slice(nextStartIndex, nextStartIndex + PAGE_SIZE);
+    const nextUrls = nextPagePlaces
+      .map((p) => p.imageUrl)
+      .filter((u): u is string => Boolean(u));
+
+    preloadPageImages(currentUrls, nextUrls);
+  }, [currentPage, filteredPlaces, paginatedPlaces]);
 
   function handlePageChange(newPage: number) {
     const targetPage = Math.min(Math.max(1, newPage), totalPages);

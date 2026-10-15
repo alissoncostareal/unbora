@@ -694,6 +694,7 @@ public class RecommendationsService {
                 "country", country,
                 "dateLabel", dateLabel,
                 "query", query,
+                "maxResults", maxResults,
                 "groundingContext", groundingContext.toString(),
                 "webContext", webContext != null ? webContext : ""
         ));

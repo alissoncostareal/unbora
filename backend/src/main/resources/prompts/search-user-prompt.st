@@ -6,9 +6,9 @@ O usuário buscou: "{query}".
 {webContext}
 
 SUA TAREFA:
-Retorne até 24 lugares reais em {city} para a busca "{query}".
-Priorize os "CANDIDATOS VIVOS DO GOOGLE MAPS" e preencha até o limite de 24.
-Meta: até 24 opções.
+Retorne até {maxResults} lugares reais em {city} para a busca "{query}".
+Priorize os "CANDIDATOS VIVOS DO GOOGLE MAPS" e preencha até o limite de {maxResults}.
+Meta: até {maxResults} opções.
 
 REGRAS:
 - Não resuma para poucos destaques — o usuário quer a lista completa.

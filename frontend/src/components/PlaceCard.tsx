@@ -32,9 +32,11 @@ export function PlaceCard({
   const [rating, setRating] = useState<number>(5);
   const [notes, setNotes] = useState('');
   const [submittingCheckin, setSubmittingCheckin] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     setImgSrc(place.imageUrl || DEFAULT_FALLBACK_IMAGE);
+    setIsLoaded(false);
   }, [place.imageUrl]);
 
   useEffect(() => {
@@ -121,11 +123,18 @@ export function PlaceCard({
     >
       <div className="relative aspect-[4/5] bg-[#e7e0d8] sm:aspect-[5/4] overflow-hidden rounded-none">
         <img
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+          className={`h-full w-full object-cover transition-all duration-500 group-hover:scale-[1.02] ${
+            isLoaded ? 'opacity-100' : 'opacity-85'
+          }`}
           src={imgSrc}
           alt={place.name}
-          loading="lazy"
-          onError={() => setImgSrc(DEFAULT_FALLBACK_IMAGE)}
+          loading="eager"
+          decoding="async"
+          onLoad={() => setIsLoaded(true)}
+          onError={() => {
+            setImgSrc(DEFAULT_FALLBACK_IMAGE);
+            setIsLoaded(true);
+          }}
         />
         {place.isSponsored ? (
           <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-none bg-gradient-to-r from-amber-600 to-orange-500 px-3 py-1 text-[11px] font-semibold tracking-wider uppercase text-white shadow-md backdrop-blur-sm">

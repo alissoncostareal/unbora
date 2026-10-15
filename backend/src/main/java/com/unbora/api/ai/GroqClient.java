@@ -93,7 +93,7 @@ public class GroqClient {
             if (model.contains("qwen3.8-27b")) {
                 effectiveMaxTokens = Math.min(effectiveMaxTokens, 950);
             } else {
-                effectiveMaxTokens = Math.min(effectiveMaxTokens, 2048);
+                effectiveMaxTokens = Math.max(effectiveMaxTokens, 2500);
             }
 
             Map<String, Object> payload = new HashMap<>();

@@ -67,16 +67,17 @@ public class FallbackLlmClient {
                     Map.of("role", "user", "content", userPrompt)
             ));
             payload.put("temperature", temperature);
-            payload.put("max_tokens", Math.min(Math.max(maxTokens, 1), 2048));
+            int effectiveMaxTokens = Math.max(maxTokens, 3500);
+            payload.put("max_tokens", Math.min(effectiveMaxTokens, 4096));
             if (jsonMode) {
                 payload.put("response_format", Map.of("type", "json_object"));
             }
 
             HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/chat/completions"))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
-                    .timeout(Duration.ofSeconds(4));
+                .uri(URI.create(baseUrl + "/chat/completions"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                .timeout(Duration.ofSeconds(20));
             if (!apiKey.isBlank()) {
                 builder.header("Authorization", "Bearer " + apiKey);
             }
