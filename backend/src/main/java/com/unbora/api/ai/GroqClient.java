@@ -39,39 +39,38 @@ public class GroqClient {
 
     /**
      * Modelos de ultra-baixa latência e alta velocidade suportados oficialmente pela Groq.
-     * qwen/qwen3.8-27b responde em ~350ms-500ms e openai/gpt-oss-120b em ~1.1s no LPU.
+     * llama-3.3-70b-versatile e llama-3.1-8b-instant operam no LPU com centenas de tokens/segundo.
      */
     private static final List<String> FAST_GROQ_MODELS = List.of(
-            "openai/gpt-oss-120b",
-            "openai/gpt-oss-20b",
-            "qwen/qwen3.8-27b",
-            "allam-2-7b"
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+            "qwen/qwen3.8-27b"
     );
 
     public GroqClient(
             @Value("${unbora.groq.api-key:}") String groqApiKey,
-            @Value("${unbora.groq.model:openai/gpt-oss-120b}") String configuredModel,
+            @Value("${unbora.groq.model:llama-3.3-70b-versatile}") String configuredModel,
             @Value("${unbora.brave.api-key:}") String braveKey,
             FallbackLlmClient fallbackLlmClient
     ) {
         this.groqApiKey = groqApiKey != null ? groqApiKey.trim() : "";
-        String model = configuredModel != null ? configuredModel.trim() : "openai/gpt-oss-120b";
+        String model = configuredModel != null ? configuredModel.trim() : "llama-3.3-70b-versatile";
         
-        // Corrige modelos legados/inexistentes para o modelo ultra-rápido suportado
-        if (model.isBlank() || model.contains("llama-3.1") || model.contains("mixtral") || model.contains("compound")) {
-            model = "openai/gpt-oss-120b";
+        // Garante modelo suportado na Groq
+        if (model.isBlank() || model.contains("gpt-oss") || model.contains("allam") || model.contains("mixtral") || model.contains("compound")) {
+            model = "llama-3.3-70b-versatile";
         }
         this.configuredModel = model;
         this.braveKey = braveKey != null ? braveKey.trim() : "";
         this.fallbackLlmClient = fallbackLlmClient;
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
+                .connectTimeout(Duration.ofSeconds(6))
                 .build();
         this.objectMapper = new ObjectMapper();
     }
 
     public <T> T callGroqJson(String systemPrompt, String userPrompt, Class<T> responseClass, double temperature, int maxTokens) {
-        return callGroqJson(systemPrompt, userPrompt, responseClass, temperature, maxTokens, Duration.ofSeconds(12), 4);
+        return callGroqJson(systemPrompt, userPrompt, responseClass, temperature, maxTokens, Duration.ofSeconds(8), 2);
     }
 
     public <T> T callGroqJson(
@@ -89,12 +88,7 @@ public class GroqClient {
     private <T> T executeGroqSingleFast(String systemPrompt, String userPrompt, Class<T> responseClass, double temperature, int maxTokens) {
         String model = configuredModel;
         try {
-            int effectiveMaxTokens = maxTokens;
-            if (model.contains("qwen3.8-27b")) {
-                effectiveMaxTokens = Math.min(effectiveMaxTokens, 950);
-            } else {
-                effectiveMaxTokens = Math.max(effectiveMaxTokens, 2500);
-            }
+            int effectiveMaxTokens = Math.max(maxTokens, 3500);
 
             Map<String, Object> payload = new HashMap<>();
             payload.put("model", model);
@@ -154,12 +148,7 @@ public class GroqClient {
 
             long start = System.currentTimeMillis();
             try {
-                int effectiveMaxTokens = maxTokens;
-                if (model.contains("qwen3.8-27b")) {
-                    effectiveMaxTokens = Math.min(effectiveMaxTokens, 950);
-                } else {
-                    effectiveMaxTokens = Math.max(effectiveMaxTokens, 2500);
-                }
+                int effectiveMaxTokens = Math.max(maxTokens, 3500);
 
                 Map<String, Object> payload = new HashMap<>();
                 payload.put("model", model);
@@ -172,7 +161,7 @@ public class GroqClient {
                 payload.put("response_format", Map.of("type", "json_object"));
 
                 Duration remaining = Duration.between(Instant.now(), deadline);
-                Duration timeout = remaining.compareTo(Duration.ofSeconds(10)) > 0 ? Duration.ofSeconds(10) : remaining;
+                Duration timeout = remaining.compareTo(Duration.ofSeconds(6)) > 0 ? Duration.ofSeconds(6) : remaining;
                 if (timeout.isNegative() || timeout.isZero()) break;
 
                 log.info("[Groq] Enviando requisicao para modelo {} (maxTokens={}, timeout={}s)...", model, effectiveMaxTokens, timeout.toSeconds());

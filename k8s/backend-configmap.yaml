@@ -6,7 +6,7 @@ metadata:
 data:
   PORT: "3001"
   ALLOWED_ORIGIN: "*"
-  GROQ_MODEL: "openai/gpt-oss-120b"
+  GROQ_MODEL: "llama-3.3-70b-versatile"
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka-service.unbora.svc.cluster.local:9092"
   UNBORA_KAFKA_ENABLED: "true"
   SUPERADMIN_NAME: "Super Admin"

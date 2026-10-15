@@ -302,7 +302,7 @@ public class RecommendationsService {
 
             try {
                 CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
-                        .get(5000, TimeUnit.MILLISECONDS);
+                        .get(1500, TimeUnit.MILLISECONDS);
             } catch (Exception ignored) {}
 
             for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
@@ -635,7 +635,7 @@ public class RecommendationsService {
 
             try {
                 CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
-                        .get(5000, TimeUnit.MILLISECONDS);
+                        .get(1500, TimeUnit.MILLISECONDS);
             } catch (Exception ignored) {}
 
             for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
@@ -969,7 +969,7 @@ public class RecommendationsService {
 
             try {
                 CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
-                        .get(3500, TimeUnit.MILLISECONDS);
+                        .get(1500, TimeUnit.MILLISECONDS);
             } catch (Exception ignored) {}
 
             for (CompletableFuture<List<GooglePlacesDiscoveryService.DiscoveredPlace>> f : futures) {
@@ -1619,7 +1619,7 @@ public class RecommendationsService {
         }
         if (!futures.isEmpty()) {
             try {
-                CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).get(1500, TimeUnit.MILLISECONDS);
+                CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).get(800, TimeUnit.MILLISECONDS);
             } catch (Exception ignored) {}
         }
     }
@@ -1831,26 +1831,19 @@ public class RecommendationsService {
             } catch (Exception ignored) {}
         }
 
-        // 3. Se ainda faltar e Google Places estiver configurado, faz busca complementar direcionada
-        if (current.size() < targetMax && googlePlacesDiscoveryService != null && googlePlacesDiscoveryService.isConfigured()) {
+        // 3. Se ainda faltar e for crítico (< 12) e Google Places estiver configurado, faz no máximo 1 busca complementar rápida
+        if (current.size() < Math.min(12, targetMax) && googlePlacesDiscoveryService != null && googlePlacesDiscoveryService.isConfigured()) {
             try {
-                List<String> extraQueries = List.of(
-                        "melhores restaurantes em " + city,
-                        "cafes e bistros em " + city,
-                        "lugares para sair em " + city
-                );
-                for (String q : extraQueries) {
-                    if (current.size() >= targetMax) break;
-                    List<GooglePlacesDiscoveryService.DiscoveredPlace> found =
-                            googlePlacesDiscoveryService.searchPlaces(q, lat, lng, radiusKm != null ? radiusKm : 30.0, city, country, 20);
-                    if (found != null) {
-                        for (GooglePlacesDiscoveryService.DiscoveredPlace dp : found) {
-                            if (current.size() >= targetMax) break;
-                            boolean already = current.stream().anyMatch(p ->
-                                    imageEnrichmentService.calculateNameSimilarity(p.getNome(), dp.displayName()) >= 0.45);
-                            if (!already) {
-                                current.add(toPlaceDto(dp, false));
-                            }
+                String extraQuery = "melhores restaurantes e cafés em " + city;
+                List<GooglePlacesDiscoveryService.DiscoveredPlace> found =
+                        googlePlacesDiscoveryService.searchPlaces(extraQuery, lat, lng, radiusKm != null ? radiusKm : 30.0, city, country, targetMax - current.size());
+                if (found != null) {
+                    for (GooglePlacesDiscoveryService.DiscoveredPlace dp : found) {
+                        if (current.size() >= targetMax) break;
+                        boolean already = current.stream().anyMatch(p ->
+                                imageEnrichmentService.calculateNameSimilarity(p.getNome(), dp.displayName()) >= 0.45);
+                        if (!already) {
+                            current.add(toPlaceDto(dp, false));
                         }
                     }
                 }
@@ -2043,7 +2036,7 @@ public class RecommendationsService {
         }
         if (!jobs.isEmpty()) {
             try {
-                CompletableFuture.allOf(jobs.toArray(CompletableFuture[]::new)).get(3500, TimeUnit.MILLISECONDS);
+                CompletableFuture.allOf(jobs.toArray(CompletableFuture[]::new)).get(800, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 log.warn("[Photos] Tempo esgotado ao resolver fotos do Google Places: {}", e.getMessage());
             }
