@@ -22,7 +22,7 @@ export function FavoritesPage() {
   const [loadingRevisits, setLoadingRevisits] = useState(false);
   const [deletingCheckinId, setDeletingCheckinId] = useState<string | null>(null);
 
-  // Recomendações personalizadas por IA
+  // Recomendações personalizadas de curadoria
   const [aiRecs, setAiRecs] = useState<Recommendation | null>(null);
   const [loadingAiRecs, setLoadingAiRecs] = useState(false);
 
@@ -79,7 +79,7 @@ export function FavoritesPage() {
       });
       setAiRecs(res);
     } catch (err) {
-      console.warn('Erro ao carregar recomendações por IA:', err);
+      console.warn('Erro ao carregar recomendações:', err);
     } finally {
       setLoadingAiRecs(false);
     }
@@ -138,7 +138,7 @@ export function FavoritesPage() {
             Suas Memórias & Descobertas
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-[#73685e]">
-            Recomendações com IA baseadas nas suas visitas, rolês salvos e histórico completo.
+            Curadoria personalizada baseada nas suas visitas, rolês salvos e histórico completo.
           </p>
         </div>
 
@@ -166,7 +166,7 @@ export function FavoritesPage() {
           <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
-          <span>Descobertas com IA</span>
+          <span>Descobertas do Guia</span>
         </button>
 
         <button
@@ -218,7 +218,7 @@ export function FavoritesPage() {
 
       {/* CONTEÚDO DAS ABAS */}
 
-      {/* 1. RECOMENDAÇÕES POR IA BASEADAS NO HISTÓRICO */}
+      {/* 1. RECOMENDAÇÕES PERSONALIZADAS BASEADAS NO HISTÓRICO */}
       {activeTab === 'ai_recommendations' && (
         <section className="mt-8 space-y-8 animate-in fade-in duration-300">
           <div className="rounded-none bg-stone-50 p-6 sm:p-8 border border-stone-200 shadow-xs">
@@ -228,7 +228,7 @@ export function FavoritesPage() {
                   <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  <span>Inteligência Artificial Unbora</span>
+                  <span>Curadoria Editorial Unbora</span>
                 </span>
                 <h2 className="mt-1 text-2xl font-light text-[#1c1917]">
                   {aiRecs?.title || 'Descobertas Personalizadas'}
@@ -244,7 +244,7 @@ export function FavoritesPage() {
                 disabled={loadingAiRecs}
                 className="inline-flex items-center gap-2 rounded-none border border-stone-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-stone-900 shadow-xs hover:bg-stone-100 transition cursor-pointer disabled:opacity-50"
               >
-                <span>{loadingAiRecs ? 'Calibrando IA...' : 'Atualizar Curadoria'}</span>
+                <span>{loadingAiRecs ? 'Atualizando...' : 'Atualizar Curadoria'}</span>
               </button>
             </div>
           </div>
@@ -253,7 +253,7 @@ export function FavoritesPage() {
             <div className="py-20 text-center space-y-3">
               <div className="mx-auto h-10 w-10 animate-spin border-3 border-[#7c2f1d] border-t-transparent" />
               <p className="text-xs font-medium text-stone-500">
-                A IA está cruzando seus check-ins para descobrir novas experiências na cidade...
+                Cruzando seus check-ins para descobrir novas experiências na cidade...
               </p>
             </div>
           ) : !aiRecs || aiRecs.places.length === 0 ? (
@@ -265,7 +265,7 @@ export function FavoritesPage() {
               </div>
               <h3 className="text-lg font-bold text-[#1c1917]">Nenhuma recomendação gerada ainda</h3>
               <p className="text-xs sm:text-sm text-stone-500 max-w-md mx-auto">
-                Faça mais check-ins nos seus locais prediletos para a nossa IA aprender com precisão seu estilo de rolê!
+                Faça mais check-ins nos seus locais prediletos para refinarmos as sugestões ao seu estilo de rolê!
               </p>
             </div>
           ) : (

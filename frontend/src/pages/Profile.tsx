@@ -46,7 +46,7 @@ export function ProfilePage() {
           </div>
           <h1 className="text-3xl font-light text-[#1e1b19]">Sua Conta</h1>
           <p className="text-sm text-[#73685e]">
-            Entre para salvar seus lugares favoritos, acessar benefícios exclusivos e recomendações com IA.
+            Entre para salvar seus lugares favoritos, acessar benefícios exclusivos e curadoria personalizada.
           </p>
         </div>
 
@@ -107,14 +107,14 @@ export function ProfilePage() {
         </button>
       </div>
 
-      {/* Destaque IA & Passaporte Urbano */}
+      {/* Destaque Curadoria & Passaporte Urbano */}
       <div className="bg-stone-50 rounded-none border border-stone-200 p-6 sm:p-8 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-[#7c2f1d] flex items-center gap-1.5">
             <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            <span>Diário de Lugares & Descobertas com IA</span>
+            <span>Diário de Lugares & Curadoria Personalizada</span>
           </span>
           <span className="bg-white border border-[#eadfd4] px-3 py-1 text-xs font-bold text-[#1e1b19]">
             {totalCheckins} {totalCheckins === 1 ? 'check-in' : 'check-ins'}
@@ -126,7 +126,7 @@ export function ProfilePage() {
         </h2>
         
         <p className="text-xs sm:text-sm text-[#73685e] leading-relaxed">
-          Nossa inteligência artificial analisa o estilo dos lugares onde você fez check-in para sugerir novidades incríveis na cidade que você ainda não visitou.
+          O Unbora analisa o estilo dos lugares onde você fez check-in para sugerir novidades autênticas na cidade que você ainda não visitou.
           {suggestionsCount > 0 ? (
             <span className="text-[#7c2f1d] font-semibold"> Além disso, você tem {suggestionsCount} lugares antigos chamando para matar a saudade!</span>
           ) : null}
@@ -137,7 +137,7 @@ export function ProfilePage() {
             to="/favorites"
             className="inline-flex items-center gap-2 rounded-none bg-[#7c2f1d] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#602416] transition"
           >
-            Ver Recomendações por IA & Diário →
+            Ver Curadoria & Diário →
           </Link>
           <Link
             to="/home"
@@ -162,7 +162,7 @@ export function ProfilePage() {
             </div>
             <div>
               <h3 className="font-bold text-sm text-[#1e1b19] group-hover:text-[#7c2f1d] transition">
-                Descobertas com IA
+                Descobertas do Guia
               </h3>
               <p className="text-[11px] text-[#8a8178]">Lugares novos pelo seu gosto</p>
             </div>

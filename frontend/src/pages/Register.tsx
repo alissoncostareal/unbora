@@ -55,7 +55,7 @@ export function RegisterPage() {
     <main className="flex min-h-screen w-full items-center justify-center bg-white px-4 py-10 sm:px-8 lg:px-12">
       <SEOHead
         title="Cadastrar Conta Gratuita · Unbora"
-        description="Crie sua conta gratuita no Unbora. Salve rolês favoritos, faça check-ins em lugares incríveis e receba recomendações com IA."
+        description="Crie sua conta gratuita no Unbora. Salve rolês favoritos, faça check-ins em lugares incríveis e receba recomendações personalizadas."
         canonical="https://unbora.com.br/register"
         breadcrumbs={[
           { name: 'Início', url: '/' },

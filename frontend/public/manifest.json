@@ -1,7 +1,7 @@
 {
-  "name": "Unbora · Recomendações e Lugares com IA",
+  "name": "Unbora · Guia de Lugares e Rolês",
   "short_name": "Unbora",
-  "description": "Descubra os melhores bares, cafeterias, restaurantes e eventos culturais na sua cidade com inteligência artificial.",
+  "description": "Descubra os melhores bares, cafeterias, restaurantes e eventos culturais na sua cidade por atmosfera e estilo.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

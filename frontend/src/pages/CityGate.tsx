@@ -20,8 +20,8 @@ export function CityGate() {
   return (
     <main className="flex min-h-dvh w-full flex-col bg-white">
       <SEOHead
-        title="Unbora · Escolha sua Cidade | O Guia Inteligente de Lugares e Rolês"
-        description="Descubra onde comer, beber e passear na sua cidade com inteligência artificial. O guia definitivo de restaurantes, cafeterias e vida noturna com fotos reais."
+        title="Unbora · Escolha sua Cidade | Guia Urbano de Lugares e Rolês"
+        description="Descubra onde comer, beber e passear na sua cidade por atmosfera e estilo. O guia definitivo de restaurantes, cafeterias e vida noturna com fotos reais."
         keywords="unbora, guia de cidades, onde comer hoje, onde sair hoje, restaurantes fortaleza, bares fortaleza, rolês curitiba"
         canonical="https://unbora.com.br/"
         city={city}
