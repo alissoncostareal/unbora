@@ -613,7 +613,7 @@ export default function SponsoredPlacesPage() {
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Brava Wine & Bistro"
+                    placeholder="Nome da sua marca ou estabelecimento"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     className={inputClassName}
@@ -840,7 +840,7 @@ export default function SponsoredPlacesPage() {
                 <Field label="Empresa / Lojista">
                   <input
                     type="text"
-                    placeholder="Ex: Brava Wine Brasil"
+                    placeholder="Nome da empresa ou grupo"
                     value={form.merchantName || ''}
                     onChange={(e) => setForm({ ...form, merchantName: e.target.value })}
                     className={`${inputClassName} bg-white`}

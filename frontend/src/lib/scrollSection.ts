@@ -1,7 +1,6 @@
 export const homeSections = [
   { id: 'intencao', label: 'Curadoria' },
   { id: 'como-funciona', label: 'Como funciona' },
-  { id: 'destaques', label: 'Atmosferas' },
   { id: 'perspectivas', label: 'Perspectivas' },
   { id: 'numeros', label: 'Números' },
 ] as const;

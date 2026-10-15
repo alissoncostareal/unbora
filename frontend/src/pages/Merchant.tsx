@@ -445,7 +445,7 @@ export function MerchantPage() {
                 required
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="Ex: Brava Wine, Café Viriato, Austin Pub..."
+                placeholder="Nome da sua marca ou estabelecimento"
                 className="w-full h-12 px-4 rounded-xl border border-[#eadfd4] focus:border-[#7c2f1d] outline-none text-[#1e1b19] shadow-[inset_0_0_0_1px_#dbc1bb] focus:bg-[#faf2ee] transition"
               />
             </div>
@@ -1080,7 +1080,7 @@ export function MerchantPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Ex: Brava Wine & Bistro"
+                    placeholder="Nome da sua marca ou estabelecimento"
                     className="w-full h-11 px-3 rounded-xl border border-[#eadfd4] text-sm outline-none focus:border-[#7c2f1d]"
                   />
                 </div>
@@ -1093,7 +1093,7 @@ export function MerchantPage() {
                     type="text"
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    placeholder="Ex: Bistrô, Cafeteria, Bar, Pub..."
+                    placeholder="Ex: Restaurante, Cafeteria, Bar, Pub..."
                     className="w-full h-11 px-3 rounded-xl border border-[#eadfd4] text-sm outline-none focus:border-[#7c2f1d]"
                   />
                 </div>
@@ -1120,7 +1120,7 @@ export function MerchantPage() {
                     type="text"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="Ex: Av. Beira Mar, 1200 - Meireles"
+                    placeholder="Endereço completo (rua, número, bairro)"
                     className="w-full h-11 px-3 rounded-xl border border-[#eadfd4] text-sm outline-none focus:border-[#7c2f1d]"
                   />
                 </div>

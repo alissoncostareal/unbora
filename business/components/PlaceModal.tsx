@@ -133,7 +133,7 @@ export function PlaceModal({ isOpen, place, onClose, onSave }: PlaceModalProps) 
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Ex: Brava Wine, Café Viriato..."
+                placeholder="Nome da sua marca ou estabelecimento"
                 className="w-full h-11 px-3.5 rounded-none border border-slate-200 text-sm outline-none focus:border-[#7c2f1d]"
               />
             </div>
@@ -146,7 +146,7 @@ export function PlaceModal({ isOpen, place, onClose, onSave }: PlaceModalProps) 
                 type="text"
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value })}
-                placeholder="Ex: Bistrô, Cafeteria, Bar, Pub..."
+                placeholder="Ex: Restaurante, Cafeteria, Bar, Pub..."
                 className="w-full h-11 px-3.5 rounded-none border border-slate-200 text-sm outline-none focus:border-[#7c2f1d]"
               />
             </div>
@@ -173,7 +173,7 @@ export function PlaceModal({ isOpen, place, onClose, onSave }: PlaceModalProps) 
                 type="text"
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
-                placeholder="Ex: Av. Beira Mar, 1200 - Meireles"
+                placeholder="Endereço completo (rua, número, bairro)"
                 className="w-full h-11 px-3.5 rounded-none border border-slate-200 text-sm outline-none focus:border-[#7c2f1d]"
               />
             </div>
