@@ -53,17 +53,17 @@ function LoginForm() {
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-white px-4 py-10 sm:px-8 lg:px-12">
       <div className="grid w-full max-w-6xl overflow-hidden bg-white shadow-sm lg:grid-cols-12">
-        <section className="flex flex-col justify-between bg-[#faf2ee] p-8 sm:p-12 lg:col-span-5 lg:p-16">
-          <div className="flex flex-col gap-6 pt-8 lg:pt-16">
+        <section className="flex flex-col justify-center bg-[#faf2ee] p-8 sm:p-12 lg:col-span-5 lg:p-12">
+          <div className="flex flex-col gap-4">
             <div className="h-0.5 w-8 bg-[#7c2f1d]" />
-            <blockquote className="text-[1.75rem] leading-tight font-light tracking-tight text-[#1e1b19]">
+            <blockquote className="text-[1.5rem] sm:text-[1.75rem] leading-snug font-light tracking-tight text-[#1e1b19]">
               “Uma cidade se revela melhor quando você sabe exatamente o silêncio ou o ritmo que procura.”
             </blockquote>
             <p className="text-[11px] font-semibold tracking-[0.12em] text-[#55433e] uppercase">
               — Caderno de atmosferas urbanas
             </p>
           </div>
-          <figure className="pt-12 lg:pt-20">
+          <figure className="mt-8">
             <div className="relative aspect-[4/3] overflow-hidden bg-[#e0d8d5]">
               <img
                 className="h-full w-full object-cover grayscale contrast-125"
