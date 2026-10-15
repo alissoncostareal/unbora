@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FormEvent, Suspense, useState } from 'react';
+import { FormEvent, Suspense, useState, useEffect } from 'react';
 
 import { setAdminSession } from '@/lib/auth';
 
@@ -17,6 +17,10 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -51,19 +55,19 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen w-full items-center justify-center bg-white px-4 py-10 sm:px-8 lg:px-12">
+    <main className="flex min-h-screen w-full items-center justify-center bg-white px-4 py-8 sm:px-6 lg:px-12">
       <div className="grid w-full max-w-6xl overflow-hidden bg-white shadow-sm lg:grid-cols-12">
-        <section className="flex flex-col justify-center bg-[#faf2ee] p-8 sm:p-12 lg:col-span-5 lg:p-12">
-          <div className="flex flex-col gap-4">
+        <section className="flex flex-col justify-between bg-[#faf2ee] p-6 pb-4 sm:p-8 sm:pb-6 lg:col-span-5 lg:p-10">
+          <div className="flex flex-col gap-3">
             <div className="h-0.5 w-8 bg-[#7c2f1d]" />
-            <blockquote className="text-[1.5rem] sm:text-[1.75rem] leading-snug font-light tracking-tight text-[#1e1b19]">
+            <blockquote className="text-[1.35rem] sm:text-[1.6rem] leading-snug font-light tracking-tight text-[#1e1b19]">
               “Uma cidade se revela melhor quando você sabe exatamente o silêncio ou o ritmo que procura.”
             </blockquote>
             <p className="text-[11px] font-semibold tracking-[0.12em] text-[#55433e] uppercase">
               — Caderno de atmosferas urbanas
             </p>
           </div>
-          <figure className="mt-8">
+          <figure className="mt-4 sm:mt-6">
             <div className="relative aspect-[4/3] overflow-hidden bg-[#e0d8d5]">
               <img
                 className="h-full w-full object-cover grayscale contrast-125"
@@ -74,11 +78,11 @@ function LoginForm() {
                 01 / Referência
               </figcaption>
             </div>
-            <p className="pt-2 text-[13px] text-[#55433e]">Unbora</p>
+            <p className="pt-2 text-[12px] text-[#55433e]">Unbora</p>
           </figure>
         </section>
 
-        <section className="flex flex-col justify-center bg-white p-8 sm:p-12 lg:col-span-7 lg:p-20">
+        <section className="flex flex-col justify-center bg-white p-6 pt-4 sm:p-8 sm:pt-6 lg:col-span-7 lg:p-14">
           <div className="mx-auto flex w-full max-w-md flex-col gap-10">
             <div className="flex flex-col gap-3">
               <p className="text-[28px] leading-none tracking-tight text-[#1e1b19]">Unbora</p>
