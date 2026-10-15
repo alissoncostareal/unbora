@@ -56,6 +56,7 @@ public class UsersService {
                 user.getPlatform(),
                 user.getRole(),
                 user.getBusinessName(),
+                user.getCnpj(),
                 user.getCreatedAt().toString(),
                 user.getLastSeenAt().toString()
         );
@@ -180,6 +181,9 @@ public class UsersService {
         user.setPlatform(dto.platform());
         user.setRole("merchant");
         user.setBusinessName(dto.businessName().trim());
+        if (dto.cnpj() != null && !dto.cnpj().isBlank()) {
+            user.setCnpj(dto.cnpj().trim());
+        }
         user.setEmailConfirmed(false);
         user.setEmailConfirmationToken(confirmToken);
         user.setCreatedAt(Instant.now());

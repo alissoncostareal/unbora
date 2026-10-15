@@ -8,6 +8,7 @@ public record PublicUserDto(
         String platform,
         String role,
         String businessName,
+        String cnpj,
         String createdAt,
         String lastSeenAt
 ) {}

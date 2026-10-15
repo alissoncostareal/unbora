@@ -32,6 +32,9 @@ public class User {
     @Column(name = "business_name")
     private String businessName;
 
+    @Column(name = "cnpj")
+    private String cnpj;
+
     @Column(name = "password_reset_token")
     private String passwordResetToken;
 
@@ -162,5 +165,13 @@ public class User {
 
     public void setLastSeenAt(Instant lastSeenAt) {
         this.lastSeenAt = lastSeenAt;
+    }
+
+    public String getCnpj() {
+        return cnpj;
+    }
+
+    public void setCnpj(String cnpj) {
+        this.cnpj = cnpj;
     }
 }

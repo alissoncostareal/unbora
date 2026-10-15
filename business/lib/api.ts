@@ -71,7 +71,8 @@ export async function registerMerchant(
   name: string,
   email: string,
   password: string,
-  businessName: string
+  businessName: string,
+  cnpj?: string
 ): Promise<MerchantUser> {
   return request<MerchantUser>('/users/register-merchant', {
     method: 'POST',
@@ -80,6 +81,7 @@ export async function registerMerchant(
       email,
       password,
       businessName,
+      cnpj,
       platform: 'business_web',
     }),
   });

@@ -11,7 +11,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, pass: string) => Promise<void>;
   loginGoogle: (idToken: string) => Promise<void>;
-  register: (name: string, email: string, pass: string, business: string) => Promise<void>;
+  register: (name: string, email: string, pass: string, business: string, cnpj?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -48,8 +48,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
         setUser(u);
       },
-      async register(name, email, password, businessName) {
-        const u = await registerMerchant(name, email, password, businessName);
+      async register(name, email, password, businessName, cnpj) {
+        const u = await registerMerchant(name, email, password, businessName, cnpj);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
         setUser(u);
       },

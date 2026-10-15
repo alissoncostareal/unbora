@@ -5,12 +5,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { GoogleAuthButton } from '@/components/GoogleAuthButton';
+import { cleanCnpj, maskCnpj, isValidCnpj } from '@/lib/cnpj';
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register, loginGoogle } = useAuth();
   const [name, setName] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [cnpj, setCnpj] = useState('');
+  const [cnpjTouched, setCnpjTouched] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,12 +24,36 @@ export default function RegisterPage() {
     window.scrollTo(0, 0);
   }, []);
 
+  const cnpjDigits = cleanCnpj(cnpj);
+  const isCnpjValid = isValidCnpj(cnpj);
+  const showCnpjError = cnpjTouched && cnpj.length > 0 && !isCnpjValid;
+
+  function handleCnpjChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const formatted = maskCnpj(e.target.value);
+    setCnpj(formatted);
+    if (error && error.includes('CNPJ')) {
+      setError('');
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setCnpjTouched(true);
+
+    if (!cnpj.trim()) {
+      setError('Informe o CNPJ da empresa.');
+      return;
+    }
+
+    if (!isValidCnpj(cnpj)) {
+      setError('CNPJ inválido. Digite um número de CNPJ autêntico com 14 dígitos.');
+      return;
+    }
+
     setLoading(true);
     try {
-      await register(name.trim(), email.trim(), password, businessName.trim());
+      await register(name.trim(), email.trim(), password, businessName.trim(), cnpj.trim());
       router.replace('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao cadastrar');
@@ -143,7 +170,7 @@ export default function RegisterPage() {
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div className="flex flex-col gap-2">
                 <label className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#1e1b19]" htmlFor="businessName">
-                  Nome da Empresa / Estabelecimento
+                  Nome da Empresa / Estabelecimento *
                 </label>
                 <input
                   id="businessName"
@@ -154,6 +181,65 @@ export default function RegisterPage() {
                   placeholder="Nome do estabelecimento"
                   className="h-12 w-full bg-white px-4 text-[15px] text-[#1e1b19] shadow-[inset_0_0_0_1px_#dbc1bb] outline-none placeholder:text-[#88726d]/70 focus:bg-[#faf2ee] focus:shadow-[inset_0_0_0_1px_#1e1b19] transition"
                 />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#1e1b19]" htmlFor="cnpj">
+                    CNPJ da Empresa *
+                  </label>
+                  {cnpjTouched && cnpj.length > 0 && (
+                    <span
+                      className={`text-[10px] font-bold tracking-[0.1em] uppercase ${
+                        isCnpjValid ? 'text-emerald-700' : 'text-[#9a4632]'
+                      }`}
+                    >
+                      {isCnpjValid ? 'CNPJ autêntico' : 'CNPJ inválido'}
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    id="cnpj"
+                    type="text"
+                    required
+                    inputMode="numeric"
+                    value={cnpj}
+                    onChange={handleCnpjChange}
+                    onBlur={() => setCnpjTouched(true)}
+                    placeholder="00.000.000/0000-00"
+                    maxLength={18}
+                    className={`h-12 w-full bg-white px-4 text-[15px] text-[#1e1b19] outline-none placeholder:text-[#88726d]/70 transition ${
+                      showCnpjError
+                        ? 'shadow-[inset_0_0_0_1.5px_#9a4632] bg-[#fdf8f7]'
+                        : isCnpjValid && cnpjTouched
+                        ? 'shadow-[inset_0_0_0_1.5px_#059669] bg-[#f7fdfa]'
+                        : 'shadow-[inset_0_0_0_1px_#dbc1bb] focus:bg-[#faf2ee] focus:shadow-[inset_0_0_0_1px_#1e1b19]'
+                    }`}
+                  />
+                  {isCnpjValid && (
+                    <div className="absolute top-1/2 right-3 -translate-y-1/2 text-emerald-700 pointer-events-none">
+                      <svg
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                {showCnpjError && (
+                  <p className="text-[11px] text-[#9a4632] font-medium">
+                    {cnpjDigits.length < 14
+                      ? 'Digite os 14 dígitos do CNPJ da empresa.'
+                      : 'Dígitos verificadores do CNPJ incorretos.'}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">

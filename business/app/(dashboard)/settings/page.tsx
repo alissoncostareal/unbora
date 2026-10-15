@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { Header } from '@/components/Header';
+import { maskCnpj } from '@/lib/cnpj';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -10,7 +11,7 @@ export default function SettingsPage() {
   const [responsibleName, setResponsibleName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState('');
-  const [cnpj, setCnpj] = useState('');
+  const [cnpj, setCnpj] = useState(user?.cnpj ? maskCnpj(user.cnpj) : '');
   const [saved, setSaved] = useState(false);
 
   function handleSave(e: React.FormEvent) {
@@ -70,7 +71,8 @@ export default function SettingsPage() {
                 type="text"
                 placeholder="00.000.000/0001-00"
                 value={cnpj}
-                onChange={(e) => setCnpj(e.target.value)}
+                onChange={(e) => setCnpj(maskCnpj(e.target.value))}
+                maxLength={18}
                 className="w-full h-11 px-3.5 rounded-none border border-slate-200 text-sm outline-none focus:border-[#7c2f1d]"
               />
             </div>

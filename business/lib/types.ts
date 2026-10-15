@@ -10,6 +10,7 @@ export interface MerchantUser {
   email: string;
   role: string;
   businessName?: string;
+  cnpj?: string;
   platform?: string;
 }
 
