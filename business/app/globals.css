@@ -6,7 +6,8 @@
 
 /* ── Unbora Business — Premium Slate & Terracotta Design System ── */
 @theme {
-  --font-sans: 'Sora', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
 
   /* Corporate Dark / Slate Theme */
   --color-brand: #7c2f1d;
@@ -46,6 +47,7 @@
   body {
     @apply bg-[#f8fafc] font-sans text-[14px] text-[#0f172a] leading-normal;
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 }
 

@@ -84,7 +84,7 @@ export default function RegisterPage() {
         <section className="flex flex-col justify-between bg-[#faf2ee] p-6 pb-4 sm:p-8 sm:pb-6 lg:col-span-5 lg:p-10">
           <div className="flex flex-col gap-3">
             <div className="h-0.5 w-8 bg-[#7c2f1d]" />
-            <blockquote className="text-[1.35rem] sm:text-[1.6rem] leading-snug font-light tracking-tight text-[#1e1b19]">
+            <blockquote className="font-serif text-[1.4rem] sm:text-[1.7rem] leading-snug font-normal tracking-tight text-[#1e1b19] italic">
               “Uma cidade se revela melhor quando você sabe exatamente o silêncio ou o ritmo que procura.”
             </blockquote>
             <p className="text-[11px] font-semibold tracking-[0.12em] text-[#55433e] uppercase">
