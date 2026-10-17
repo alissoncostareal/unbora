@@ -1,9 +1,15 @@
 package com.unbora.api.domain.sponsored;
 
+import com.unbora.api.common.exception.ApiException;
 import com.unbora.api.domain.sponsored.dto.*;
+import com.unbora.api.security.AdminPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -21,67 +27,134 @@ public class MerchantSponsoredController {
         this.service = service;
     }
 
+    private String resolveMerchantId(AdminPrincipal principal, String paramMerchantId) {
+        if (principal == null) {
+            if (paramMerchantId != null && !paramMerchantId.isBlank()) {
+                return paramMerchantId.trim();
+            }
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Autenticação necessária.");
+        }
+        if ("SUPERADMIN".equalsIgnoreCase(principal.role()) || "ADMIN".equalsIgnoreCase(principal.role())) {
+            return (paramMerchantId != null && !paramMerchantId.isBlank()) ? paramMerchantId.trim() : principal.id();
+        }
+        return principal.id();
+    }
+
+    private void verifyPlaceOwnership(String placeId, String merchantId, AdminPrincipal principal) {
+        if (principal != null && ("SUPERADMIN".equalsIgnoreCase(principal.role()) || "ADMIN".equalsIgnoreCase(principal.role()))) {
+            return;
+        }
+        SponsoredPlaceDto place = service.getById(placeId);
+        if (place.merchantId() != null && !place.merchantId().equals(merchantId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Estabelecimento não pertence ao lojista autenticado.");
+        }
+    }
+
     @GetMapping("/places")
+    @PreAuthorize("hasAnyRole('MERCHANT', 'SUPERADMIN', 'ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Listar estabelecimentos vinculados ao lojista")
-    public List<SponsoredPlaceDto> listMyPlaces(@RequestParam String merchantId) {
-        return service.listByMerchant(merchantId);
+    public List<SponsoredPlaceDto> listMyPlaces(
+            @RequestParam(required = false) String merchantId,
+            @AuthenticationPrincipal AdminPrincipal principal
+    ) {
+        return service.listByMerchant(resolveMerchantId(principal, merchantId));
     }
 
     @PostMapping("/places")
+    @PreAuthorize("hasAnyRole('MERCHANT', 'SUPERADMIN', 'ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Cadastrar novo estabelecimento patrocinado pelo lojista")
     public SponsoredPlaceDto createMyPlace(
-            @RequestParam String merchantId,
+            @RequestParam(required = false) String merchantId,
+            @AuthenticationPrincipal AdminPrincipal principal,
             @Valid @RequestBody SaveSponsoredPlaceDto dto
     ) {
-        return service.createForMerchant(merchantId, dto);
+        return service.createForMerchant(resolveMerchantId(principal, merchantId), dto);
     }
 
     @PutMapping("/places/{id}")
+    @PreAuthorize("hasAnyRole('MERCHANT', 'SUPERADMIN', 'ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Atualizar informações do estabelecimento do lojista")
     public SponsoredPlaceDto updateMyPlace(
             @PathVariable String id,
-            @RequestParam String merchantId,
+            @RequestParam(required = false) String merchantId,
+            @AuthenticationPrincipal AdminPrincipal principal,
             @Valid @RequestBody SaveSponsoredPlaceDto dto
     ) {
-        return service.updateForMerchant(merchantId, id, dto);
+        String effectiveMerchantId = resolveMerchantId(principal, merchantId);
+        verifyPlaceOwnership(id, effectiveMerchantId, principal);
+        return service.updateForMerchant(effectiveMerchantId, id, dto);
     }
 
     @PostMapping("/places/{id}/toggle-active")
+    @PreAuthorize("hasAnyRole('MERCHANT', 'SUPERADMIN', 'ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Pausar ou ativar campanha do estabelecimento")
-    public SponsoredPlaceDto toggleActive(@PathVariable String id) {
+    public SponsoredPlaceDto toggleActive(
+            @PathVariable String id,
+            @RequestParam(required = false) String merchantId,
+            @AuthenticationPrincipal AdminPrincipal principal
+    ) {
+        String effectiveMerchantId = resolveMerchantId(principal, merchantId);
+        verifyPlaceOwnership(id, effectiveMerchantId, principal);
         return service.toggleActive(id);
     }
 
     @PostMapping("/places/{id}/recharge")
+    @PreAuthorize("hasAnyRole('MERCHANT', 'SUPERADMIN', 'ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Recarregar saldo de créditos de desempenho (CPC)")
     public SponsoredInvoiceDto rechargeCredits(
             @PathVariable String id,
+            @RequestParam(required = false) String merchantId,
+            @AuthenticationPrincipal AdminPrincipal principal,
             @Valid @RequestBody RechargeCreditsDto dto
     ) {
+        String effectiveMerchantId = resolveMerchantId(principal, merchantId);
+        verifyPlaceOwnership(id, effectiveMerchantId, principal);
         return service.rechargeCredits(id, dto);
     }
 
     public record ChangePlanRequest(PlanTier planTier, BillingModel billingModel) {}
 
     @PostMapping("/places/{id}/change-plan")
+    @PreAuthorize("hasAnyRole('MERCHANT', 'SUPERADMIN', 'ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Alterar plano de assinatura (Bronze, Prata, Ouro) e gerar fatura")
     public SponsoredInvoiceDto changePlan(
             @PathVariable String id,
+            @RequestParam(required = false) String merchantId,
+            @AuthenticationPrincipal AdminPrincipal principal,
             @RequestBody ChangePlanRequest req
     ) {
+        String effectiveMerchantId = resolveMerchantId(principal, merchantId);
+        verifyPlaceOwnership(id, effectiveMerchantId, principal);
         return service.changePlan(id, req.planTier() != null ? req.planTier() : PlanTier.GOLD, req.billingModel());
     }
 
     @GetMapping("/invoices")
+    @PreAuthorize("hasAnyRole('MERCHANT', 'SUPERADMIN', 'ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Listar histórico de faturas e pagamentos do lojista")
-    public List<SponsoredInvoiceDto> listMyInvoices(@RequestParam String merchantId) {
-        return service.listInvoicesByMerchant(merchantId);
+    public List<SponsoredInvoiceDto> listMyInvoices(
+            @RequestParam(required = false) String merchantId,
+            @AuthenticationPrincipal AdminPrincipal principal
+    ) {
+        return service.listInvoicesByMerchant(resolveMerchantId(principal, merchantId));
     }
 
     @PostMapping("/invoices/{invoiceId}/pay")
-    @Operation(summary = "Confirmar liquidação de fatura PIX pelo lojista")
-    public SponsoredInvoiceDto payInvoice(@PathVariable String invoiceId, @RequestParam String merchantId) {
-        return service.markInvoicePaidForMerchant(invoiceId, merchantId);
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Confirmar liquidação de fatura PIX (Apenas Administrador)")
+    public SponsoredInvoiceDto payInvoice(
+            @PathVariable String invoiceId,
+            @RequestParam(required = false) String merchantId,
+            @AuthenticationPrincipal AdminPrincipal principal
+    ) {
+        return service.markInvoicePaidForMerchant(invoiceId, resolveMerchantId(principal, merchantId));
     }
 
     @GetMapping("/plans")

@@ -11,6 +11,7 @@ export interface BackendUser {
   businessName?: string;
   createdAt: string;
   lastSeenAt: string;
+  token?: string;
 }
 
 export function syncUser(user: AppUser, platform?: string) {
@@ -66,5 +67,6 @@ export function mapBackendUser(user: BackendUser): AppUser {
     isGuest: user.isGuest,
     role: user.role ?? 'user',
     businessName: user.businessName,
+    token: user.token,
   };
 }

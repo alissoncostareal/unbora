@@ -49,11 +49,7 @@ export interface AppUser {
   isGuest: boolean;
   role?: 'user' | 'merchant';
   businessName?: string;
-}
-
-export interface StoredAccount {
-  user: AppUser;
-  password: string;
+  token?: string;
 }
 
 export interface RecommendationRequest {

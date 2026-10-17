@@ -32,22 +32,31 @@ public class UsersService {
     private final GoogleAuthService googleAuthService;
     private final EmailService emailService;
     private final BruteForceProtectionService bruteForceProtectionService;
+    private final com.unbora.api.security.JwtService jwtService;
 
     public UsersService(
             UserRepository userRepository,
             KafkaEventPublisher kafkaEventPublisher,
             GoogleAuthService googleAuthService,
             EmailService emailService,
-            BruteForceProtectionService bruteForceProtectionService
+            BruteForceProtectionService bruteForceProtectionService,
+            com.unbora.api.security.JwtService jwtService
     ) {
         this.userRepository = userRepository;
         this.kafkaEventPublisher = kafkaEventPublisher;
         this.googleAuthService = googleAuthService;
         this.emailService = emailService;
         this.bruteForceProtectionService = bruteForceProtectionService;
+        this.jwtService = jwtService;
     }
 
     public PublicUserDto toPublic(User user) {
+        String token = jwtService.generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getName(),
+                user.getRole() != null ? user.getRole() : "user"
+        );
         return new PublicUserDto(
                 user.getId(),
                 user.getName(),
@@ -57,8 +66,9 @@ public class UsersService {
                 user.getRole(),
                 user.getBusinessName(),
                 user.getCnpj(),
-                user.getCreatedAt().toString(),
-                user.getLastSeenAt().toString()
+                user.getCreatedAt() != null ? user.getCreatedAt().toString() : Instant.now().toString(),
+                user.getLastSeenAt() != null ? user.getLastSeenAt().toString() : Instant.now().toString(),
+                token
         );
     }
 
@@ -351,6 +361,15 @@ public class UsersService {
             ));
 
             return saved;
+        }
+
+        // Se a conta for de usuário registrado (não guest), apenas atualiza lastSeenAt/platform sem sobrescrever perfil
+        if (!Boolean.TRUE.equals(user.getGuest())) {
+            user.setLastSeenAt(Instant.now());
+            if (dto.platform() != null && !dto.platform().isBlank()) {
+                user.setPlatform(dto.platform());
+            }
+            return toPublic(userRepository.save(user));
         }
 
         user.setName(dto.name().trim());

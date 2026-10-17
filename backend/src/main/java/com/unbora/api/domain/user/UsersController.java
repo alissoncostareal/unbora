@@ -76,6 +76,8 @@ public class UsersController {
     }
 
     @PostMapping("/upgrade-to-merchant")
+    @PreAuthorize("isAuthenticated()")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Fazer upgrade da conta de usuário para lojista parceiro")
     public PublicUserDto upgradeToMerchant(@Valid @RequestBody UpgradeToMerchantDto dto) {
         return usersService.upgradeToMerchant(dto);

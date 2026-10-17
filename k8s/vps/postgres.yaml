@@ -8,14 +8,13 @@ metadata:
   labels:
     app: unbora-postgres
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: unbora-postgres
   ports:
     - name: postgres
       port: 5432
       targetPort: 5432
-      nodePort: 30432
 ---
 apiVersion: apps/v1
 kind: StatefulSet

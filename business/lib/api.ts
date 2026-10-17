@@ -34,13 +34,29 @@ async function errorMessage(response: Response): Promise<string> {
   return text || 'Erro ao comunicar com o servidor.';
 }
 
+function getAuthHeaders(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem('unbora-business-session');
+    if (raw) {
+      const u = JSON.parse(raw);
+      if (u?.token) {
+        return { Authorization: `Bearer ${u.token}` };
+      }
+    }
+  } catch {}
+  return {};
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const baseUrl = getApiBaseUrl();
   const url = path.startsWith('http') ? path : `${baseUrl}${path}`;
+  const authHeaders = getAuthHeaders();
   const res = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...options?.headers,
     },
   });

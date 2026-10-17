@@ -60,26 +60,40 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+                        // Public system endpoints
                         .requestMatchers("/", "/health").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/venue-photos/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/api/**").permitAll()
                         .requestMatchers("/locations/**").permitAll()
+
+                        // Swagger UI & OpenAPI docs
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+
+                        // Admin authentication & endpoints
                         .requestMatchers("/admin/auth/login").permitAll()
                         .requestMatchers("/admin/auth/me").authenticated()
                         .requestMatchers("/admin/events/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/admin/users/**").hasRole("SUPERADMIN")
-                        .requestMatchers(HttpMethod.GET, "/guide").permitAll()
                         .requestMatchers("/admin/guide/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/admin/bans/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                        .requestMatchers("/admin/places/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/admin/locations/**").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")
                         .requestMatchers("/admin/sponsored/**").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")
                         .requestMatchers("/admin/partner-settings/**").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")
                         .requestMatchers("/admin/testimonials/**").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")
-                        .requestMatchers(HttpMethod.GET, "/partner-settings/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/testimonials/**").permitAll()
+
+                        // Public content endpoints
+                        .requestMatchers(HttpMethod.GET, "/guide").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/partner-settings/**", "/api/partner-settings/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/testimonials/**", "/api/testimonials/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/events/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/events").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/events/sync-live").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/carousels/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/notifications/**").permitAll()
+                        .requestMatchers("/checkins/**").permitAll()
+
+                        // Public user onboarding & auth
                         .requestMatchers(HttpMethod.POST, "/users/sync").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/register-merchant").permitAll()
@@ -88,18 +102,19 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/users/forgot-password").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/reset-password").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/confirm-account").permitAll()
-                        .requestMatchers("/checkins/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/events").permitAll()
-                        .requestMatchers(HttpMethod.PATCH, "/events/**").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/events/**").permitAll()
-                        // Swagger UI & OpenAPI
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                        // Protected admin endpoints
+                        .requestMatchers(HttpMethod.POST, "/users/upgrade-to-merchant").authenticated()
+
+                        // Protected user administration
                         .requestMatchers("/users/stats").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")
                         .requestMatchers(HttpMethod.GET, "/users").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")
                         .requestMatchers(HttpMethod.GET, "/users/*").hasAnyRole("SUPERADMIN", "ADMIN", "CONSULTOR")
-                        // Everything else
-                        .anyRequest().permitAll()
+
+                        // Merchant portal operations
+                        .requestMatchers(HttpMethod.GET, "/merchant/sponsored/plans").permitAll()
+                        .requestMatchers("/merchant/sponsored/**").hasAnyRole("MERCHANT", "SUPERADMIN", "ADMIN")
+
+                        // Default fallback: require authentication
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(aiRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -112,12 +127,13 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         if ("*".equals(allowedOrigin) || allowedOrigin.isBlank()) {
             configuration.addAllowedOriginPattern("*");
+            configuration.setAllowCredentials(false);
         } else {
             configuration.setAllowedOrigins(Arrays.asList(allowedOrigin.split(",")));
+            configuration.setAllowCredentials(true);
         }
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Content-Type", "Authorization", "x-user-id"));
-        configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

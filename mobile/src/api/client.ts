@@ -116,6 +116,20 @@ async function fetchWithTimeout(
   }
 }
 
+let currentAuthToken: string | null = null;
+
+export function setApiAuthToken(token: string | null | undefined) {
+  currentAuthToken = token ?? null;
+}
+
+export function getApiAuthToken(): string | null {
+  return currentAuthToken;
+}
+
+function getAuthHeaders(): Record<string, string> {
+  return currentAuthToken ? { Authorization: `Bearer ${currentAuthToken}` } : {};
+}
+
 export async function apiPost<T>(
   path: string,
   body: unknown,
@@ -125,11 +139,15 @@ export async function apiPost<T>(
   const started = Date.now();
   log.info('api', `POST ${path}`);
 
+  const authHeaders = getAuthHeaders();
   const response = await fetchWithTimeout(
     url,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
       body: JSON.stringify(body),
     },
     timeoutMs,
@@ -150,7 +168,16 @@ export async function apiGet<T>(path: string, timeoutMs = 15_000): Promise<T> {
   const started = Date.now();
   log.info('api', `GET ${path}`);
 
-  const response = await fetchWithTimeout(url, {}, timeoutMs);
+  const authHeaders = getAuthHeaders();
+  const response = await fetchWithTimeout(
+    url,
+    {
+      headers: {
+        ...authHeaders,
+      },
+    },
+    timeoutMs,
+  );
   const data = await response.json().catch(() => ({}));
   const ms = Date.now() - started;
   if (!response.ok) {

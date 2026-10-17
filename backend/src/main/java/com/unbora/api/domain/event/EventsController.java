@@ -32,6 +32,8 @@ public class EventsController {
     }
 
     @PostMapping("/sync-live")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Limpar base e sincronizar eventos reais ao vivo do Instagram e web")
     public List<EventRecordDto> syncLive(
             @RequestParam(required = false, defaultValue = "Fortaleza") String city,
@@ -41,6 +43,8 @@ public class EventsController {
     }
 
     @PostMapping("/import-instagram")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Importar e estruturar evento a partir de um post do Instagram com foto original")
     public EventRecordDto importInstagram(@Valid @RequestBody ImportInstagramEventDto dto) {
         return instagramEventService.importFromInstagram(dto);
@@ -69,21 +73,37 @@ public class EventsController {
     }
 
     @PatchMapping("/{id}")
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Atualizar evento existente (autor)")
     public EventRecordDto update(
             @PathVariable String id,
-            @RequestHeader(value = "x-user-id", required = true) String merchantId,
+            @RequestHeader(value = "x-user-id", required = false) String headerMerchantId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.unbora.api.security.AdminPrincipal principal,
             @RequestBody UpdateEventDto dto
     ) {
-        return eventsService.update(id, merchantId, dto);
+        String effectiveMerchantId = resolveAuthor(principal, headerMerchantId);
+        return eventsService.update(id, effectiveMerchantId, dto);
     }
 
     @DeleteMapping("/{id}")
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Remover evento")
     public Map<String, Object> remove(
             @PathVariable String id,
-            @RequestHeader(value = "x-user-id", required = true) String merchantId
+            @RequestHeader(value = "x-user-id", required = false) String headerMerchantId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.unbora.api.security.AdminPrincipal principal
     ) {
-        return eventsService.remove(id, merchantId);
+        String effectiveMerchantId = resolveAuthor(principal, headerMerchantId);
+        return eventsService.remove(id, effectiveMerchantId);
+    }
+
+    private String resolveAuthor(com.unbora.api.security.AdminPrincipal principal, String headerMerchantId) {
+        if (principal != null) {
+            return principal.id();
+        }
+        if (headerMerchantId != null && !headerMerchantId.isBlank()) {
+            return headerMerchantId.trim();
+        }
+        throw new com.unbora.api.common.exception.ApiException(org.springframework.http.HttpStatus.UNAUTHORIZED, "Autenticação necessária.");
     }
 }

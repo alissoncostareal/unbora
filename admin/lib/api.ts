@@ -62,8 +62,23 @@ export type {
   TestimonialItem,
 } from '@/lib/types';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001';
+export function getApiBaseUrl(): string {
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:3001';
+    }
+    return 'https://api.unbora.com.br';
+  }
+  return process.env.NODE_ENV === 'production'
+    ? 'https://api.unbora.com.br'
+    : 'http://localhost:3001';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 function getErrorMessage(data: unknown, fallback: string): string {
   if (!data || typeof data !== 'object') return fallback;

@@ -35,7 +35,9 @@ public class VenuePhotoController {
     }
 
     @PutMapping("/{venueNormalized}")
-    @Operation(summary = "Atualizar ou curar a URL da foto de um estabelecimento")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Atualizar ou curar a URL da foto de um estabelecimento (Admin)")
     public ResponseEntity<VenuePhoto> updateVenuePhoto(
             @PathVariable String venueNormalized,
             @RequestBody Map<String, String> body

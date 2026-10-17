@@ -1,7 +1,15 @@
 import { cookies } from 'next/headers';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001';
+export function getApiBaseUrl(): string {
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  return process.env.NODE_ENV === 'production'
+    ? 'https://api.unbora.com.br'
+    : 'http://localhost:3001';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const AUTH_COOKIE = 'unbora_admin_token';
 

@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { getApiBaseUrl } from '@/api/client';
+import { getApiBaseUrl, setApiAuthToken } from '@/api/client';
 import { log } from '@/utils/log';
 import {
   googleLoginUser,
@@ -67,9 +67,14 @@ export const useAuthStore = create<AuthState>()(
           log.info('boot', `API base: ${getApiBaseUrl()}`);
         }
         const current = get().user ?? createGuest();
+        if (current.token) {
+          setApiAuthToken(current.token);
+        }
         try {
           const synced = await syncUser(current, Platform.OS);
-          set({ user: mapBackendUser(synced), hydrated: true });
+          const mapped = mapBackendUser(synced);
+          setApiAuthToken(mapped.token);
+          set({ user: mapped, hydrated: true });
         } catch {
           set({ user: current, hydrated: true });
         }
@@ -82,7 +87,9 @@ export const useAuthStore = create<AuthState>()(
           password,
           platform: Platform.OS,
         });
-        set({ user: mapBackendUser(user) });
+        const mapped = mapBackendUser(user);
+        setApiAuthToken(mapped.token);
+        set({ user: mapped });
       },
 
       registerMerchant: async (name, email, password, businessName) => {
@@ -93,12 +100,16 @@ export const useAuthStore = create<AuthState>()(
           businessName,
           platform: Platform.OS,
         });
-        set({ user: mapBackendUser(user) });
+        const mapped = mapBackendUser(user);
+        setApiAuthToken(mapped.token);
+        set({ user: mapped });
       },
 
       login: async (email, password) => {
         const user = await loginUser({ email, password });
-        set({ user: mapBackendUser(user) });
+        const mapped = mapBackendUser(user);
+        setApiAuthToken(mapped.token);
+        set({ user: mapped });
       },
 
       googleLogin: async (input, nameParam, googleIdParam) => {
@@ -125,14 +136,19 @@ export const useAuthStore = create<AuthState>()(
         }
 
         const user = await googleLoginUser(payload);
-        set({ user: mapBackendUser(user) });
+        const mapped = mapBackendUser(user);
+        setApiAuthToken(mapped.token);
+        set({ user: mapped });
       },
 
       logout: async () => {
+        setApiAuthToken(null);
         const guest = createGuest();
         try {
           const synced = await syncUser(guest, Platform.OS);
-          set({ user: mapBackendUser(synced) });
+          const mapped = mapBackendUser(synced);
+          setApiAuthToken(mapped.token);
+          set({ user: mapped });
         } catch {
           set({ user: guest });
         }
@@ -146,7 +162,9 @@ export const useAuthStore = create<AuthState>()(
 
         const updated = { ...user, name: name.trim() };
         const synced = await syncUser(updated, Platform.OS);
-        set({ user: mapBackendUser(synced) });
+        const mapped = mapBackendUser(synced);
+        setApiAuthToken(mapped.token);
+        set({ user: mapped });
       },
     }),
     {
@@ -154,6 +172,9 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ user: state.user }),
       onRehydrateStorage: () => (state) => {
+        if (state?.user?.token) {
+          setApiAuthToken(state.user.token);
+        }
         state?.bootstrap();
       },
     },

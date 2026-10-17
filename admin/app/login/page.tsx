@@ -4,14 +4,29 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, Suspense, useState, useEffect } from 'react';
 
 import { setAdminSession } from '@/lib/auth';
+import { getApiBaseUrl } from '@/lib/api';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001';
+const API_BASE_URL = getApiBaseUrl();
+
+function getSafeNextPath(raw: string | null): string {
+  if (!raw) return '/';
+  const trimmed = raw.trim();
+  if (
+    !trimmed.startsWith('/') ||
+    trimmed.startsWith('//') ||
+    trimmed.startsWith('/\\') ||
+    trimmed.includes('://') ||
+    trimmed.toLowerCase().startsWith('/javascript:')
+  ) {
+    return '/';
+  }
+  return trimmed;
+}
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get('next') || '/';
+  const nextPath = getSafeNextPath(searchParams.get('next'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

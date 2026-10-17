@@ -12,6 +12,7 @@ export interface MerchantUser {
   businessName?: string;
   cnpj?: string;
   platform?: string;
+  token?: string;
 }
 
 export interface BusinessPlace {

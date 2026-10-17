@@ -23,13 +23,17 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
 
 export function setAdminSession(data: AdminLoginResponse) {
   if (typeof document === 'undefined') return;
-  document.cookie = `${AUTH_COOKIE}=${data.token}; path=/; max-age=${60 * 60 * 12}; SameSite=Lax`;
+  const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const secureFlag = isSecure ? '; Secure' : '';
+  document.cookie = `${AUTH_COOKIE}=${encodeURIComponent(data.token)}; path=/; max-age=${60 * 60 * 12}; SameSite=Lax${secureFlag}`;
   localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(data.user));
 }
 
 export function clearAdminSession() {
   if (typeof document === 'undefined') return;
-  document.cookie = `${AUTH_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+  const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const secureFlag = isSecure ? '; Secure' : '';
+  document.cookie = `${AUTH_COOKIE}=; path=/; max-age=0; SameSite=Lax${secureFlag}`;
   localStorage.removeItem(AUTH_SESSION_KEY);
 }
 

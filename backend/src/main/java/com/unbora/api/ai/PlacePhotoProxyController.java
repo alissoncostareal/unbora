@@ -43,7 +43,7 @@ public class PlacePhotoProxyController {
 
     private final PlacePhotoLinkService placePhotoLinkService;
     private final HttpClient httpClient = HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
+            .followRedirects(HttpClient.Redirect.NEVER)
             .connectTimeout(Duration.ofSeconds(8))
             .build();
 

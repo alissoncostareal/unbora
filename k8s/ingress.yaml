@@ -21,13 +21,15 @@ spec:
                 name: unbora-backend-service
                 port:
                   number: 3001
-    - host: kafka-ui.unbora.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: kafka-ui-service
-                port:
-                  number: 8080
+    # kafka-ui nao deve ser exposto publicamente sem autenticacao previa.
+    # Acesse com seguranca via: kubectl port-forward -n unbora svc/kafka-ui-service 8080:8080
+    # - host: kafka-ui.unbora.com
+    #   http:
+    #     paths:
+    #       - path: /
+    #         pathType: Prefix
+    #         backend:
+    #           service:
+    #             name: kafka-ui-service
+    #             port:
+    #               number: 8080

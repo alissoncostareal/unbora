@@ -76,7 +76,7 @@ public class RealEventSyncService {
             curator.setName("Curadoria Unbora");
             curator.setEmail("curadoria@unbora.com");
             curator.setGuest(false);
-            curator.setPasswordHash(PasswordUtil.hashPassword("unbora123"));
+            curator.setPasswordHash(PasswordUtil.hashPassword(UUID.randomUUID().toString()));
             curator.setPlatform("system");
             curator.setRole("curator");
             curator.setBusinessName("Agendas & Instagram Oficial");
