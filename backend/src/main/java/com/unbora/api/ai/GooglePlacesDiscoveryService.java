@@ -116,7 +116,7 @@ public class GooglePlacesDiscoveryService {
                     .uri(URI.create("https://places.googleapis.com/v1/places:searchText"))
                     .header("Content-Type", "application/json")
                     .header("X-Goog-Api-Key", googlePlacesKey)
-                    .header("X-Goog-FieldMask", "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.currentOpeningHours,places.primaryType,places.types,places.googleMapsUri,places.editorialSummary,places.photos,places.priceLevel")
+                    .header("X-Goog-FieldMask", "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.currentOpeningHours,places.primaryType,places.types,places.googleMapsUri,places.photos,places.priceLevel")
                     .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
                     .timeout(Duration.ofSeconds(6))
                     .build();
@@ -274,7 +274,7 @@ public class GooglePlacesDiscoveryService {
         }
     }
 
-    private String extractPhotoKey(String mediaUrl) {
+    public String extractPhotoKey(String mediaUrl) {
         if (mediaUrl == null || mediaUrl.isBlank()) return null;
         int v1Idx = mediaUrl.indexOf("/v1/");
         int mediaIdx = mediaUrl.indexOf("/media");
@@ -284,7 +284,7 @@ public class GooglePlacesDiscoveryService {
         return mediaUrl;
     }
 
-    private String getCachedPhotoUri(String photoKey) {
+    public String getCachedPhotoUri(String photoKey) {
         if (photoKey == null || photoKey.isBlank()) return null;
         String mem = directPhotoCache.get(photoKey);
         if (mem != null) return mem;

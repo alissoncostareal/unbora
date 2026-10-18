@@ -368,4 +368,76 @@ class RecommendationsServiceTest {
         assertTrue(place.getGoogleMapsUri().contains("google.com/maps/search/?api=1&query="));
         assertTrue(place.getGoogleMapsUri().contains("Parque+Ecol%C3%B3gico+do+A%C3%A7u"));
     }
+
+    @Test
+    @DisplayName("Garante que apenas o destaque chama resolveDirectPhotoUrl ao vivo e outros usam fallback para economizar Places API")
+    void shouldOnlyResolvePhotoApiForDestaqueAndUseFallbackOrCacheForOthers() {
+        RecommendDto dto = new RecommendDto(
+                "Animado",
+                "Com amigos.",
+                List.of(),
+                "Fortaleza",
+                "Ceará",
+                "Brasil",
+                -3.73,
+                -38.52,
+                10.0,
+                null
+        );
+
+        when(locationSettingsService.getEffectiveMaxResults(anyString())).thenReturn(24);
+        when(cityAnchor.resolve(any(), any(), any(), any(), any())).thenReturn(new CityAnchor.Center(-3.73, -38.52));
+        when(cityAnchor.contains(any(), anyDouble(), any(), any(), any(), any())).thenReturn(true);
+        when(recommendationCacheService.computeRecommendKey(any(), any(), any(), any(), any(), any()))
+                .thenReturn("rec_test_key_quota_opt");
+        when(recommendationCacheService.getCachedRecommendation(anyString())).thenReturn(Optional.empty());
+        when(sponsoredPlaceService.getMatchingSponsoredForSearch(any(), any(), any(), any()))
+                .thenReturn(List.of());
+
+        PlaceDto place1 = new PlaceDto();
+        place1.setNome("Bar Destaque");
+        place1.setTipo("Bar");
+        place1.setEndereco("Rua 1, Fortaleza");
+        place1.setLatitude(-3.73);
+        place1.setLongitude(-38.52);
+        place1.setDestaque(true);
+        place1.setImagem("https://places.googleapis.com/v1/places/p1/photos/photo1/media");
+
+        PlaceDto place2 = new PlaceDto();
+        place2.setNome("Bar Secundario");
+        place2.setTipo("Bar");
+        place2.setEndereco("Rua 2, Fortaleza");
+        place2.setLatitude(-3.73);
+        place2.setLongitude(-38.52);
+        place2.setDestaque(false);
+        place2.setImagem("https://places.googleapis.com/v1/places/p2/photos/photo2/media");
+
+        RecommendationResult mockResult = new RecommendationResult(
+                "Noite em Fortaleza",
+                "Bares",
+                List.of(place1, place2)
+        );
+
+        when(groqClient.callGroqJson(any(), any(), eq(RecommendationResult.class), anyDouble(), anyInt(), any(Duration.class), anyInt()))
+                .thenReturn(mockResult);
+
+        when(googlePlacesDiscoveryService.extractPhotoKey(contains("photo1"))).thenReturn("places/p1/photos/photo1");
+        when(googlePlacesDiscoveryService.extractPhotoKey(contains("photo2"))).thenReturn("places/p2/photos/photo2");
+        when(googlePlacesDiscoveryService.getCachedPhotoUri(anyString())).thenReturn(null);
+        when(googlePlacesDiscoveryService.resolveDirectPhotoUrl(contains("photo1")))
+                .thenReturn("https://lh3.googleusercontent.com/p1_direct");
+        when(imageEnrichmentService.getCuratedFallback(any(), any()))
+                .thenReturn("https://images.unsplash.com/curated_bar");
+        when(placePhotoLinkService.toAppPath(anyString()))
+                .thenAnswer(inv -> "/api/media/p/token_" + inv.getArgument(0).hashCode());
+
+        RecommendationResult result = recommendationsService.recommend(dto);
+
+        assertNotNull(result);
+        assertEquals(2, result.getLugares().size());
+
+        // Verifica que resolveDirectPhotoUrl foi chamado EXATAMENTE 1 vez (somente para o destaque)
+        verify(googlePlacesDiscoveryService, times(1)).resolveDirectPhotoUrl(contains("photo1"));
+        verify(googlePlacesDiscoveryService, never()).resolveDirectPhotoUrl(contains("photo2"));
+    }
 }
