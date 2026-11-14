@@ -475,8 +475,13 @@ public class ImageEnrichmentService {
     }
 
     /**
-     * Lugares físicos (recomendar/buscar): somente foto do Google Places / Maps.
-     * Sem Unsplash, Brave ou tema — se não houver Places, retorna null (placeholder no app).
+     * Lugares físicos (recomendar/buscar): foto do estabelecimento (upload próprio) ou já
+     * cacheada de uma resolução anterior. NÃO faz mais busca paga ao vivo no Google Places
+     * por recomendação — isso era o maior custo de API do produto (uma busca nova por lugar
+     * em destaque, em toda recomendação sem cache). Quando não há foto cacheada, quem chama
+     * este método cai no fallback temático curado (getCuratedFallback), igual aos demais lugares.
+     * Se um dia quisermos voltar a resolver fotos novas do Google, isso deve ser feito só em
+     * lote/offline (seeder), nunca no caminho de uma requisição de usuário.
      */
     public String fetchPlaceImage(
             String placeName,
@@ -494,7 +499,6 @@ public class ImageEnrichmentService {
         }
 
         String effectiveCity = (city != null && !city.isBlank()) ? city : "Brasil";
-        String cleanAddress = address != null ? address : effectiveCity;
         String normKey = normalizeText(placeName + " " + effectiveCity);
 
         // 1. Cache L1 — só URLs autoritativas (Places/Brave), nunca Unsplash
@@ -504,7 +508,7 @@ public class ImageEnrichmentService {
             if (accepted != null) return accepted;
         }
 
-        // 2. Cache L2 PostgreSQL
+        // 2. Cache L2 PostgreSQL — inclui fotos enviadas pelo próprio estabelecimento (admin)
         try {
             if (venuePhotoRepository != null) {
                 Optional<VenuePhoto> dbPhoto = venuePhotoRepository.findByVenueNormalized(normKey);
@@ -526,30 +530,8 @@ public class ImageEnrichmentService {
             log.debug("DB lookup error for place {}: {}", normKey, e.getMessage());
         }
 
-        // 3. Google Places (fonte principal para lugares)
-        if (!googlePlacesKey.isBlank()) {
-            String query = (visualQuery != null && !visualQuery.isBlank())
-                    ? visualQuery + " " + cleanAddress
-                    : placeName + ", " + cleanAddress;
-
-            String photo = searchGooglePlacePhoto(query, placeName, latitude, longitude);
-            String accepted = acceptOrContinue(photo, batch);
-            if (accepted != null) {
-                saveToCache(normKey, placeName, effectiveCity, accepted, "google_places",
-                        categoryTag != null ? categoryTag : type);
-                return accepted;
-            }
-
-            photo = searchGooglePlacePhoto(placeName + " " + effectiveCity, placeName, latitude, longitude);
-            accepted = acceptOrContinue(photo, batch);
-            if (accepted != null) {
-                saveToCache(normKey, placeName, effectiveCity, accepted, "google_places",
-                        categoryTag != null ? categoryTag : type);
-                return accepted;
-            }
-        }
-
-        // 4. Brave removido para lugares: regra do produto é só Google Maps.
+        // 3. Sem foto cacheada/enviada: não chama mais o Google Places aqui.
+        //    O chamador aplica o fallback temático curado (sem custo de API).
         return null;
     }
 
