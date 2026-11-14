@@ -10,11 +10,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -116,7 +114,11 @@ public class GooglePlacesDiscoveryService {
                     .uri(URI.create("https://places.googleapis.com/v1/places:searchText"))
                     .header("Content-Type", "application/json")
                     .header("X-Goog-Api-Key", googlePlacesKey)
-                    .header("X-Goog-FieldMask", "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.currentOpeningHours,places.primaryType,places.types,places.googleMapsUri,places.photos,places.priceLevel")
+                    // Sem "places.photos" de propósito: incluir fotos no FieldMask muda o SKU de
+                    // cobrança do Places API (New) para o nível Pro, bem mais caro. Fotos de lugares
+                    // agora vêm só de upload do estabelecimento ou do fallback temático (sem custo de API) —
+                    // ver ImageEnrichmentService.fetchPlaceImage.
+                    .header("X-Goog-FieldMask", "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.currentOpeningHours,places.primaryType,places.types,places.googleMapsUri,places.priceLevel")
                     .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
                     .timeout(Duration.ofSeconds(6))
                     .build();
@@ -156,35 +158,10 @@ public class GooglePlacesDiscoveryService {
                     }
                 }
 
-                // Seleciona a melhor foto real do estabelecimento
+                // Fotos não vêm mais do Google Places aqui (ver FieldMask acima) — custo de API.
+                // ImageEnrichmentService.fetchPlaceImage resolve foto do estabelecimento ou usa
+                // fallback temático sem custo, a partir do nome/categoria do lugar.
                 String photoUrl = null;
-                JsonNode photos = p.path("photos");
-                if (photos.isArray() && !photos.isEmpty()) {
-                    String selectedPhotoName = null;
-                    for (JsonNode photo : photos) {
-                        int width = photo.path("widthPx").asInt(0);
-                        int height = photo.path("heightPx").asInt(0);
-                        String name = photo.path("name").asText(null);
-                        if (name != null && !name.isBlank()) {
-                            if (width >= height && width >= 600) {
-                                selectedPhotoName = name;
-                                break;
-                            }
-                        }
-                    }
-                    if (selectedPhotoName == null) {
-                        selectedPhotoName = photos.get(0).path("name").asText(null);
-                    }
-                    if (selectedPhotoName != null && !selectedPhotoName.isBlank()) {
-                        // Verifica se já está em cache persistente (PostgreSQL / RAM)
-                        String cachedDirectUri = getCachedPhotoUri(selectedPhotoName);
-                        if (cachedDirectUri != null && !cachedDirectUri.isBlank()) {
-                            photoUrl = cachedDirectUri;
-                        } else {
-                            photoUrl = "https://places.googleapis.com/v1/" + selectedPhotoName + "/media?maxHeightPx=720&maxWidthPx=960&key=" + URLEncoder.encode(googlePlacesKey, StandardCharsets.UTF_8);
-                        }
-                    }
-                }
 
                 if (displayName != null && !displayName.isBlank()) {
                     results.add(new DiscoveredPlace(
